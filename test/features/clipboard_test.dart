@@ -197,4 +197,43 @@ void main() {
     await clipboard.clear();
     expect(await clipboard.read(), isNull);
   }, skip: !(Platform.isWindows && Platform.environment['EXPLORER_REAL_CLIPBOARD'] == '1'));
+
+  // File Explorer's Paste (the shell's paste verb on a folder) takes what
+  // Explorer copied or cut. Uses the real clipboard too.
+  test('File Explorer pastes what Explorer copied or cut', () async {
+    Future<void> shellPaste(Directory into) async {
+      final result = await Process.run('powershell', [
+        '-NoProfile', '-STA', '-Command',
+        r"$s = New-Object -ComObject Shell.Application; "
+            r"$s.Namespace($args[0]).ParseName($args[1]).InvokeVerb('paste'); "
+            // The shell copies in the background: time to finish first.
+            r'Start-Sleep -Seconds 3',
+        p.dirname(into.path), p.basename(into.path),
+      ]);
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+    }
+
+    Future<void> waitFor(bool Function() done) async {
+      for (var i = 0; i < 100 && !done(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
+    final clipboard = WindowsFileClipboard();
+    final notes = File(p.join(a.path, 'notes.txt'));
+    final album = Directory(p.join(a.path, 'album'));
+    await clipboard.write(ClipboardFiles([notes.path, album.path], cut: false));
+    await shellPaste(b);
+    await waitFor(() => File(p.join(b.path, 'notes.txt')).existsSync());
+    expect(names(b), containsAll(['notes.txt', 'album']));
+    expect(notes.existsSync(), isTrue, reason: 'copied, not moved');
+
+    final c = await Directory(p.join(root.path, 'c')).create();
+    await clipboard.write(ClipboardFiles([notes.path], cut: true));
+    await shellPaste(c);
+    await waitFor(() => !notes.existsSync());
+    expect(names(c), ['notes.txt']);
+    expect(notes.existsSync(), isFalse, reason: 'cut: moved');
+    await clipboard.clear();
+  }, skip: !(Platform.isWindows && Platform.environment['EXPLORER_REAL_CLIPBOARD'] == '1'));
 }
