@@ -8,6 +8,7 @@ import 'package:explorer/features/video_downloader/screens/video_downloader_scre
 import 'package:explorer/features/video_downloader/screens/video_downloader_settings_screen.dart';
 import 'package:explorer/features/video_downloader/widgets/history_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -212,6 +213,9 @@ void main() {
     expect(backend.specs, hasLength(1));
     expect(backend.specs.single.args, containsAllInOrder(['--format-sort', 'res:720,fps,vcodec:h264,acodec:aac']));
     expect(backend.specs.single.outputDir, '/downloads/Explorer Videos');
+    // Ready for the next link.
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(find.text('Test clip'), findsNothing);
 
     await tester.tap(find.text('Downloads (1)'));
     await tester.pumpAndSettle();
@@ -255,6 +259,39 @@ void main() {
     expect(backend.specs.single.outputDir, p.join('/downloads/Explorer Videos', 'A playlist'));
     // The queue is visible beside the panel.
     expect(find.textContaining('42%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a copied link is put in the field, once', (tester) async {
+    var clipboard = 'Watch this: https://example.com/watch/copied';
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') return {'text': clipboard};
+      if (call.method == 'Clipboard.hasStrings') return {'value': true};
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    String field() => tester.widget<TextField>(find.byType(TextField)).controller!.text;
+
+    await pumpScreen(tester, const Size(1280, 800));
+    await tester.tap(find.text('I understand'));
+    await tester.pumpAndSettle();
+    expect(field(), 'https://example.com/watch/copied');
+    expect(find.text('Test clip'), findsNothing, reason: 'filled in, not fetched');
+
+    // Cleared: coming back to the app doesn't put the same link back.
+    await tester.tap(find.byTooltip('Clear'));
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(field(), isEmpty);
+
+    // A new link copied meanwhile is.
+    clipboard = 'https://example.com/watch/abc';
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(field(), 'https://example.com/watch/abc');
     expect(tester.takeException(), isNull);
   });
 

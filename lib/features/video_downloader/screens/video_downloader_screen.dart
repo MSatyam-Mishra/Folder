@@ -68,7 +68,11 @@ class _VideoDownloaderScreenState extends State<VideoDownloaderScreen> {
     final url = widget.initialUrl?.trim();
     if (url != null && url.isNotEmpty) {
       await _panelKey.currentState?.fetch();
-    } else if (Platform.isAndroid) {
+      return;
+    }
+    // After the notices, so what's behind them doesn't change.
+    unawaited(_panelKey.currentState?.fillFromClipboard());
+    if (Platform.isAndroid) {
       // Start yt-dlp now so the first fetch is quick.
       unawaited(_controller.ensureReady().catchError((Object _) {}));
     }

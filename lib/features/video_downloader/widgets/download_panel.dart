@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:explorer/core/services/video_downloader/downloader_backend.dart';
 import 'package:explorer/core/services/video_downloader/video_downloader_controller.dart';
 import 'package:explorer/core/services/video_downloader/ytdlp_models.dart';
@@ -38,7 +40,11 @@ class DownloadPanel extends StatefulWidget {
   State<DownloadPanel> createState() => DownloadPanelState();
 }
 
-class DownloadPanelState extends State<DownloadPanel> {
+class DownloadPanelState extends State<DownloadPanel> with WidgetsBindingObserver {
+  /// The copied links last put in the field, so a link isn't offered again
+  /// after it was downloaded or cleared.
+  static String? _offered;
+
   final _url = TextEditingController();
   VideoInfo? _info;
   bool _fetching = false;
@@ -56,10 +62,18 @@ class DownloadPanelState extends State<DownloadPanel> {
     _options = _c.settings.defaultOptions;
     _url.text = widget.initialUrl?.trim() ?? '';
     _url.addListener(_onText);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the browser with a new link copied.
+    if (state == AppLifecycleState.resumed) fillFromClipboard();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _url.removeListener(_onText);
     _url.dispose();
     super.dispose();
@@ -127,7 +141,31 @@ class DownloadPanelState extends State<DownloadPanel> {
       return;
     }
     _url.text = text;
+    _offered = DownloaderText.extractUrls(text).join('\n');
     if (DownloaderText.extractUrls(text).length == 1) fetch();
+  }
+
+  /// Puts a copied link in the empty field, as if it was pasted (without
+  /// fetching it). Not on macOS, which asks the user each time an app reads
+  /// what another app copied.
+  Future<void> fillFromClipboard() async {
+    if (Platform.isMacOS) return;
+    final ClipboardData? data;
+    try {
+      data = await Clipboard.getData(Clipboard.kTextPlain);
+    } catch (_) {
+      return;
+    }
+    final urls = DownloaderText.extractUrls(data?.text ?? '');
+    // Links already queued or downloaded aren't offered again.
+    bool known(String url) =>
+        _c.jobs.any((j) => j.url == url) || _c.history.any((h) => h.url == url);
+    if (urls.isEmpty || urls.every(known) || !mounted) return;
+    final text = urls.join('\n');
+    if (text == _offered || _url.text.trim().isNotEmpty || _info != null || _fetching) return;
+    _offered = text;
+    _url.text = text;
+    _url.selection = TextSelection.collapsed(offset: text.length);
   }
 
   void _clear() {
@@ -150,6 +188,7 @@ class DownloadPanelState extends State<DownloadPanel> {
           ? [for (final i in (_selected.toList()..sort())) info.entries[i]]
           : null;
       final count = await _c.download(info, options: _options, entries: entries);
+      if (mounted) _clear();
       widget.onQueued(count);
     } catch (e) {
       _showError(e);
@@ -163,7 +202,7 @@ class DownloadPanelState extends State<DownloadPanel> {
     setState(() => _queuing = true);
     try {
       final count = await _c.downloadUrls(urls);
-      _url.clear();
+      if (mounted) _clear();
       widget.onQueued(count);
     } catch (e) {
       _showError(e);
