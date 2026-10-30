@@ -19,10 +19,13 @@ abstract final class AppTheme {
   static ShadThemeData shad(AppThemeSettings settings, Brightness brightness) {
     final style = settings.style;
     var scheme = style.schemeFor(brightness) ?? settings.colorTheme.schemeFor(brightness);
-    // A translucent window: the main background lets it show through.
+    // A see-through window: the main background and the panes (sidebar,
+    // tab bar) let the backdrop show through, as much as set.
     if (settings.windowEffect && WindowEffects.supported) {
+      final alpha = 1 - settings.transparency;
       scheme = scheme.copyWith(
-        background: scheme.background.withValues(alpha: WindowEffects.backgroundAlpha(brightness)),
+        background: scheme.background.withValues(alpha: scheme.background.a * alpha),
+        muted: scheme.muted.withValues(alpha: scheme.muted.a * alpha),
       );
     }
     return ShadThemeData(

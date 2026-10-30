@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/core/theme/app_color_theme.dart';
@@ -176,18 +174,46 @@ class ExplorerOptionsSheet extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: Text('${settings.style.label} is a dark theme.', style: text.bodySmall),
           ),
-        if (WindowEffects.supported)
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: settings.windowEffect,
-            onChanged: cubit.setWindowEffect,
-            title: const Text('Translucent window'),
-            subtitle: Text(Platform.isWindows
-                ? 'Acrylic: the desktop shows through, blurred'
-                : Platform.isMacOS
-                    ? 'Vibrancy: the desktop shows through, blurred'
-                    : 'The desktop shows through (blurred where your desktop supports it)'),
+        if (WindowEffects.supported) ...[
+          const _Heading('Window'),
+          // The system's materials behind the window, and how much of them
+          // shows through the app.
+          SegmentedButton<WindowBackdrop>(
+            style: _compactSegments,
+            showSelectedIcon: false,
+            segments: [
+              for (final backdrop in WindowBackdrop.available)
+                ButtonSegment(
+                  value: backdrop,
+                  icon: Icon(backdrop.icon, size: 16),
+                  label: Text(backdrop.label),
+                ),
+            ],
+            selected: {settings.backdrop},
+            onSelectionChanged: (s) => cubit.setBackdrop(s.first),
           ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(settings.backdrop.description, style: text.bodySmall),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(LucideIcons.blend, size: 16, color: context.colors.mutedForeground),
+              const SizedBox(width: 10),
+              Text('Transparency', style: text.bodyMedium),
+              const Spacer(),
+              Text('${(settings.transparency * 100).round()}%', style: text.bodySmall),
+            ],
+          ),
+          Slider(
+            value: settings.transparency,
+            divisions: 20,
+            label: '${(settings.transparency * 100).round()}%',
+            onChanged: settings.windowEffect ? (v) => cubit.setTransparency(v, save: false) : null,
+            onChangeEnd: settings.windowEffect ? cubit.setTransparency : null,
+          ),
+        ],
         // The other styles come with their own colours.
         if (settings.style == AppStyle.standard) ...[
           const _Heading('Color'),

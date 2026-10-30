@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:explorer/shared/widgets/scrollbar_scroll_view.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/repositories/file_repository.dart';
@@ -817,18 +818,16 @@ class _FileExplorerUI extends StatelessWidget {
       ];
     }
 
-    final scroller = Scrollbar(
-      child: CustomScrollView(
-        // Remembers each folder's scroll position when coming back up.
-        key: PageStorageKey<String>('explorer:${state.path}'),
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        slivers: [
-          ...slivers,
-          SliverToBoxAdapter(child: SizedBox(height: bottom)),
-        ],
+    final scroller = ScrollbarScrollView(
+      // Remembers each folder's scroll position when coming back up.
+      storageKey: 'explorer:${state.path}',
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
       ),
+      slivers: [
+        ...slivers,
+        SliverToBoxAdapter(child: SizedBox(height: bottom)),
+      ],
     );
     // Dropped on the space around the items: into this folder.
     final list = ExplorerPaths.isWindowsRoots(state.path)

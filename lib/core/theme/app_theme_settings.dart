@@ -1,3 +1,4 @@
+import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/theme/app_color_theme.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/shared/file_icons/file_icon_style.dart';
@@ -10,7 +11,8 @@ class AppThemeSettings {
     required this.themeMode,
     required this.colorThemeId,
     this.fileIconStyle = FileIconStyle.solid,
-    this.windowEffect = true,
+    this.backdrop = WindowBackdrop.off,
+    this.transparency = 0.5,
     this.style = AppStyle.standard,
   });
 
@@ -18,8 +20,15 @@ class AppThemeSettings {
   final String colorThemeId;
   final FileIconStyle fileIconStyle;
 
-  /// Translucent window on computers (Acrylic, vibrancy); see WindowEffects.
-  final bool windowEffect;
+  /// What shows behind the window on computers (Mica, Acrylic,
+  /// vibrancy...); see WindowEffects.
+  final WindowBackdrop backdrop;
+
+  /// How see-through the app's backgrounds are over [backdrop], 0 (solid)
+  /// to 1 (clear).
+  final double transparency;
+
+  bool get windowEffect => backdrop != WindowBackdrop.off;
 
   /// The overall look: the app's own, or macOS, Windows, Sweet, Dracula.
   final AppStyle style;
@@ -33,14 +42,16 @@ class AppThemeSettings {
     ThemeMode? themeMode,
     String? colorThemeId,
     FileIconStyle? fileIconStyle,
-    bool? windowEffect,
+    WindowBackdrop? backdrop,
+    double? transparency,
     AppStyle? style,
   }) {
     return AppThemeSettings(
       themeMode: themeMode ?? this.themeMode,
       colorThemeId: colorThemeId ?? this.colorThemeId,
       fileIconStyle: fileIconStyle ?? this.fileIconStyle,
-      windowEffect: windowEffect ?? this.windowEffect,
+      backdrop: backdrop ?? this.backdrop,
+      transparency: transparency ?? this.transparency,
       style: style ?? this.style,
     );
   }

@@ -147,6 +147,9 @@ class BackgroundMode extends ChangeNotifier with WindowListener {
   Future<void> quit() async {
     // On macOS destroy() asks to quit again, through [exitRequested].
     _quitting = true;
+    // Gone at once: shutting the engine and plugins down takes seconds
+    // (about 4 on Windows), and the window would stay up meanwhile.
+    await windowManager.hide();
     if (Platform.isWindows) await _tray.invokeMethod('hide');
     await windowManager.setPreventClose(false);
     await windowManager.destroy();

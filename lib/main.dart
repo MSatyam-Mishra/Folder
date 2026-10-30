@@ -7,7 +7,6 @@ import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/platform/background_mode.dart';
 import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/theme/icon_strokes.dart';
-import 'package:explorer/core/theme/theme_preferences.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/platform/macos_open_files.dart';
@@ -42,7 +41,7 @@ void main(List<String> args) async {
   // Closing the window while work goes on leaves a Tasks view (desktop).
   await BackgroundMode.instance.init();
   // The translucent window (Acrylic, vibrancy), as last chosen.
-  await WindowEffects.init(enabled: (await ThemePreferences.load()).windowEffect);
+  await WindowEffects.init();
   await IconStrokes.useLight();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
@@ -63,7 +62,9 @@ void main(List<String> args) async {
       // In the first tab, so closing the file shows its folder.
       final context = ExplorerTabs.instance.active?.navigatorKey.currentContext ??
           _navigatorKey.currentContext;
-      if (context != null) FileOpener.open(context, File(launchFile));
+      // Never back to the system: if Explorer is the file's default app,
+      // that would start another Explorer for it, and so on.
+      if (context != null) FileOpener.open(context, File(launchFile), allowExternal: false);
     });
   }
 
@@ -129,7 +130,7 @@ class App extends StatelessWidget {
               (settings.effectiveThemeMode == ThemeMode.system &&
                   MediaQuery.platformBrightnessOf(context) == Brightness.dark);
           WidgetsBinding.instance.addPostFrameCallback(
-            (_) => WindowEffects.apply(enabled: settings.windowEffect, dark: dark),
+            (_) => WindowEffects.apply(backdrop: settings.backdrop, dark: dark),
           );
           // shadcn/ui theme; ShadApp derives the Material theme from it,
           // which AppTheme.material completes.

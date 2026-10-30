@@ -102,6 +102,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  // Out of sight while the engine and the plugins shut down, which takes
+  // a few seconds.
+  ::ShowWindow(window.GetHandle(), SW_HIDE);
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

@@ -36,7 +36,7 @@ void main() {
     );
     expect(
       AppTheme.shad(settings.copyWith(style: AppStyle.windows), Brightness.light).colorScheme.accent,
-      const Color(0xFFCCE8FF),
+      const Color(0x260078D4),
       reason: 'File Explorer\'s selection blue',
     );
     expect(

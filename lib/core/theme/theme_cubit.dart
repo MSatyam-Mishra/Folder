@@ -1,3 +1,4 @@
+import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:explorer/core/theme/theme_preferences.dart';
@@ -33,10 +34,17 @@ class ThemeCubit extends Cubit<AppThemeSettings> {
     await ThemePreferences.save(next);
   }
 
-  Future<void> setWindowEffect(bool enabled) async {
-    final next = state.copyWith(windowEffect: enabled);
+  Future<void> setBackdrop(WindowBackdrop backdrop) async {
+    final next = state.copyWith(backdrop: backdrop);
     emit(next);
     await ThemePreferences.save(next);
+  }
+
+  /// Shown while a slider moves; saved when [save] (the slider let go).
+  Future<void> setTransparency(double value, {bool save = true}) async {
+    final next = state.copyWith(transparency: value.clamp(0.0, 1.0));
+    emit(next);
+    if (save) await ThemePreferences.save(next);
   }
 
   Future<void> setStyle(AppStyle style) async {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:explorer/shared/widgets/scrollbar_scroll_view.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/router/file_opener.dart';
 import 'package:explorer/features/category_view/bloc/bloc/category_bloc.dart';
@@ -186,7 +187,7 @@ class _GroupedAssets extends StatelessWidget {
     slivers.add(
       SliverToBoxAdapter(child: SizedBox(height: media.padding.bottom + 24)),
     );
-    return Scrollbar(child: CustomScrollView(slivers: slivers));
+    return ScrollbarScrollView(slivers: slivers);
   }
 }
 

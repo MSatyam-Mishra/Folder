@@ -222,8 +222,8 @@ const _macLight = ShadColorScheme(
   secondaryForeground: Color(0xFF262626),
   muted: Color(0xFFEFEFEF), // sidebar
   mutedForeground: Color(0xFF808080), // secondaryLabelColor
-  accent: Color(0xFF0064E1), // selected row
-  accentForeground: Color(0xFFFFFFFF),
+  accent: Color(0x24007AFF), // selected row: a light, see-through blue
+  accentForeground: Color(0xFF262626),
   destructive: Color(0xFFFF3B30),
   destructiveForeground: Color(0xFFFFFFFF),
   border: Color(0xFFE5E5E5), // separatorColor
@@ -245,8 +245,8 @@ const _macDark = ShadColorScheme(
   secondaryForeground: Color(0xFFDFDFDF),
   muted: Color(0xFF282828), // sidebar
   mutedForeground: Color(0xFF999999),
-  accent: Color(0xFF0058D0), // selected row
-  accentForeground: Color(0xFFFFFFFF),
+  accent: Color(0x3D0A84FF), // selected row: a light, see-through blue
+  accentForeground: Color(0xFFDFDFDF),
   destructive: Color(0xFFFF453A),
   destructiveForeground: Color(0xFFFFFFFF),
   border: Color(0xFF3A3A3A),
@@ -269,7 +269,7 @@ const _windowsLight = ShadColorScheme(
   secondaryForeground: Color(0xFF1B1B1B),
   muted: Color(0xFFF3F3F3), // navigation pane, Mica
   mutedForeground: Color(0xFF606060), // TextFillColorSecondary
-  accent: Color(0xFFCCE8FF), // selected item
+  accent: Color(0x260078D4), // selected item: File Explorer's light blue, see-through
   accentForeground: Color(0xFF1B1B1B),
   destructive: Color(0xFFC42B1C),
   destructiveForeground: Color(0xFFFFFFFF),
@@ -292,7 +292,7 @@ const _windowsDark = ShadColorScheme(
   secondaryForeground: Color(0xFFFFFFFF),
   muted: Color(0xFF202020), // navigation pane, Mica
   mutedForeground: Color(0xFFC5C5C5), // TextFillColorSecondary
-  accent: Color(0xFF414141), // selected item
+  accent: Color(0x24FFFFFF), // selected item: a light grey, see-through
   accentForeground: Color(0xFFFFFFFF),
   destructive: Color(0xFFFF99A4),
   destructiveForeground: Color(0xFF000000),
@@ -316,8 +316,8 @@ const _sweet = ShadColorScheme(
   secondaryForeground: Color(0xFFD3DAE3),
   muted: Color(0xFF181B28), // window
   mutedForeground: Color(0xFF858CA2),
-  accent: Color(0xFFC50ED2), // selection
-  accentForeground: Color(0xFFFFFFFF),
+  accent: Color(0x47C50ED2), // selection: its magenta, see-through
+  accentForeground: Color(0xFFD3DAE3),
   destructive: Color(0xFFED254E),
   destructiveForeground: Color(0xFFFFFFFF),
   border: Color(0xFF262A3D),
