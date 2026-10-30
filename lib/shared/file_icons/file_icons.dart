@@ -1,3 +1,4 @@
+import 'package:explorer/shared/file_icons/place_icon.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
@@ -280,7 +281,7 @@ class FileIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isDirectory) return FolderIcon(size: size);
+    if (isDirectory) return FolderIcon(size: size, path: path);
     final style =
         this.style ??
         context.select<ThemeCubit, FileIconStyle>((c) => c.state.fileIconStyle);
@@ -324,20 +325,41 @@ class FileIcon extends StatelessWidget {
 /// The glass folder from assets/iocns/glass, or a folder in the colours of
 /// the style chosen (Finder's blue, Windows' yellow...).
 class FolderIcon extends StatelessWidget {
-  const FolderIcon({super.key, this.size = 40});
+  const FolderIcon({super.key, this.size = 40, this.path});
 
   final double size;
 
+  /// The folder: the home folder, Documents, Downloads... get their own
+  /// icon in styles with an icon theme, a symbol on the folder in others.
+  final String? path;
+
   @override
   Widget build(BuildContext context) {
-    final colors = context.look.folder;
+    final look = context.look;
+    final folder = look.folder;
+    final path = this.path;
+    final place = path == null ? null : Place.of(path);
+    final Widget art;
+    if (look.iconPack != null) {
+      art = SvgPicture.asset(
+        place?.assetFor(look) ?? 'assets/icon_themes/${look.iconPack}/folder.svg',
+        fit: BoxFit.contain,
+      );
+    } else if (folder != null) {
+      art = CustomPaint(
+        painter: _FolderPainter(front: folder.$1, back: folder.$2),
+        child: place == null
+            ? null
+            : Align(
+                alignment: const Alignment(0, 0.42),
+                child: Icon(place.glyph, size: size * 0.32, color: Color.lerp(folder.$2, Colors.black, 0.18)),
+              ),
+      );
+    } else {
+      art = SvgPicture.asset(FileIcons.folderAsset, fit: BoxFit.contain);
+    }
     // The folder art isn't square; keep it inside a size×size box.
-    return SizedBox.square(
-      dimension: size,
-      child: colors == null
-          ? SvgPicture.asset(FileIcons.folderAsset, fit: BoxFit.contain)
-          : CustomPaint(painter: _FolderPainter(front: colors.$1, back: colors.$2)),
-    );
+    return SizedBox.square(dimension: size, child: art);
   }
 }
 

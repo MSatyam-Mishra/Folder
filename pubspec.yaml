@@ -100,6 +100,10 @@ flutter:
 
   uses-material-design: true
   assets:
+    # Folder and place icons of the Sweet and Dracula styles (GPL-3.0,
+    # see assets/icon_themes/README.md)
+    - assets/icon_themes/sweet/
+    - assets/icon_themes/dracula/
     # File and folder icons (lib/shared/file_icons)
     - assets/iocns/file_type/icon_1/
     - assets/iocns/file_type/icon_2/

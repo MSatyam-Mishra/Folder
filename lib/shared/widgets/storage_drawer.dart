@@ -1,3 +1,5 @@
+import 'package:explorer/core/theme/app_style.dart';
+import 'package:explorer/shared/file_icons/place_icon.dart';
 import 'package:explorer/shared/widgets/main_drawer.dart';
 import 'package:disk_space_plus/disk_space_plus.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -81,7 +83,12 @@ class _StorageDrawerItemState extends State<StorageDrawerItem> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           child: Row(
             children: [
-              Icon(widget.icon, size: 18, color: colors.foreground),
+              PlaceIcon(
+                place: Place.named(widget.title) ?? Place.of(widget.path),
+                icon: widget.icon,
+                size: 18,
+                color: context.look.sidebarIcons ?? context.look.iconColor(widget.icon, colors.foreground),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

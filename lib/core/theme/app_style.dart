@@ -85,6 +85,7 @@ enum AppStyle {
         ),
       AppStyle.sweet => const AppLook(
           style: AppStyle.sweet,
+          iconPack: 'sweet',
           // Violet: apart from the magenta of the selection.
           folder: (Color(0xFF9D6CF5), Color(0xFF6C45D1)),
           iconPalette: [
@@ -98,6 +99,7 @@ enum AppStyle {
         ),
       AppStyle.dracula => const AppLook(
           style: AppStyle.dracula,
+          iconPack: 'dracula',
           folder: (Color(0xFFBD93F9), Color(0xFF9273D6)),
           iconPalette: [
             Color(0xFFBD93F9), // purple
@@ -116,7 +118,7 @@ enum AppStyle {
 /// What a style changes besides its colours, for widgets to read with
 /// `context.look`.
 class AppLook extends ThemeExtension<AppLook> {
-  const AppLook({required this.style, this.folder, this.iconPalette, this.sidebarIcons});
+  const AppLook({required this.style, this.folder, this.iconPalette, this.sidebarIcons, this.iconPack});
 
   final AppStyle style;
 
@@ -128,6 +130,10 @@ class AppLook extends ThemeExtension<AppLook> {
 
   /// Colour of the sidebar's icons (Finder tints them).
   final Color? sidebarIcons;
+
+  /// The folder and place icons the style has (`assets/icon_themes/<pack>`):
+  /// Sweet's and Dracula's.
+  final String? iconPack;
 
   /// The colour for [icon] in a colourful style: the same icon always gets
   /// the same colour, and kinds of action get fitting ones (delete red,
@@ -195,6 +201,7 @@ class AppLook extends ThemeExtension<AppLook> {
         folder: folder,
         iconPalette: iconPalette,
         sidebarIcons: sidebarIcons,
+        iconPack: iconPack,
       );
 
   @override

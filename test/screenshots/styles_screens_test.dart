@@ -23,7 +23,7 @@ void main() {
     await loadAppFonts();
     root = Directory(p.join(Directory.systemTemp.path, 'Style shots', 'Projects'));
     if (await root.exists()) await root.delete(recursive: true);
-    for (final d in ['Designs', 'Invoices', 'Photos 2026']) {
+    for (final d in ['Designs', 'Documents', 'Downloads', 'Invoices', 'Music', 'Photos 2026']) {
       await Directory(p.join(root.path, d)).create(recursive: true);
     }
     for (final name in ['Roadmap.pdf', 'Notes.md', 'Budget.xlsx', 'Logo.png', 'Song.mp3']) {

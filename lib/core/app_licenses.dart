@@ -25,7 +25,21 @@ Stream<LicenseEntry> _entries() async* {
   yield const LicenseEntryWithLineBreaks(['Explorer'], appLegalese);
   yield const LicenseEntryWithLineBreaks(['Explorer'], gpl3Text);
   yield const LicenseEntryWithLineBreaks(['PDFium'], _pdfium);
+  yield const LicenseEntryWithLineBreaks(['Sweet folders (Sweet style)'], _sweetFolders);
+  yield const LicenseEntryWithLineBreaks(['Dracula Icons (Dracula style)'], _draculaIcons);
+  yield const LicenseEntryWithLineBreaks(['Sweet folders (Sweet style)', 'Dracula Icons (Dracula style)'], gpl3Text);
 }
+
+const _sweetFolders = '''
+Sweet folders, Sweet-Rainbow (folder and place icons of the Sweet style)
+by Eliver Lara. Source: https://github.com/EliverLara/Sweet-folders
+Licensed under the GNU General Public License, version 3.''';
+
+const _draculaIcons = '''
+Dracula Icons (folder and place icons of the Dracula style) by Matheus
+Vitor, recoloured from Papirus (https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)
+to the Dracula palette. Source: https://github.com/m4thewz/dracula-icons
+Licensed under the GNU General Public License, version 3.''';
 
 const _pdfium = '''
 PDFium (PDF rendering and editing, via pdfrx)
