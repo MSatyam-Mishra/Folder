@@ -1,3 +1,4 @@
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:explorer/core/theme/theme_preferences.dart';
 import 'package:explorer/shared/file_icons/file_icon_style.dart';
@@ -34,6 +35,12 @@ class ThemeCubit extends Cubit<AppThemeSettings> {
 
   Future<void> setWindowEffect(bool enabled) async {
     final next = state.copyWith(windowEffect: enabled);
+    emit(next);
+    await ThemePreferences.save(next);
+  }
+
+  Future<void> setStyle(AppStyle style) async {
+    final next = state.copyWith(style: style);
     emit(next);
     await ThemePreferences.save(next);
   }

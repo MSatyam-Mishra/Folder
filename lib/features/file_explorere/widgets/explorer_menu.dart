@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
@@ -83,7 +84,7 @@ abstract final class ExplorerMenu {
             Icon(
               icon,
               size: 16,
-              color: destructive ? colors.destructive : colors.mutedForeground,
+              color: destructive ? colors.destructive : context.look.iconColor(icon, colors.mutedForeground),
             ),
             const SizedBox(width: 10),
           ],
@@ -205,7 +206,7 @@ class _SubmenuState<T> extends State<_Submenu<T>> {
           child: Row(
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, size: 16, color: colors.mutedForeground),
+                Icon(widget.icon, size: 16, color: context.look.iconColor(widget.icon, colors.mutedForeground)),
                 const SizedBox(width: 10),
               ],
               Expanded(

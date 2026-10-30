@@ -113,6 +113,10 @@ class FileListItem extends StatelessWidget {
       fontWeight: FontWeight.w500,
       color: isSelected ? colors.accentForeground : colors.foreground,
     );
+    // On a selected row the details follow the name, as in Finder (where
+    // the selection is a strong blue).
+    final detail = isSelected ? colors.accentForeground.withValues(alpha: 0.8) : colors.mutedForeground;
+    final detailStyle = text.bodySmall?.copyWith(color: detail);
     final where = location;
     final Widget name = where == null || style == FileRowStyle.comfortable
         ? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle)
@@ -127,7 +131,7 @@ class FileListItem extends StatelessWidget {
                   'in $where',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: text.bodySmall,
+                  style: detailStyle,
                 ),
               ),
             ],
@@ -150,7 +154,7 @@ class FileListItem extends StatelessWidget {
                 ].join(' · ').ifEmpty(' '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: text.bodySmall,
+                style: detailStyle,
               ),
             ),
           ],
@@ -168,7 +172,7 @@ class FileListItem extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 12),
                         child: Text(
                           EntityFormat.size(stat.size),
-                          style: text.bodySmall,
+                          style: detailStyle,
                         ),
                       ),
               ),
@@ -177,7 +181,7 @@ class FileListItem extends StatelessWidget {
       case FileRowStyle.table:
         final cell = text.bodySmall?.copyWith(
           fontSize: 13,
-          color: colors.mutedForeground,
+          color: detail,
         );
         return Row(
           children: [

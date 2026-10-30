@@ -1,3 +1,4 @@
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/app_theme.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
@@ -13,18 +14,19 @@ Widget themedApp(
   Widget home, {
   ThemeMode themeMode = ThemeMode.light,
   String colorScheme = 'blue',
+  AppStyle style = AppStyle.standard,
 }) {
   final settings = AppThemeSettings.defaults()
-      .copyWith(themeMode: themeMode, colorThemeId: colorScheme);
+      .copyWith(themeMode: themeMode, colorThemeId: colorScheme, style: style);
   return BlocProvider(
     create: (_) => ThemeCubit(),
     child: ShadApp.custom(
-      themeMode: themeMode,
+      themeMode: settings.effectiveThemeMode,
       theme: AppTheme.shad(settings, Brightness.light),
       darkTheme: AppTheme.shad(settings, Brightness.dark),
       appBuilder: (context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.material(Theme.of(context), ShadTheme.of(context)),
+        theme: AppTheme.material(Theme.of(context), ShadTheme.of(context), style: style),
         localizationsDelegates: const [
           GlobalShadLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,

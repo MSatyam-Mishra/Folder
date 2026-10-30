@@ -6,6 +6,7 @@ import 'package:explorer/core/app/app_bloc_observer.dart';
 import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/platform/background_mode.dart';
 import 'package:explorer/core/platform/window_effects.dart';
+import 'package:explorer/core/theme/icon_strokes.dart';
 import 'package:explorer/core/theme/theme_preferences.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -42,6 +43,7 @@ void main(List<String> args) async {
   await BackgroundMode.instance.init();
   // The translucent window (Acrylic, vibrancy), as last chosen.
   await WindowEffects.init(enabled: (await ThemePreferences.load()).windowEffect);
+  await IconStrokes.useLight();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 
@@ -123,8 +125,8 @@ class App extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, AppThemeSettings>(
         builder: (context, settings) {
           // The window effect follows the setting and light/dark.
-          final dark = settings.themeMode == ThemeMode.dark ||
-              (settings.themeMode == ThemeMode.system &&
+          final dark = settings.effectiveThemeMode == ThemeMode.dark ||
+              (settings.effectiveThemeMode == ThemeMode.system &&
                   MediaQuery.platformBrightnessOf(context) == Brightness.dark);
           WidgetsBinding.instance.addPostFrameCallback(
             (_) => WindowEffects.apply(enabled: settings.windowEffect, dark: dark),
@@ -132,7 +134,7 @@ class App extends StatelessWidget {
           // shadcn/ui theme; ShadApp derives the Material theme from it,
           // which AppTheme.material completes.
           return ShadApp.custom(
-            themeMode: settings.themeMode,
+            themeMode: settings.effectiveThemeMode,
             theme: AppTheme.shad(settings, Brightness.light),
             darkTheme: AppTheme.shad(settings, Brightness.dark),
             appBuilder: (context) => MaterialApp(
@@ -141,6 +143,7 @@ class App extends StatelessWidget {
               theme: AppTheme.material(
                 Theme.of(context),
                 ShadTheme.of(context),
+                style: settings.style,
               ),
               debugShowCheckedModeBanner: false,
               supportedLocales: const [Locale('en')],

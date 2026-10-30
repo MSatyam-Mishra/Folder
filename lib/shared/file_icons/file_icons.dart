@@ -1,4 +1,5 @@
 import 'package:explorer/core/files/file_types.dart';
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
 import 'package:explorer/shared/file_icons/file_icon_catalog.g.dart';
 import 'package:explorer/shared/file_icons/file_icon_style.dart';
@@ -320,7 +321,8 @@ class FileIcon extends StatelessWidget {
   }
 }
 
-/// The glass folder from assets/iocns/glass.
+/// The glass folder from assets/iocns/glass, or a folder in the colours of
+/// the style chosen (Finder's blue, Windows' yellow...).
 class FolderIcon extends StatelessWidget {
   const FolderIcon({super.key, this.size = 40});
 
@@ -328,12 +330,60 @@ class FolderIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.look.folder;
     // The folder art isn't square; keep it inside a size×size box.
     return SizedBox.square(
       dimension: size,
-      child: SvgPicture.asset(FileIcons.folderAsset, fit: BoxFit.contain),
+      child: colors == null
+          ? SvgPicture.asset(FileIcons.folderAsset, fit: BoxFit.contain)
+          : CustomPaint(painter: _FolderPainter(front: colors.$1, back: colors.$2)),
     );
   }
+}
+
+/// A flat folder: the back with its tab, and the front a little lower.
+class _FolderPainter extends CustomPainter {
+  const _FolderPainter({required this.front, required this.back});
+
+  final Color front;
+  final Color back;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // As wide as the glass folder, and as tall: about 80% by 64%.
+    final left = w * 0.08;
+    final right = w * 0.92;
+    final top = h * 0.2;
+    final bottom = h * 0.84;
+    final r = w * 0.06;
+    final tab = Path()
+      ..moveTo(left, top + r)
+      ..quadraticBezierTo(left, top, left + r, top)
+      ..lineTo(left + w * 0.3, top)
+      ..quadraticBezierTo(left + w * 0.34, top, left + w * 0.37, top + h * 0.05)
+      ..lineTo(left + w * 0.4, top + h * 0.08)
+      ..lineTo(right - r, top + h * 0.08)
+      ..quadraticBezierTo(right, top + h * 0.08, right, top + h * 0.08 + r)
+      ..lineTo(right, bottom - r)
+      ..lineTo(left, bottom - r)
+      ..close();
+    canvas.drawPath(tab, Paint()..color = back);
+    final body = RRect.fromLTRBR(left, top + h * 0.17, right, bottom, Radius.circular(r));
+    canvas.drawRRect(
+      body,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color.lerp(front, Colors.white, 0.12)!, front],
+        ).createShader(body.outerRect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FolderPainter old) => old.front != front || old.back != back;
 }
 
 /// White page behind an icon_2 SVG (201×240 view box, drawn with

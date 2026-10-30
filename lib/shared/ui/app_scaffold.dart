@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -115,10 +116,12 @@ class AppIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glyph = icon;
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
-      color: color,
+      // Sweet and Dracula colour their icons.
+      color: color ?? (glyph is Icon && glyph.color == null ? context.look.tint(glyph.icon) : null),
       icon: icon,
       constraints: const BoxConstraints.tightFor(width: 40, height: 40),
       padding: EdgeInsets.zero,

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:explorer/core/theme/icon_strokes.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
@@ -18,12 +19,15 @@ Future<void> loadAppFonts() async {
     await rootBundle.loadString('FontManifest.json'),
   ) as List<dynamic>;
   for (final entry in manifest.cast<Map<String, dynamic>>()) {
+    // The app draws its icons with lighter lines (see below).
+    if (entry['family'] == 'packages/lucide_icons_flutter/Lucide') continue;
     final loader = FontLoader(entry['family'] as String);
     for (final font in (entry['fonts'] as List).cast<Map<String, dynamic>>()) {
       loader.addFont(rootBundle.load(Uri.decodeFull(font['asset'] as String)));
     }
     await loader.load();
   }
+  await IconStrokes.useLight();
 }
 
 /// Sets the test window to [logicalSize] at [pixelRatio].

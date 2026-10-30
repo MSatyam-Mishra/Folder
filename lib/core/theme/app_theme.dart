@@ -1,4 +1,5 @@
 import 'package:explorer/core/platform/window_effects.dart';
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -16,7 +17,8 @@ abstract final class AppTheme {
   static const double surfaceRadius = 12;
 
   static ShadThemeData shad(AppThemeSettings settings, Brightness brightness) {
-    var scheme = settings.colorTheme.schemeFor(brightness);
+    final style = settings.style;
+    var scheme = style.schemeFor(brightness) ?? settings.colorTheme.schemeFor(brightness);
     // A translucent window: the main background lets it show through.
     if (settings.windowEffect && WindowEffects.supported) {
       scheme = scheme.copyWith(
@@ -24,20 +26,22 @@ abstract final class AppTheme {
       );
     }
     return ShadThemeData(
-      brightness: brightness,
+      brightness: style.darkOnly ? Brightness.dark : brightness,
       colorScheme: scheme,
-      radius: BorderRadius.circular(controlRadius),
+      radius: BorderRadius.circular(style.controlRadius),
+      textTheme: style.fontFamily == null ? null : ShadTextTheme(family: style.fontFamily),
     );
   }
 
-  /// Completes the Material theme [ShadApp] derived from [shad].
-  static ThemeData material(ThemeData base, ShadThemeData shad) {
+  /// Completes the Material theme [ShadApp] derived from [shad], with the
+  /// extras of [style] ([AppLook]).
+  static ThemeData material(ThemeData base, ShadThemeData shad, {AppStyle style = AppStyle.standard}) {
     final c = shad.colorScheme;
     // Dialogs, sheets, the drawer and menus stay solid over a translucent
     // window.
     final solid = c.background.withValues(alpha: 1);
     final dark = shad.brightness == Brightness.dark;
-    final control = BorderRadius.circular(controlRadius);
+    final control = BorderRadius.circular(style.controlRadius);
     final surface = BorderRadius.circular(surfaceRadius);
     final hover = c.accent;
 
@@ -183,6 +187,7 @@ abstract final class AppTheme {
     });
 
     return base.copyWith(
+      extensions: [style.look(shad.brightness)],
       colorScheme: scheme,
       scaffoldBackgroundColor: c.background,
       canvasColor: solid,

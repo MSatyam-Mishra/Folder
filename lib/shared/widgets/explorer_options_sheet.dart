@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/core/theme/app_color_theme.dart';
+import 'package:explorer/core/theme/app_style.dart';
+import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:explorer/shared/file_icons/file_icons.dart';
@@ -131,6 +133,20 @@ class ExplorerOptionsSheet extends StatelessWidget {
             ),
           ],
         ),
+        const _Heading('Style'),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final style in AppStyle.values)
+              _StyleCard(
+                style: style,
+                settings: settings,
+                selected: settings.style == style,
+                onTap: () => cubit.setStyle(style),
+              ),
+          ],
+        ),
         const _Heading('Theme'),
         SegmentedButton<ThemeMode>(
           showSelectedIcon: false,
@@ -151,9 +167,15 @@ class ExplorerOptionsSheet extends StatelessWidget {
               label: Text('Dark'),
             ),
           ],
-          selected: {settings.themeMode},
-          onSelectionChanged: (s) => cubit.setThemeMode(s.first),
+          selected: {settings.effectiveThemeMode},
+          // Sweet and Dracula only come dark.
+          onSelectionChanged: settings.style.darkOnly ? null : (s) => cubit.setThemeMode(s.first),
         ),
+        if (settings.style.darkOnly)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('${settings.style.label} is a dark theme.', style: text.bodySmall),
+          ),
         if (WindowEffects.supported)
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -166,19 +188,22 @@ class ExplorerOptionsSheet extends StatelessWidget {
                     ? 'Vibrancy: the desktop shows through, blurred'
                     : 'The desktop shows through (blurred where your desktop supports it)'),
           ),
-        const _Heading('Color'),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (final spec in AppColorThemes.all)
-              _Swatch(
-                spec: spec,
-                selected: settings.colorThemeId == spec.id,
-                onTap: () => cubit.setColorTheme(spec.id),
-              ),
-          ],
-        ),
+        // The other styles come with their own colours.
+        if (settings.style == AppStyle.standard) ...[
+          const _Heading('Color'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final spec in AppColorThemes.all)
+                _Swatch(
+                  spec: spec,
+                  selected: settings.colorThemeId == spec.id,
+                  onTap: () => cubit.setColorTheme(spec.id),
+                ),
+            ],
+          ),
+        ],
         const _Heading('File icons'),
         SegmentedButton<FileIconStyle>(
           showSelectedIcon: false,
@@ -224,6 +249,146 @@ class _Heading extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 8),
       child: Text(label, style: Theme.of(context).textTheme.titleSmall),
+    );
+  }
+}
+
+/// A style, shown as a small window in its colours.
+class _StyleCard extends StatelessWidget {
+  const _StyleCard({
+    required this.style,
+    required this.settings,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final AppStyle style;
+  final AppThemeSettings settings;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final brightness = style.darkOnly ? Brightness.dark : Theme.of(context).brightness;
+    final scheme = style.schemeFor(brightness) ?? settings.colorTheme.schemeFor(brightness);
+    final look = style.look(brightness);
+    final folder = look.folder ?? (scheme.primary, scheme.primary);
+    final palette = look.iconPalette;
+    Widget line(double width, Color color) => Container(
+          width: width,
+          height: 3,
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        );
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: style.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 122,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: selected ? colors.primary : colors.border, width: selected ? 2 : 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(style.controlRadius),
+                child: SizedBox(
+                  height: 62,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // The sidebar, its icons in the style's colours.
+                      Container(
+                        width: 34,
+                        color: scheme.muted,
+                        padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < 4; i++)
+                              line(
+                                i.isEven ? 22 : 16,
+                                palette?[i % palette.length] ?? look.sidebarIcons ?? scheme.mutedForeground,
+                              ),
+                          ],
+                        ),
+                      ),
+                      // The items: a folder, a selected row, a detail.
+                      Expanded(
+                        child: Container(
+                          color: scheme.background,
+                          padding: const EdgeInsets.fromLTRB(6, 7, 6, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 9,
+                                    decoration: BoxDecoration(
+                                      color: folder.$1,
+                                      borderRadius: BorderRadius.circular(2),
+                                      border: Border(top: BorderSide(color: folder.$2, width: 2)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(child: line(30, scheme.foreground)),
+                                ],
+                              ),
+                              Container(
+                                height: 11,
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: scheme.accent,
+                                  borderRadius: BorderRadius.circular(style.controlRadius / 2),
+                                ),
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.only(left: 4, top: 4),
+                                child: line(28, scheme.accentForeground),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(child: line(24, scheme.mutedForeground)),
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    margin: const EdgeInsets.only(bottom: 4),
+                                    decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 2),
+                child: Text(
+                  style.label,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colors.foreground,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

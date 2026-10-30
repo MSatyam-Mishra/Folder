@@ -1,3 +1,4 @@
+import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -82,7 +83,13 @@ class AppSidebarItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             child: Row(
               children: [
-                Icon(icon, size: 18, color: fg),
+                Icon(
+                  icon,
+                  size: 18,
+                  // Finder tints the sidebar's icons; Sweet and Dracula
+                  // colour them.
+                  color: selected ? fg : context.look.sidebarIcons ?? context.look.iconColor(icon, fg),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
