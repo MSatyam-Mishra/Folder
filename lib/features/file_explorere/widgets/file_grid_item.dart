@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:explorer/shared/file_icons/file_thumbnail.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
@@ -79,9 +80,17 @@ class FileGridItem extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: Center(
-              child: EntityIcon(entity: entity, size: 44),
-            ),
+            child: entity is File
+                ? LayoutBuilder(
+                    builder: (context, constraints) => Center(
+                      child: FileThumbnail(
+                        path: entity.path,
+                        size: (constraints.biggest.shortestSide).clamp(44.0, 120.0),
+                        fallback: Center(child: EntityIcon(entity: entity, size: 44)),
+                      ),
+                    ),
+                  )
+                : Center(child: EntityIcon(entity: entity, size: 44)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -187,43 +196,25 @@ class _Thumbnail extends StatelessWidget {
 
   final FileSystemEntity entity;
 
-  static bool _isImage(String path) =>
-      FileTypes.image.contains(FileTypes.extensionOf(path));
-
   @override
   Widget build(BuildContext context) {
-    final isDirectory = entity is Directory;
     final icon = Center(child: EntityIcon(entity: entity, size: 56));
-    if (isDirectory || !_isImage(entity.path)) {
-      final isVideo = FileTypes.kindOf(entity.path) == FileKind.video;
-      if (!isVideo) return icon;
-      return Stack(
-        children: [
-          Positioned.fill(child: icon),
-          Positioned(left: 6, bottom: 6, child: _Badge(LucideIcons.play)),
-        ],
-      );
-    }
+    if (entity is Directory) return icon;
+    final isVideo = FileTypes.kindOf(entity.path) == FileKind.video;
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final dpr = MediaQuery.devicePixelRatioOf(context);
-        final width = constraints.maxWidth.isFinite
-            ? (constraints.maxWidth * dpr).round()
-            : 256;
-        return Image.file(
-          File(entity.path),
-          key: ValueKey(entity.path),
-          fit: BoxFit.cover,
-          cacheWidth: width,
-          filterQuality: FilterQuality.medium,
-          gaplessPlayback: true,
-          errorBuilder: (_, _, _) => icon,
-          frameBuilder: (context, child, frame, wasSync) {
-            if (wasSync || frame != null) return child;
-            return const SizedBox.expand();
-          },
-        );
-      },
+      builder: (context, constraints) => Stack(
+        fit: StackFit.expand,
+        children: [
+          FileThumbnail(
+            path: entity.path,
+            size: constraints.biggest.longestSide.isFinite ? constraints.biggest.longestSide : 200,
+            cover: true,
+            radius: 0,
+            fallback: icon,
+          ),
+          if (isVideo) Positioned(left: 6, bottom: 6, child: _Badge(LucideIcons.play)),
+        ],
+      ),
     );
   }
 }

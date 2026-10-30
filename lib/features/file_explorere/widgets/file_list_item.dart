@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:explorer/shared/file_icons/file_thumbnail.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,13 @@ class FileListItem extends StatelessWidget {
 
     final row = Row(
       children: [
-        EntityIcon(entity: entity, size: iconSize),
+        entity is File
+            ? FileThumbnail(
+                path: entity.path,
+                size: iconSize,
+                fallback: EntityIcon(entity: entity, size: iconSize),
+              )
+            : EntityIcon(entity: entity, size: iconSize),
         SizedBox(width: style == FileRowStyle.compact ? 10 : 12),
         Expanded(child: _details(context, title)),
         if (isSelectionMode) ...[

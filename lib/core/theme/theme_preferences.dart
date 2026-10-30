@@ -15,6 +15,7 @@ abstract final class ThemePreferences {
   static const _keyBackdrop = 'window_backdrop';
   static const _keyTransparency = 'window_transparency';
   static const _keyStyle = 'app_style';
+  static const _keyThumbnails = 'show_thumbnails';
 
   static Future<AppThemeSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,6 +28,7 @@ abstract final class ThemePreferences {
           : WindowBackdrop.parse(prefs.getString(_keyBackdrop)),
       transparency: (prefs.getDouble(_keyTransparency) ?? WindowBackdrop.standardTransparency).clamp(0.0, 1.0),
       style: AppStyle.parse(prefs.getString(_keyStyle)),
+      showThumbnails: prefs.getBool(_keyThumbnails) ?? true,
     );
   }
 
@@ -38,6 +40,7 @@ abstract final class ThemePreferences {
     await prefs.setString(_keyBackdrop, settings.backdrop.name);
     await prefs.setDouble(_keyTransparency, settings.transparency);
     await prefs.setString(_keyStyle, settings.style.name);
+    await prefs.setBool(_keyThumbnails, settings.showThumbnails);
   }
 
   static ThemeMode _parseThemeMode(String? value) => switch (value) {

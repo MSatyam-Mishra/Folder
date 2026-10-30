@@ -47,6 +47,12 @@ class ThemeCubit extends Cubit<AppThemeSettings> {
     if (save) await ThemePreferences.save(next);
   }
 
+  Future<void> setShowThumbnails(bool show) async {
+    final next = state.copyWith(showThumbnails: show);
+    emit(next);
+    await ThemePreferences.save(next);
+  }
+
   Future<void> setStyle(AppStyle style) async {
     final next = state.copyWith(style: style);
     emit(next);

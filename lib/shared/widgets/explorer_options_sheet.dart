@@ -230,6 +230,14 @@ class ExplorerOptionsSheet extends StatelessWidget {
             ],
           ),
         ],
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(LucideIcons.images, size: 18),
+          value: settings.showThumbnails,
+          onChanged: cubit.setShowThumbnails,
+          title: const Text('Thumbnails'),
+          subtitle: const Text('Pictures of images, videos, PDFs and documents instead of their icons'),
+        ),
         const _Heading('File icons'),
         SegmentedButton<FileIconStyle>(
           showSelectedIcon: false,

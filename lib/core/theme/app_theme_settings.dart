@@ -14,6 +14,7 @@ class AppThemeSettings {
     this.backdrop = WindowBackdrop.off,
     this.transparency = 0.5,
     this.style = AppStyle.standard,
+    this.showThumbnails = true,
   });
 
   final ThemeMode themeMode;
@@ -30,6 +31,10 @@ class AppThemeSettings {
 
   bool get windowEffect => backdrop != WindowBackdrop.off;
 
+  /// Pictures of images, videos, PDFs and documents in place of their
+  /// icons in the file list.
+  final bool showThumbnails;
+
   /// The overall look: the app's own, or macOS, Windows, Sweet, Dracula.
   final AppStyle style;
 
@@ -45,6 +50,7 @@ class AppThemeSettings {
     WindowBackdrop? backdrop,
     double? transparency,
     AppStyle? style,
+    bool? showThumbnails,
   }) {
     return AppThemeSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -53,6 +59,7 @@ class AppThemeSettings {
       backdrop: backdrop ?? this.backdrop,
       transparency: transparency ?? this.transparency,
       style: style ?? this.style,
+      showThumbnails: showThumbnails ?? this.showThumbnails,
     );
   }
 
