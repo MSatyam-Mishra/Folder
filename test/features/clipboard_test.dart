@@ -202,13 +202,14 @@ void main() {
   // Explorer copied or cut. Uses the real clipboard too.
   test('File Explorer pastes what Explorer copied or cut', () async {
     Future<void> shellPaste(Directory into) async {
+      // PowerShell's single quotes, with ' doubled.
+      String quote(String s) => "'${s.replaceAll("'", "''")}'";
       final result = await Process.run('powershell', [
         '-NoProfile', '-STA', '-Command',
-        r"$s = New-Object -ComObject Shell.Application; "
-            r"$s.Namespace($args[0]).ParseName($args[1]).InvokeVerb('paste'); "
+        r'$s = New-Object -ComObject Shell.Application; '
+            '\$s.Namespace(${quote(p.dirname(into.path))}).ParseName(${quote(p.basename(into.path))}).InvokeVerb(\'paste\'); '
             // The shell copies in the background: time to finish first.
-            r'Start-Sleep -Seconds 3',
-        p.dirname(into.path), p.basename(into.path),
+            'Start-Sleep -Seconds 3',
       ]);
       expect(result.exitCode, 0, reason: '${result.stderr}');
     }
