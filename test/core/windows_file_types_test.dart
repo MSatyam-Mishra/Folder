@@ -27,7 +27,10 @@ void main() {
         FileTypes.openDocumentPresentation, FileTypes.model3d,
         FileTypes.archive, FileTypes.diskImage, FileTypes.cameraRaw,
         FileTypes.design, FileTypes.markdown, FileTypes.html, FileTypes.json,
-        FileTypes.lottie, FileTypes.rive, FileTypes.font, FileTypes.package,
+        // Not FileTypes.package (.apk, .dmg...): Explorer has no viewer
+        // for them and hands them to the default app, which with nothing
+        // else for them would be Explorer again, without end.
+        FileTypes.lottie, FileTypes.rive, FileTypes.font,
         FileTypes.code, FileTypes.text,
       ])
         ...group,

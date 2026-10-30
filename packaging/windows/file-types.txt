@@ -21,7 +21,6 @@ aif
 aiff
 amf
 amr
-apk
 apks
 apng
 arb
@@ -76,12 +75,10 @@ d
 dae
 dart
 dcr
-deb
 desktop
 diff
 divx
 diz
-dmg
 dng
 doc
 dockerfile
@@ -285,7 +282,6 @@ raw
 rb
 readme
 riv
-rpm
 rs
 rss
 rst

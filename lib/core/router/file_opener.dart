@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:explorer/core/platform/windows_default_app.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/features/viewer_3d/screens/blend_viewer_screen.dart';
 import 'package:explorer/features/viewer_3d/screens/three_d_viewer_screen.dart';
@@ -152,6 +153,12 @@ class FileOpener {
   }
 
   static Future<void> openExternally(BuildContext context, File file) async {
+    // Windows: when Explorer is the type's default app, handing the file
+    // over would start Explorer again; Windows asks for an app instead.
+    if (Platform.isWindows && WindowsDefaultApp.isThisApp(file.path)) {
+      await WindowsDefaultApp.chooseApp(file.path);
+      return;
+    }
     final result = await OpenFilex.open(file.path);
     if (result.type != ResultType.done && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
