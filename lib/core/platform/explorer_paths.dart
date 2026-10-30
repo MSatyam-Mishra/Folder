@@ -16,8 +16,11 @@ abstract final class ExplorerPaths {
   /// window, or a folder passed on the command line).
   static String? startFolder;
 
-  static String get initialPath {
-    if (startFolder != null) return startFolder!;
+  static String get initialPath => startFolder ?? homePath;
+
+  /// Where browsing starts: This PC on Windows, internal storage on
+  /// Android, the home folder elsewhere. New tabs open here.
+  static String get homePath {
     if (Platform.isWindows) return windowsRoots;
     if (Platform.isAndroid) return androidInternalStorage;
     return Platform.environment['HOME'] ?? '/';

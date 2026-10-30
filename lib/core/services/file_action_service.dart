@@ -4,6 +4,7 @@ import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/services/bluetooth_share.dart';
 import 'package:explorer/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
 import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
@@ -104,6 +105,11 @@ class FileActionsService {
               value: _EntityAction.showContents,
               label: 'Show package contents',
               icon: LucideIcons.packageOpen),
+        if (!isFile && !package && ExplorerTabs.instance.enabled)
+          ExplorerMenu.item(context,
+              value: _EntityAction.newTab,
+              label: 'Open in new tab',
+              icon: LucideIcons.squarePlus),
         if (Desktop.isDesktop && !package)
           ExplorerMenu.item(context,
               value: _EntityAction.newWindow,
@@ -164,6 +170,8 @@ class FileActionsService {
         onOpen();
       case _EntityAction.showContents:
         onShowContents?.call();
+      case _EntityAction.newTab:
+        ExplorerTabs.instance.open(entity.path);
       case _EntityAction.newWindow:
         await (isFile
             ? Desktop.openWindow(file: entity.path)
@@ -1175,6 +1183,7 @@ enum ShareMethod { web, ftp, localSend, bluetooth, apps }
 enum _EntityAction {
   open,
   showContents,
+  newTab,
   newWindow,
   openWith,
   copy,

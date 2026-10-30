@@ -10,6 +10,7 @@ import 'package:explorer/core/services/archive_service.dart';
 import 'package:explorer/core/services/file_action_service.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:explorer/features/file_explorere/bloc/grouping.dart';
 import 'package:explorer/features/file_explorere/widgets/explorer_empty_state.dart';
@@ -39,9 +40,9 @@ import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 FileActionsService fileActionsService = FileActionsService();
 
-/// Mouse clicks in the file list (one explorer per window): the kind of the
-/// last pointer, and what was clicked last, for double-clicks and Shift
-/// ranges.
+/// Mouse clicks in the file list (shared by a window's tabs, which are used
+/// one at a time): the kind of the last pointer, and what was clicked last,
+/// for double-clicks and Shift ranges.
 final _clicks = _Clicks();
 
 class _Clicks {
@@ -69,7 +70,13 @@ bool get _controlClick =>
     Platform.isMacOS && _clicks.mouse && HardwareKeyboard.instance.isControlPressed;
 
 class FileExplorerScreen extends StatefulWidget {
-  const FileExplorerScreen({super.key});
+  const FileExplorerScreen({super.key, this.initialPath, this.onFolderChanged});
+
+  /// The folder to show first; else [ExplorerPaths.initialPath].
+  final String? initialPath;
+
+  /// The folder shown changed (a tab's title follows it).
+  final ValueChanged<String>? onFolderChanged;
 
   @override
   State<FileExplorerScreen> createState() => _FileExplorerScreenState();
@@ -127,7 +134,10 @@ class _FileExplorerScreenState extends State<FileExplorerScreen>
         _granted = status.isGranted;
         // Handle both standard usage and "manage external storage" scenarios
         if (status.isGranted) {
-          return const _FileExplorerWithProviders();
+          return _FileExplorerWithProviders(
+            initialPath: widget.initialPath,
+            onFolderChanged: widget.onFolderChanged,
+          );
         } else {
           return _PermissionDeniedScreen(
             onRequest: () => setState(
@@ -157,7 +167,10 @@ class _FileExplorerScreenState extends State<FileExplorerScreen>
 
 // This widget holds all our BLoCs at the very top.
 class _FileExplorerWithProviders extends StatelessWidget {
-  const _FileExplorerWithProviders();
+  const _FileExplorerWithProviders({this.initialPath, this.onFolderChanged});
+
+  final String? initialPath;
+  final ValueChanged<String>? onFolderChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +179,7 @@ class _FileExplorerWithProviders extends StatelessWidget {
         BlocProvider(
           create: (context) =>
               FileExplorerBloc(repository: LocalFileRepository())
-                ..add(LoadDirectory(ExplorerPaths.initialPath)),
+                ..add(LoadDirectory(initialPath ?? ExplorerPaths.initialPath)),
         ),
         BlocProvider(
           create: (context) => SidebarBloc()..add(LoadSidebarData()),
@@ -177,7 +190,13 @@ class _FileExplorerWithProviders extends StatelessWidget {
               ClipboardBloc(taskProgressBloc: context.read<TaskProgressBloc>()),
         ),
       ],
-      child: _FileExplorerUI(),
+      child: onFolderChanged == null
+          ? const _FileExplorerUI()
+          : BlocListener<FileExplorerBloc, FileExplorerState>(
+              listenWhen: (before, now) => _pathOf(now) != null && _pathOf(now) != _pathOf(before),
+              listener: (context, state) => onFolderChanged!(_pathOf(state)!),
+              child: const _FileExplorerUI(),
+            ),
     );
   }
 }
@@ -678,12 +697,21 @@ class _FileExplorerUI extends StatelessWidget {
 
     // Every item can be dragged (with the rest of the selection); folders
     // take drops, but not macOS packages (apps), which would be damaged.
+    // With tabs, the middle button opens a folder in a new one, behind.
     Widget dragAndDrop(FileSystemEntity entity, Widget item) {
-      final target = entity is Directory && !FileActionsService.isPackage(entity)
+      final folder = entity is Directory && !FileActionsService.isPackage(entity);
+      final target = folder
           ? FileDropTarget(
               folder: entity.path,
               onDrop: (paths, move) => drop(paths, entity.path, move),
-              builder: (context, hovering) => DropHighlight(active: hovering, child: item),
+              builder: (context, hovering) => Listener(
+                onPointerDown: (event) {
+                  if (event.buttons == kMiddleMouseButton && ExplorerTabs.instance.enabled) {
+                    ExplorerTabs.instance.open(entity.path, inBackground: true);
+                  }
+                },
+                child: DropHighlight(active: hovering, child: item),
+              ),
             )
           : item;
       return FileDragSource(

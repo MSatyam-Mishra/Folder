@@ -19,6 +19,8 @@ import 'package:explorer/core/services/webview_warmup.dart';
 import 'package:explorer/core/theme/app_theme.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
+import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
+import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
 import 'package:explorer/features/incoming/incoming_file_screen.dart';
 import 'package:explorer/features/video_downloader/screens/video_downloader_screen.dart';
@@ -40,6 +42,8 @@ void main(List<String> args) async {
   await BackgroundMode.instance.init();
   // The translucent window (Acrylic, vibrancy), as last chosen.
   await WindowEffects.init(enabled: (await ThemePreferences.load()).windowEffect);
+  // Windows: the tabs take the title bar's place.
+  await TabbedExplorer.prepareWindow();
 
   // Desktop: a new window (or the system) can pass a folder to show or a
   // file to open. On macOS, Finder sends them as events instead (Open With,
@@ -54,7 +58,9 @@ void main(List<String> args) async {
   final launchFile = launch.file;
   if (launchFile != null) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _navigatorKey.currentContext;
+      // In the first tab, so closing the file shows its folder.
+      final context = ExplorerTabs.instance.active?.navigatorKey.currentContext ??
+          _navigatorKey.currentContext;
       if (context != null) FileOpener.open(context, File(launchFile));
     });
   }
@@ -160,15 +166,21 @@ class App extends StatelessWidget {
                             child: child ?? const SizedBox.shrink(),
                           ),
                         ),
-                        if (tasksOnly) const TasksView(),
+                        if (tasksOnly)
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [WindowTitleBar(), Expanded(child: TasksView())],
+                          ),
                       ],
                     );
                   },
                 ),
               ),
-              home: launchItem == null
-                  ? const FileExplorerScreen()
-                  : _screenFor(launchItem!, launchedForIt: true),
+              home: launchItem != null
+                  ? _screenFor(launchItem!, launchedForIt: true)
+                  : Desktop.isDesktop
+                      ? TabbedExplorer(startFolder: ExplorerPaths.initialPath)
+                      : const FileExplorerScreen(),
             ),
           );
         },
