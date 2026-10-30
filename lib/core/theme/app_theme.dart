@@ -196,7 +196,8 @@ abstract final class AppTheme {
       canvasColor: solid,
       cardColor: c.card,
       dividerColor: c.border,
-      hoverColor: hover.withValues(alpha: 0.6),
+      // Lighter than a selected item (the accent may be see-through itself).
+      hoverColor: hover.withValues(alpha: hover.a * 0.6),
       focusColor: c.ring.withValues(alpha: 0.2),
       highlightColor: c.foreground.withValues(alpha: 0.04),
       splashColor: c.foreground.withValues(alpha: 0.06),
