@@ -14,15 +14,19 @@ built-in viewers and tools, for **Android, Windows and Linux** (macOS builds too
 ## Toolchain and commands
 
 - Flutter 3.44.1 stable, Dart 3.12. Android SDK (AVD `explorer_test`, Play Store image, x86_64). Rust is installed on the main PC; `super_drag_and_drop` (cargokit) uses precompiled binaries.
+- Windows builds need `nuget` on the PATH (flutter_inappwebview, local_auth). On the main PC it comes from `winget install Microsoft.NuGet` (user scope). If a build says "Failed to install nuget package", check the `NUGET` line in `build/windows/x64/CMakeCache.txt` points at a nuget.exe that exists. Inno Setup 6 is installed for the user too (`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`) to build `packaging/windows/explorer.iss` locally.
+- Processes started from Claude Code can't open the Windows clipboard, and while the screen is locked nothing can (and Flutter draws no frames, so window captures come out blank). Clipboard and drag tests need an unlocked desktop.
 - macOS (a MacBook, Xcode 26, CocoaPods, rustup): `flutter build macos --release` gives `build/macos/Build/Products/Release/Explorer.app` (universal, macOS 12+, sandbox off). `super_native_extensions` compiles Rust through a native-assets hook (toolchain 1.97.1), so rustup must be installed. The app is ad-hoc signed (no Developer ID), so other Macs show a Gatekeeper warning; a DMG is made with `hdiutil create -srcfolder`.
 - `flutter analyze lib test`: the only known findings are old ones in `lib/core/services/driver/mass_storage_driver.dart`, `lib/core/services/usb_host_service.dart` and `plugins/vocsy_epub_viewer-main`.
-- `flutter test`: about 160 tests, about 30 s. Screenshots: `SCREENSHOTS=1 flutter test test/screenshots` writes `build/screenshots/*.png`. On a device: `flutter test integration_test/image_text_test.dart -d <device>`.
+- `flutter test`: about 230 tests, under a minute. Screenshots: `SCREENSHOTS=1 flutter test test/screenshots` writes `build/screenshots/*.png` (`styles_screens_test.dart` shows every style, `tabs_screens_test.dart` the Windows title bar). On a device: `flutter test integration_test/image_text_test.dart -d <device>`; `integration_test/icon_strokes_test.dart` checks the lighter icon font.
 - Widget tests run on a fake clock, so real file I/O must go inside `tester.runAsync` (the `settle()` helpers alternate `runAsync` and `pump`). Under `FLUTTER_TEST` the app uses an in-memory clipboard, no folder watching, no native drag and drop and no OCR in the viewer. Opt-in: `EXPLORER_REAL_CLIPBOARD=1` (real Windows clipboard test), `EXPLORER_FFMPEG=path` (converter tests).
 - Long Python edit scripts: write them to a file and run with `python -I -X utf8 script.py` (bash heredocs with quotes break). Don't run `dart format` on whole files that aren't already formatted.
 
 ## Map
 
-- `lib/main.dart`: startup. `BackgroundMode.instance.init()` runs on desktop; `MaterialApp.builder` shows only `TasksView` while in tasks mode, with the app kept alive behind it.
+- `lib/main.dart`: startup. `BackgroundMode.instance.init()` runs on desktop; `MaterialApp.builder` shows only `TasksView` while in tasks mode, with the app kept alive behind it. On desktop the home is `TabbedExplorer`.
+- `lib/features/explorer_tabs/`: tabs (desktop). `ExplorerTabs.instance` holds the window's tabs; `TabbedExplorer` shows the tab bar and one nested `Navigator` per tab (viewers open inside the tab). On Windows `TabbedExplorer.prepareWindow()` hides the system title bar (window_manager `TitleBarStyle.hidden`) and the bar draws the caption buttons, a drag area and a top resize edge (no Windows 11 snap-layout flyout on the maximize button). macOS and Linux keep their title bar, with the tab bar under it. Keys: Ctrl+T/W/Tab/1-9; middle-click on a folder opens it in a background tab.
+- `lib/core/theme/`: `app_style.dart` (Options > Style: `AppStyle` standard/macos/windows/sweet/dracula, their colour schemes, and `AppLook`, a ThemeExtension read with `context.look`: folder colours, `iconColor`/`tint` for colourful icons, Finder's sidebar tint), `icon_strokes.dart` (loads Lucide's 1.55 px weight under the default Lucide family, so every icon gets lighter lines), `app_theme.dart`, `theme_preferences.dart` (`app_style` key).
 - `lib/features/file_explorere/` (the folder name's typo is real; keep it):
   - `screens/file_explorer_screen.dart`: the browser. It handles clicks, keys (Ctrl+C/X/V/A/N/F, F2, F5, Del, Esc), right-click menus, drag and drop, and group headings.
   - `bloc/`: the folder bloc (loading, sort, `GroupBy` groups, search, folder watching), `grouping.dart`, `folder_search.dart` (isolate search).
@@ -42,6 +46,7 @@ built-in viewers and tools, for **Android, Windows and Linux** (macOS builds too
 - `lib/shared/widgets/`: `progress_dock.dart` (bottom-right tasks, hide to a ring), `tasks_view.dart`, `round_qr_code.dart`.
 - Android native code is in `android/app/src/main/kotlin/com/example/explorer/` (`MainActivity` registers `*Native` classes per channel). The video downloader flavour lives in `src/videoDownloader/`.
 - `windows/runner/`: `main.cpp` (a new window cascades from the one that opened it) and `flutter_window.cpp` (tray icon, channel `explorer/tray`: show/hide/notify; it sends clicked/open/quit).
+- `packaging/windows/`: `explorer.iss` (Inno Setup; registers Open with: `Applications\explory.exe`, `*\OpenWithList`, an `Explory.File` ProgID in each listed type's `OpenWithProgids`, and Default apps capabilities), `msix/AppxManifest.xml` (the same types as a `uap3:FileTypeAssociation`; `make-packages.ps1` fills them in, less `.ttf`, which an MSIX can't take), and `file-types.txt` (the list for both; `test/core/windows_file_types_test.dart` keeps it in step with `FileTypes`).
 
 ## Releases
 
@@ -55,7 +60,18 @@ GitHub **pre-releases** tagged `vX.Y.Z`:
 6. macOS (not in CI): on the MacBook run `flutter build macos --release`, make `build/release/vX.Y.Z/explorer-vX.Y.Z-macos-universal.dmg` with `hdiutil create -volname Explorer -srcfolder <folder with Explorer.app and an /Applications link> -format UDZO`, upload it and add its line to SHA256SUMS.txt (keep the other lines), and keep the notes' "macOS" install section (not notarized: Open Anyway / `xattr -dr com.apple.quarantine`). The python.org Python on the Mac needs `SSL_CERT_FILE=/etc/ssl/cert.pem` for the release scripts; `gh` isn't installed there.
 6. Known CI flakiness: the Ubuntu apt mirror can stall. apt now retries with a 30 s timeout, and the package check job is capped at 30 min. The Linux portable bundle carries libmpv and Tesseract (`packaging/linux/system-libs.txt` lists what's left to the system).
 
-## Where things stand (2026-10-23)
+## Where things stand (2026-10-30)
+
+- **Done since v1.0.8, not released yet** (each its own commit on `main`):
+  - Downloader: the link and preview clear once queued; a copied link is put in the empty field when it opens or the app comes back (not on macOS).
+  - Windows Open with registration (installer and MSIX). Checked here: the installer built from the installed v1.0.8 files registered 377 types, and Windows lists Explorer in the Open with menu of each; the MSIX layout registered and showed up too (removed again).
+  - Tabs (see Map). Checked on Windows in the real window: tabs in the title bar, caption buttons, title follows the tab.
+  - Styles and lighter icons (see Map).
+- **Still to check by hand (needs an unlocked desktop):**
+  1. Dragging files from Explorer to File Explorer and the desktop, and pasting in File Explorer what Explorer copied or cut. The code offers CF_HDROP (drag) and CF_HDROP + Preferred DropEffect (clipboard). The opt-in test `EXPLORER_REAL_CLIPBOARD=1 flutter test test/features/clipboard_test.dart` pastes with the shell's own Paste.
+  2. The custom title bar: dragging, double-click to maximize, resizing from the top edge, the Tasks view's title bar, Acrylic behind the tab bar.
+  3. Tabs on macOS and Linux (the bar sits under the system title bar there).
+  4. The macOS style with San Francisco on a Mac, and the Windows style with Segoe UI Variable.
 
 - **v1.0.7** is complete.
 - **v1.0.8** (convert and resize, background tasks and tray, translucent window, side sheets and dialogs, menu icons) is published with its APKs. Its Windows and Linux packages come from the `release` run of desktop-release.yml started on 2026-10-23. Check that the release has 16 files (17 now: the macOS DMG was added by hand on 2026-10-24); if a job failed, re-run it (Releases, step 5) or attach what was built with `tool/release/upload_desktop.py`.
