@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:explorer/features/file_explorere/explorer_zoom.dart';
 import 'package:explorer/core/app/app_bloc_observer.dart';
 import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/platform/background_mode.dart';
@@ -43,6 +44,7 @@ void main(List<String> args) async {
   // The translucent window (Acrylic, vibrancy), as last chosen.
   await WindowEffects.init();
   await IconStrokes.useLight();
+  await ExplorerZoom.instance.load();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 

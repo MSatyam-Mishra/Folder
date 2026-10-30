@@ -50,13 +50,26 @@ class FileListItem extends StatelessWidget {
     this.style = FileRowStyle.comfortable,
     this.location,
     this.onSecondaryTapUp,
+    this.zoom = 1,
   });
 
-  static double heightFor(FileRowStyle style) => switch (style) {
-        FileRowStyle.comfortable => 60,
-        FileRowStyle.compact => 40,
-        FileRowStyle.table => 48,
+  /// Icon (or thumbnail) size, 1 the usual (see ExplorerZoom).
+  final double zoom;
+
+  static double _iconFor(FileRowStyle style) => switch (style) {
+        FileRowStyle.comfortable => 40,
+        FileRowStyle.compact => 24,
+        FileRowStyle.table => 28,
       };
+
+  /// A row's height: the usual one, plus what a bigger icon needs.
+  static double heightFor(FileRowStyle style, [double zoom = 1]) =>
+      switch (style) {
+        FileRowStyle.comfortable => 60.0,
+        FileRowStyle.compact => 40.0,
+        FileRowStyle.table => 48.0,
+      } +
+      _iconFor(style) * (zoom - 1);
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +78,7 @@ class FileListItem extends StatelessWidget {
     final title = rawTitle.isEmpty ? entity.path : rawTitle;
     final radius = BorderRadius.circular(8);
 
-    final iconSize = switch (style) {
-      FileRowStyle.comfortable => 40.0,
-      FileRowStyle.compact => 24.0,
-      FileRowStyle.table => 28.0,
-    };
+    final iconSize = _iconFor(style) * zoom;
 
     final row = Row(
       children: [
@@ -100,7 +109,7 @@ class FileListItem extends StatelessWidget {
           onLongPress: onLongPress,
           onSecondaryTapUp: onSecondaryTapUp,
           child: SizedBox(
-            height: heightFor(style),
+            height: heightFor(style, zoom),
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: style == FileRowStyle.compact ? 10 : 12,

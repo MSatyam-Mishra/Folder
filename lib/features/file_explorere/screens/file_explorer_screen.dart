@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:explorer/features/file_explorere/explorer_zoom.dart';
 import 'package:explorer/shared/widgets/scrollbar_scroll_view.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -259,11 +260,14 @@ class _FileExplorerUI extends StatelessWidget {
     final body = Stack(
       children: [
         Positioned.fill(
-          child: _buildFileList(
-            context,
-            fileExplorerState,
-            bottomInset: bottomInset,
-            canCreate: canCreate,
+          child: ValueListenableBuilder<double>(
+            valueListenable: ExplorerZoom.instance,
+            builder: (context, _, _) => _buildFileList(
+              context,
+              fileExplorerState,
+              bottomInset: bottomInset,
+              canCreate: canCreate,
+            ),
           ),
         ),
         if (pasteState != null)
@@ -395,6 +399,13 @@ class _FileExplorerUI extends StatelessWidget {
       Desktop.openWindow(folder: state.path);
     } else if ((command && key == LogicalKeyboardKey.keyF) || key == LogicalKeyboardKey.f3) {
       bloc.add(OpenSearch());
+    } else if (command &&
+        (key == LogicalKeyboardKey.equal || key == LogicalKeyboardKey.add || key == LogicalKeyboardKey.numpadAdd)) {
+      ExplorerZoom.instance.step(1);
+    } else if (command && (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.numpadSubtract)) {
+      ExplorerZoom.instance.step(-1);
+    } else if (command && (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0)) {
+      ExplorerZoom.instance.reset();
     } else if (key == LogicalKeyboardKey.f5 ||
         (command && key == LogicalKeyboardKey.keyR)) {
       bloc.add(LoadDirectory(state.path));
@@ -724,6 +735,7 @@ class _FileExplorerUI extends StatelessWidget {
       );
     }
 
+    final zoom = ExplorerZoom.instance.value;
     final List<Widget> slivers;
     if (state.viewMode == ViewMode.grid || state.viewMode == ViewMode.gallery) {
       final gallery = state.viewMode == ViewMode.gallery;
@@ -739,13 +751,13 @@ class _FileExplorerUI extends StatelessWidget {
             // Column count follows the window width (phones ≈3, tablets 6+).
             gridDelegate: gallery
                 ? SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: wide ? 200 : 180,
+                    maxCrossAxisExtent: (wide ? 200 : 180) * zoom,
                     childAspectRatio: 0.84,
                     crossAxisSpacing: spacing,
                     mainAxisSpacing: spacing,
                   )
                 : SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: wide ? 144 : 128,
+                    maxCrossAxisExtent: (wide ? 144 : 128) * zoom,
                     childAspectRatio: 0.84,
                     crossAxisSpacing: spacing,
                     mainAxisSpacing: spacing,
@@ -756,6 +768,7 @@ class _FileExplorerUI extends StatelessWidget {
                 entity: entity,
                 displayName: state.labelFor(entity),
                 gallery: gallery,
+                zoom: zoom,
                 isSelectionMode: state.isSelectionMode,
                 isSelected: state.selectedItems.contains(entity),
                 onTap: () => onTap(entity),
@@ -796,7 +809,7 @@ class _FileExplorerUI extends StatelessWidget {
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: sidePad),
           sliver: SliverFixedExtentList(
-            itemExtent: FileListItem.heightFor(style) + 2,
+            itemExtent: FileListItem.heightFor(style, zoom) + 2,
             delegate: SliverChildBuilderDelegate((context, index) {
               final entity = group.entities[index];
               return dragAndDrop(entity, FileListItem(
@@ -804,6 +817,7 @@ class _FileExplorerUI extends StatelessWidget {
                 displayName: state.labelFor(entity),
                 location: locationOf(entity),
                 style: style,
+                zoom: zoom,
                 isSelectionMode: state.isSelectionMode,
                 isSelected: state.selectedItems.contains(entity),
                 onTap: () => onTap(entity),
@@ -821,8 +835,9 @@ class _FileExplorerUI extends StatelessWidget {
     final scroller = ScrollbarScrollView(
       // Remembers each folder's scroll position when coming back up.
       storageKey: 'explorer:${state.path}',
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
+      // Ctrl+wheel zooms instead (ZoomGestures below).
+      physics: const ZoomKeyScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       ),
       slivers: [
         ...slivers,
@@ -838,7 +853,7 @@ class _FileExplorerUI extends StatelessWidget {
             builder: (context, hovering) =>
                 DropHighlight(active: hovering, radius: 0, child: scroller),
           );
-    return Listener(
+    return ZoomGestures(child: Listener(
       // Before the item's tap fires: was it a mouse or a finger, and where?
       onPointerDown: (event) => _clicks
         ..kind = event.kind
@@ -858,7 +873,7 @@ class _FileExplorerUI extends StatelessWidget {
             : null,
         child: list,
       ),
-    );
+    ));
   }
 
   /// Opens a folder or file, as a tap does. macOS packages (apps, document

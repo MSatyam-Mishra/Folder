@@ -24,7 +24,11 @@ class FileGridItem extends StatelessWidget {
     required this.onLongPress,
     this.onSecondaryTapUp,
     this.gallery = false,
+    this.zoom = 1,
   });
+
+  /// Tile size, 1 the usual (see ExplorerZoom).
+  final double zoom;
 
   final FileSystemEntity entity;
   final String displayName;
@@ -85,12 +89,12 @@ class FileGridItem extends StatelessWidget {
                     builder: (context, constraints) => Center(
                       child: FileThumbnail(
                         path: entity.path,
-                        size: (constraints.biggest.shortestSide).clamp(44.0, 120.0),
-                        fallback: Center(child: EntityIcon(entity: entity, size: 44)),
+                        size: constraints.biggest.shortestSide.clamp(32.0, 600.0),
+                        fallback: Center(child: EntityIcon(entity: entity, size: 44 * zoom)),
                       ),
                     ),
                   )
-                : Center(child: EntityIcon(entity: entity, size: 44)),
+                : Center(child: EntityIcon(entity: entity, size: 44 * zoom)),
           ),
           const SizedBox(height: 8),
           SizedBox(

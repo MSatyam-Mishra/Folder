@@ -1,3 +1,4 @@
+import 'package:explorer/features/file_explorere/explorer_zoom.dart';
 import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/core/theme/app_color_theme.dart';
@@ -77,6 +78,33 @@ class ExplorerOptionsSheet extends StatelessWidget {
           ],
           selected: {fileState.viewMode},
           onSelectionChanged: (s) => onViewModeChanged(s.first),
+        ),
+        const SizedBox(height: 12),
+        // Also Ctrl+wheel or a pinch over the files, and Ctrl+plus/minus.
+        ValueListenableBuilder<double>(
+          valueListenable: ExplorerZoom.instance,
+          builder: (context, zoom, _) => Row(
+            children: [
+              Tooltip(
+                message: 'Icon size',
+                child: Icon(LucideIcons.image, size: 14, color: context.colors.mutedForeground),
+              ),
+              Expanded(
+                child: Slider(
+                  value: zoom,
+                  min: ExplorerZoom.min,
+                  max: ExplorerZoom.max,
+                  label: '${(zoom * 100).round()}%',
+                  onChanged: ExplorerZoom.instance.set,
+                ),
+              ),
+              Icon(LucideIcons.image, size: 22, color: context.colors.mutedForeground),
+              SizedBox(
+                width: 48,
+                child: Text('${(zoom * 100).round()}%', textAlign: TextAlign.end, style: text.bodySmall),
+              ),
+            ],
+          ),
         ),
         StatefulBuilder(
           builder: (context, setState) => SwitchListTile(
