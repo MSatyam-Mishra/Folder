@@ -38,6 +38,8 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 PrivilegesRequired=lowest
 CloseApplications=yes
+; The file types below: File Explorer picks them up without a restart.
+ChangesAssociations=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -58,3 +60,32 @@ Name: "{autodesktop}\Explorer"; Filename: "{app}\explory.exe"; Tasks: desktopico
 
 [Run]
 Filename: "{app}\explory.exe"; Description: "{cm:LaunchProgram,Explorer}"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+; "Open with": Explorer is in the Open with menu of each type in
+; file-types.txt, and under Choose another app for every other file.
+; Nothing becomes the default; Windows asks the user for that. Settings >
+; Default apps lists Explorer with those types.
+Root: HKA; Subkey: "Software\Classes\Applications\explory.exe"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "Explorer"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Applications\explory.exe\DefaultIcon"; ValueType: string; ValueData: """{app}\explory.exe"",0"
+Root: HKA; Subkey: "Software\Classes\Applications\explory.exe\shell\open\command"; ValueType: string; ValueData: """{app}\explory.exe"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\*\OpenWithList\explory.exe"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Explory.File"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Explory.File\Application"; ValueType: string; ValueName: "ApplicationName"; ValueData: "Explorer"
+Root: HKA; Subkey: "Software\Classes\Explory.File\shell\open\command"; ValueType: string; ValueData: """{app}\explory.exe"" ""%1"""
+Root: HKA; Subkey: "Software\MSatyam-Mishra\Explorer\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "Explorer"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\MSatyam-Mishra\Explorer\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "The universal file manager: open, edit and share almost any file."
+Root: HKA; Subkey: "Software\MSatyam-Mishra\Explorer"; Flags: uninsdeletekeyifempty
+Root: HKA; Subkey: "Software\MSatyam-Mishra"; Flags: uninsdeletekeyifempty
+Root: HKA; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "Explorer"; ValueData: "Software\MSatyam-Mishra\Explorer\Capabilities"; Flags: uninsdeletevalue
+; Each type in file-types.txt (one per line, # for comments).
+#define TypesFile FileOpen(AddBackslash(SourcePath) + "file-types.txt")
+#sub FileTypeEntries
+  #define Ext Trim(FileRead(TypesFile))
+  #if Ext != "" && Copy(Ext, 1, 1) != "#"
+Root: HKA; Subkey: "Software\Classes\.{#Ext}\OpenWithProgids"; ValueType: string; ValueName: "Explory.File"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\MSatyam-Mishra\Explorer\Capabilities\FileAssociations"; ValueType: string; ValueName: ".{#Ext}"; ValueData: "Explory.File"
+  #endif
+#endsub
+#for {0; !FileEof(TypesFile); 0} FileTypeEntries
+#expr FileClose(TypesFile)

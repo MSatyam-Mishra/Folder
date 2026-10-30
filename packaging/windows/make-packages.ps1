@@ -58,7 +58,11 @@ Copy-Item -Recurse $AppDir $stage
 # Web view data left by running the app from the build folder.
 Remove-Item -Recurse -Force "$stage\*.WebView2" -ErrorAction SilentlyContinue
 Copy-Item -Recurse "$here\msix\Assets" "$stage\Assets"
-(Get-Content -Raw "$here\msix\AppxManifest.xml").Replace('@VERSION@', $msixVersion) |
+# Open with: the types in file-types.txt, less fonts (an MSIX can't take
+# .ttf: Windows keeps it for its font viewer).
+$fileTypes = (Get-Content "$here\file-types.txt" | Where-Object { $_.Trim() -and -not $_.StartsWith('#') -and $_.Trim() -ne 'ttf' } |
+  ForEach-Object { "              <uap:FileType>.$($_.Trim())</uap:FileType>" }) -join "`n"
+(Get-Content -Raw "$here\msix\AppxManifest.xml").Replace('@VERSION@', $msixVersion).Replace('@FILE_TYPES@', $fileTypes) |
   Set-Content -Encoding utf8 "$stage\AppxManifest.xml"
 
 $msix = Join-Path $OutDir "$name-windows-x64.msix"
