@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/viewer_kit/viewer_kit.dart';
 import 'package:explorer/features/viewer_text/screens/text_editor_screen.dart';
 import 'package:explorer/shared/file_icons/file_icons.dart';
@@ -23,7 +24,7 @@ class TabbedTextEditorScreen extends StatefulWidget {
 class _EditorTab {
   _EditorTab(this.file, {this.isCopy = false});
 
-  final File file;
+  File file;
 
   /// [file] is the file picker's temporary copy, not the user's file, so
   /// saving goes through "Save a copy" instead of overwriting it.
@@ -222,7 +223,8 @@ class _TabbedTextEditorScreenState extends State<TabbedTextEditorScreen> {
                   color: _current.dirty ? colors.primary : null,
                 ),
                 tooltip: 'Save',
-                onPressed: _current.dirty ? _saveCurrent : null,
+                // A new file can be saved as it is, to give it its name.
+                onPressed: _current.dirty || UntitledFiles.isUntitled(_current.file) ? _saveCurrent : null,
               ),
               const SizedBox(width: 4),
             ],
@@ -243,6 +245,7 @@ class _TabbedTextEditorScreenState extends State<TabbedTextEditorScreen> {
                           key: tab.key,
                           file: tab.file,
                           saveAsCopy: tab.isCopy,
+                          onFileNamed: (file) => setState(() => tab.file = file),
                           onDirtyChanged: (dirty) {
                             if (tab.dirty != dirty) {
                               setState(() => tab.dirty = dirty);

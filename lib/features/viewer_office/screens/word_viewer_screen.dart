@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
 
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
 import 'package:explorer/shared/layout/adaptive_layout.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
@@ -149,6 +150,8 @@ class _WordViewerScreenState extends State<WordViewerScreen> {
       _saveFormat = _overwriteFormatFor(model.format, _ext);
       _overwriteAllowed = !model.warnings.contains(DocModel.warnUnwritable);
       _setModel(model, keepLayout: true);
+      // A new file is there to be written in.
+      if (UntitledFiles.isUntitled(_file) && _session == null) _startEditing();
       final note = model.warnings.contains('plainText')
           ? 'Showing the text only — formatting in this file isn\'t supported.'
           : model.warnings.contains(DocModel.warnEncoding)
@@ -465,6 +468,9 @@ class _WordViewerScreenState extends State<WordViewerScreen> {
   Future<void> _save(_SaveKind kind) async {
     final session = _session;
     if (session == null || _saving) return;
+    final named = await UntitledFiles.saveTarget(context, _file);
+    if (named == null || !mounted) return;
+    _file = named;
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
     try {

@@ -30,6 +30,9 @@ class FileListItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+
+  /// In place of the name, while it's being edited.
+  final Widget? nameEditor;
   final String? displayName;
   final FileRowStyle style;
 
@@ -47,6 +50,7 @@ class FileListItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.onLongPress,
+    this.nameEditor,
     this.displayName,
     this.style = FileRowStyle.comfortable,
     this.location,
@@ -149,7 +153,7 @@ class FileListItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
     );
-    final Widget name = where == null || style == FileRowStyle.comfortable
+    final Widget name = nameEditor ?? (where == null || style == FileRowStyle.comfortable
         ? Align(alignment: Alignment.centerLeft, heightFactor: 1, child: label)
         : Row(
             children: [
@@ -164,7 +168,7 @@ class FileListItem extends StatelessWidget {
                 ),
               ),
             ],
-          );
+          ));
 
     switch (style) {
       case FileRowStyle.comfortable:

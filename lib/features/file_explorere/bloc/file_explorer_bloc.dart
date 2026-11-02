@@ -36,6 +36,13 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       }
     });
 
+    on<StopRenaming>((event, emit) {
+      final currentState = state;
+      if (currentState is FileExplorerLoaded) {
+        emit(currentState.copyWith(stopRenaming: true));
+      }
+    });
+
     on<SelectItem>((event, emit) {
       final currentState = state;
       if (currentState is FileExplorerLoaded) {
@@ -324,10 +331,12 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       final kept = latest is FileExplorerLoaded && latest.path == event.path
           ? {for (final e in latest.selectedItems) e.path}
           : const <String>{};
+      final select = event.select;
       final selected = {
         for (final e in sortedEntities)
-          if (kept.contains(e.path)) e,
+          if (select != null ? e.path == select : kept.contains(e.path)) e,
       };
+      final same = latest is FileExplorerLoaded && latest.path == event.path;
       final loaded = FileExplorerLoaded(
         entities: sortedEntities,
         path: event.path,
@@ -337,9 +346,12 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
         pathLabels: pathLabels,
         groupBy: groupBy,
         selectedItems: selected,
-        isSelectionMode: selected.isNotEmpty &&
+        isSelectionMode: select == null &&
+            selected.isNotEmpty &&
             latest is FileExplorerLoaded &&
             latest.isSelectionMode,
+        // A refresh of the folder doesn't end a rename going on in it.
+        renamingPath: event.rename ? select : (same && select == null ? latest.renamingPath : null),
         // A refresh keeps the search box open.
         searchOpen: latest is FileExplorerLoaded && latest.path == event.path && latest.searchOpen,
       );

@@ -28,6 +28,7 @@ import 'package:explorer/shared/ui/app_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
+import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// Routes a file to the in-app viewer/editor for its type.
 ///
@@ -176,14 +177,14 @@ class FileOpener {
     final kind = FileTypes.kindOf(file.path);
     final options = <(IconData, String, FileKind?)>[
       if (kind != FileKind.unknown && _screenFor(file, kind) != null)
-        (Icons.auto_awesome, 'Default viewer (${FileTypes.describe(kind)})', kind),
-      (Icons.edit_note, 'Text editor', FileKind.text),
-      (Icons.memory, 'Hex viewer', FileKind.unknown),
-      (Icons.image_outlined, 'Image viewer', FileKind.image),
-      (Icons.view_in_ar_outlined, '3D viewer', FileKind.model3d),
-      (Icons.folder_zip_outlined, 'Archive viewer', FileKind.archive),
-      (Icons.play_circle_outline, 'Media player', FileKind.video),
-      if (allowExternal) (Icons.open_in_new, 'Another app', null),
+        (LucideIcons.sparkles, 'Default viewer (${FileTypes.describe(kind)})', kind),
+      (LucideIcons.squarePen, 'Text editor', FileKind.text),
+      (LucideIcons.binary, 'Hex viewer', FileKind.unknown),
+      (LucideIcons.image, 'Image viewer', FileKind.image),
+      (LucideIcons.box, '3D viewer', FileKind.model3d),
+      (LucideIcons.archive, 'Archive viewer', FileKind.archive),
+      (LucideIcons.play, 'Media player', FileKind.video),
+      if (allowExternal) (LucideIcons.externalLink, 'Another app', null),
     ];
     Widget chooser(BuildContext sheetContext) => ListView(
           shrinkWrap: true,

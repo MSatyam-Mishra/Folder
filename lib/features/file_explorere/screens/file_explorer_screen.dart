@@ -25,6 +25,7 @@ import 'package:explorer/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
 import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/features/file_explorere/widgets/image_actions.dart';
+import 'package:explorer/features/file_explorere/widgets/inline_rename.dart';
 import 'package:explorer/features/file_explorere/widgets/paste_bar.dart';
 import 'package:explorer/features/localsend/screens/localsend_screen.dart';
 import 'package:explorer/features/network/screens/file_server_screen.dart';
@@ -388,7 +389,7 @@ class _FileExplorerUI extends StatelessWidget {
       floatingActionButton: showFab
           ? FloatingActionButton(
               tooltip: 'New folder',
-              onPressed: () => fileActionsService.showCreateFolderDialog(
+              onPressed: () => fileActionsService.createFolder(
                 context,
                 loaded.path,
               ),
@@ -468,7 +469,7 @@ class _FileExplorerUI extends StatelessWidget {
       }
     } else if (command && keys.isShiftPressed && key == LogicalKeyboardKey.keyN) {
       if (inFolder) {
-        fileActionsService.showCreateFolderDialog(context, state.path);
+        fileActionsService.createFolder(context, state.path);
       }
     } else if (command && key == LogicalKeyboardKey.keyN && Desktop.isDesktop) {
       Desktop.openWindow(folder: state.path);
@@ -664,11 +665,11 @@ class _FileExplorerUI extends StatelessWidget {
           ? null
           : (option, order) => bloc.add(ChangeSortOrder(option, order)),
       onNewFile: canCreate && loaded != null
-          ? (kind) => fileActionsService.showCreateFileDialog(context, loaded.path, kind)
+          ? (kind) => fileActionsService.startNewFile(context, loaded.path, kind)
           : null,
       onNewFolder: canCreate && loaded != null
           ? () =>
-                fileActionsService.showCreateFolderDialog(context, loaded.path)
+                fileActionsService.createFolder(context, loaded.path)
           : null,
       onNewWindow: Desktop.isDesktop && loaded != null
           ? () => Desktop.openWindow(folder: loaded.path)
@@ -759,7 +760,7 @@ class _FileExplorerUI extends StatelessWidget {
           actions: [
             if (canCreate)
               OutlinedButton.icon(
-                onPressed: () => fileActionsService.showCreateFolderDialog(
+                onPressed: () => fileActionsService.createFolder(
                   context,
                   state.path,
                 ),
@@ -809,6 +810,7 @@ class _FileExplorerUI extends StatelessWidget {
     }
 
     void onTap(FileSystemEntity e) {
+      if (e.path == state.renamingPath) return;
       if (_controlClick) {
         _showItemMenu(context, state, e, _clicks.position);
       } else if (_clicks.mouse) {
@@ -817,7 +819,19 @@ class _FileExplorerUI extends StatelessWidget {
         _handleTap(context, state, e);
       }
     }
-    void onLongPress(FileSystemEntity e) => _handleLongPress(context, state, e);
+    void onLongPress(FileSystemEntity e) {
+      if (e.path != state.renamingPath) _handleLongPress(context, state, e);
+    }
+
+    /// The name's editor, on the item being renamed.
+    Widget? nameEditor(FileSystemEntity e, {bool centered = false}) => e.path == state.renamingPath
+        ? InlineRename(
+            key: ValueKey(e.path),
+            name: p.basename(e.path),
+            centered: centered,
+            onDone: (name) => fileActionsService.finishRename(context, e, name),
+          )
+        : null;
     GestureTapUpCallback? onSecondaryTap(FileSystemEntity e) {
       if (Desktop.isDesktop) {
         return (details) =>
@@ -845,6 +859,20 @@ class _FileExplorerUI extends StatelessWidget {
     final shown = _shownIn(bloc)
       ..top = top
       ..bottom = bottom;
+    // A new folder may have landed out of view.
+    final renaming = state.renamingPath;
+    if (renaming != shown.revealedRename) {
+      shown.revealedRename = renaming;
+      if (renaming != null) {
+        _clicks.mark(renaming);
+        final index = state.displayEntities.indexWhere((e) => e.path == renaming);
+        if (index >= 0) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => shown.reveal(renaming, index, state.displayEntities.length),
+          );
+        }
+      }
+    }
 
     // Every item can be dragged (with the rest of the selection); folders
     // take drops, but not macOS packages (apps), which would be damaged.
@@ -870,6 +898,7 @@ class _FileExplorerUI extends StatelessWidget {
         entity: entity,
         child: FileDragSource(
           entity: entity,
+          draggable: entity.path != state.renamingPath,
           selection: () => state.selectedItems.contains(entity)
               ? [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e]
               : const [],
@@ -929,6 +958,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onTap: () => onTap(entity),
                 onLongPress: () => onLongPress(entity),
                 onSecondaryTapUp: onSecondaryTap(entity),
+                nameEditor: nameEditor(entity, centered: true),
               ));
             }, childCount: group.entities.length),
           ),
@@ -978,6 +1008,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onTap: () => onTap(entity),
                 onLongPress: () => onLongPress(entity),
                 onSecondaryTapUp: onSecondaryTap(entity),
+                nameEditor: nameEditor(entity),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1304,7 +1335,7 @@ class _FileExplorerUI extends StatelessWidget {
     if (action is GroupBy) return bloc.add(ChangeGroupBy(action));
     switch (action) {
       case 'folder':
-        fileActionsService.showCreateFolderDialog(context, state.path);
+        fileActionsService.createFolder(context, state.path);
       case 'paste':
         clipboard.add(PasteFromClipboard(state.path));
       case 'all':

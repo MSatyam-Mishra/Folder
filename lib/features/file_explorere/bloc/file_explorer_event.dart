@@ -6,8 +6,16 @@ abstract class FileExplorerEvent {}
 class LoadDirectory extends FileExplorerEvent {
   final String path;
 
-  LoadDirectory(this.path);
+  /// The item to select once it's loaded (one just made)...
+  final String? select;
+
+  /// ...and to rename where it's shown.
+  final bool rename;
+
+  LoadDirectory(this.path, {this.select, this.rename = false});
 }
+
+class StopRenaming extends FileExplorerEvent {}
 
 class ToggleSelectionMode extends FileExplorerEvent {
   final bool enable;

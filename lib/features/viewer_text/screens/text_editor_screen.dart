@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:explorer/core/files/file_types.dart';
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/core/files/safe_write.dart';
 import 'package:explorer/features/viewer_hex/screens/hex_viewer_screen.dart';
 import 'package:explorer/features/viewer_text/code_editor_controller.dart';
@@ -30,12 +31,16 @@ class TextEditorPane extends StatefulWidget {
     super.key,
     required this.file,
     this.onDirtyChanged,
+    this.onFileNamed,
     this.topPadding = 0,
     this.saveAsCopy = false,
   });
 
   final File file;
   final ValueChanged<bool>? onDirtyChanged;
+
+  /// A new file got its name at its first save: this is the file now.
+  final ValueChanged<File>? onFileNamed;
 
   /// Space reserved above the content for the floating top bar.
   final double topPadding;
@@ -264,7 +269,10 @@ class TextEditorPaneState extends State<TextEditorPane> {
         );
         if (saved == null) return false;
       } else {
-        await writeFileAtomically(widget.file, bytes);
+        final target = await UntitledFiles.saveTarget(context, widget.file);
+        if (target == null || !mounted) return false;
+        await writeFileAtomically(target, bytes);
+        if (target.path != widget.file.path) widget.onFileNamed?.call(target);
       }
       _document = doc;
       _savedText = text;

@@ -25,10 +25,12 @@ class FileDragSource extends StatelessWidget {
     required this.entity,
     required this.child,
     this.selection,
+    this.draggable = true,
   });
 
   final FileSystemEntity entity;
   final Widget child;
+  final bool draggable;
   final List<FileSystemEntity> Function()? selection;
 
   static DragItem _item(FileSystemEntity entity) => DragItem(
@@ -43,7 +45,7 @@ class FileDragSource extends StatelessWidget {
       allowedOperations: () => const [DropOperation.move, DropOperation.copy],
       dragItemProvider: (_) => _item(entity),
       child: DraggableWidget(
-        isLocationDraggable: (position) => overDragPart(context, position),
+        isLocationDraggable: (position) => draggable && overDragPart(context, position),
         // The rest of the selection, also rows scrolled out of view, with
         // this row's picture.
         onDragConfiguration: (configuration, session) {

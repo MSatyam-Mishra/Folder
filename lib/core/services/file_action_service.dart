@@ -477,34 +477,20 @@ class FileActionsService {
     }
   }
 
-  /// Asks for a name and creates a folder in [parentPath].
-  Future<void> showCreateFolderDialog(
+  /// Makes a folder in [parentPath] and starts renaming it where it's shown,
+  /// as File Explorer does.
+  Future<void> createFolder(
     BuildContext blocContext,
     String parentPath,
   ) async {
-    final name = await promptForName(
-      blocContext,
-      title: 'New folder',
-      confirmLabel: 'Create',
-      initialValue: 'New folder',
-      validator: (name) {
-        if (Directory(p.join(parentPath, name)).existsSync() ||
-            File(p.join(parentPath, name)).existsSync()) {
-          return 'An item with this name already exists.';
-        }
-        return null;
-      },
-    );
-    if (name == null || name.isEmpty) return;
+    final bloc = blocContext.read<FileExplorerBloc>();
+    final path = p.join(parentPath, NewFiles.freeName(parentPath, 'New folder', ''));
     try {
-      await repository.createDirectory(p.join(parentPath, name));
-      if (!blocContext.mounted) return;
-      final currentState = blocContext.read<FileExplorerBloc>().state;
-      if (currentState is FileExplorerLoaded) {
-        blocContext.read<FileExplorerBloc>().add(
-          LoadDirectory(currentState.path),
-        );
-      }
+      await repository.createDirectory(path);
+      // A search under way wouldn't show it.
+      final current = bloc.state;
+      if (current is FileExplorerLoaded && current.searchOpen) bloc.add(CloseSearch());
+      bloc.add(LoadDirectory(parentPath, select: path, rename: true));
     } catch (e) {
       debugPrint('Error creating folder: $e');
       if (blocContext.mounted) {
@@ -513,8 +499,98 @@ class FileActionsService {
     }
   }
 
-  /// Asks for a name and creates a blank file of [kind].
-  Future<void> showCreateFileDialog(
+  /// The name typed where [entity] is shown: [name], or null to keep its own.
+  Future<void> finishRename(
+    BuildContext blocContext,
+    FileSystemEntity entity,
+    String? name,
+  ) async {
+    final bloc = blocContext.read<FileExplorerBloc>();
+    final oldName = p.basename(entity.path);
+    bloc.add(StopRenaming());
+    if (name == null || name.isEmpty || name == oldName) return;
+    if (name == '.' || name == '..' || RegExp(r'[\\/:*?"<>|]').hasMatch(name)) {
+      _toast(blocContext, '"$name" can\'t be a name. Kept "$oldName".');
+      return;
+    }
+    final parent = entity.parent.path;
+    final target = p.join(parent, name);
+    // On Windows and macOS changing only the case is a rename, not a clash.
+    if (FileSystemEntity.typeSync(target) != FileSystemEntityType.notFound &&
+        !FileSystemEntity.identicalSync(entity.path, target)) {
+      _toast(blocContext, 'An item named "$name" already exists. Kept "$oldName".');
+      return;
+    }
+    try {
+      await repository.rename(entity.path, target);
+      bloc.add(LoadDirectory(parent, select: target));
+    } catch (e) {
+      debugPrint('Error renaming: $e');
+      if (blocContext.mounted) {
+        _toast(blocContext, "Couldn't rename \"$oldName\": ${_reason(e)}");
+      }
+    }
+  }
+
+  /// Opens a new file of [kind] in its editor. It's not in [folder], and has no
+  /// name, until its first save asks for one; left unsaved, nothing is made.
+  Future<void> startNewFile(
+    BuildContext blocContext,
+    String folder,
+    NewFileKind kind,
+  ) async {
+    if (kind.editor == NewFileEditor.none) {
+      return _createThenOpen(blocContext, folder, kind);
+    }
+    final bloc = blocContext.read<FileExplorerBloc>();
+    UntitledFile? untitled;
+    try {
+      untitled = await UntitledFiles.start(kind, folder, _askNewFileName);
+      if (!blocContext.mounted) return;
+      await (kind.editor == NewFileEditor.text
+          ? FileOpener.openAs(blocContext, untitled.file, FileKind.text)
+          : FileOpener.open(blocContext, untitled.file));
+    } catch (e) {
+      debugPrint('Error starting a new file: $e');
+      if (blocContext.mounted) {
+        _toast(blocContext, "Couldn't create the file: ${_reason(e)}");
+      }
+    } finally {
+      await untitled?.close();
+      final saved = untitled?.savedPath;
+      if (saved != null && !bloc.isClosed) bloc.add(LoadDirectory(folder, select: saved));
+    }
+  }
+
+  /// The name of a new file, asked at its first save. Its extension is added
+  /// if left out; only text may change to another one, as the other editors
+  /// write their own format.
+  Future<String?> _askNewFileName(BuildContext context, UntitledFile untitled) async {
+    final kind = untitled.kind;
+    String complete(String name) {
+      final extension = p.extension(name).toLowerCase();
+      final fine = kind.editor == NewFileEditor.text ? extension.isNotEmpty : extension == '.${kind.extension}';
+      return fine ? name : '$name.${kind.extension}';
+    }
+
+    final name = await promptForName(
+      context,
+      title: 'Save as',
+      description: 'In ${untitled.folder}',
+      confirmLabel: 'Save',
+      initialValue: NewFiles.freeName(untitled.folder, kind.baseName, kind.extension),
+      selectBaseName: true,
+      validator: (name) => FileSystemEntity.typeSync(p.join(untitled.folder, complete(name))) !=
+              FileSystemEntityType.notFound
+          ? 'An item with this name already exists.'
+          : null,
+    );
+    return name == null || name.isEmpty ? null : complete(name);
+  }
+
+  /// For kinds with no editor to type in (a PDF, a picture, an archive): asks
+  /// for a name, creates the blank file and shows it.
+  Future<void> _createThenOpen(
     BuildContext blocContext,
     String parentPath,
     NewFileKind kind,
@@ -523,7 +599,7 @@ class FileActionsService {
       blocContext,
       title: 'New ${kind.label}',
       confirmLabel: 'Create',
-      initialValue: NewFiles.freeName(parentPath, kind),
+      initialValue: NewFiles.freeName(parentPath, kind.baseName, kind.extension),
       selectBaseName: true,
       validator: (name) {
         if (FileSystemEntity.typeSync(p.join(parentPath, name)) != FileSystemEntityType.notFound) {
@@ -534,12 +610,11 @@ class FileActionsService {
     );
     if (name == null || name.isEmpty) return;
     try {
-      await NewFiles.create(kind, p.join(parentPath, name));
+      final path = p.join(parentPath, name);
+      await NewFiles.create(kind, path);
       if (!blocContext.mounted) return;
-      final currentState = blocContext.read<FileExplorerBloc>().state;
-      if (currentState is FileExplorerLoaded) {
-        blocContext.read<FileExplorerBloc>().add(LoadDirectory(currentState.path));
-      }
+      blocContext.read<FileExplorerBloc>().add(LoadDirectory(parentPath, select: path));
+      await FileOpener.open(blocContext, File(path));
     } catch (e) {
       debugPrint('Error creating file: $e');
       if (blocContext.mounted) {

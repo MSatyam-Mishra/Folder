@@ -34,6 +34,9 @@ class ShownItems {
   double top = 0;
   double bottom = 0;
 
+  /// The rename last scrolled to.
+  String? revealedRename;
+
   ScrollableState? get _scrollable =>
       _items.isEmpty ? null : Scrollable.maybeOf(_items.values.first.context);
 

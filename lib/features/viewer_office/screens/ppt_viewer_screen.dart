@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
 import 'package:explorer/shared/layout/adaptive_layout.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
@@ -138,6 +139,8 @@ class _PptViewerScreenState extends State<PptViewerScreen> {
         });
         _showThumbsAfterThisFrame();
         _finishLoad();
+        // A new file is there to be written in.
+        if (UntitledFiles.isUntitled(_file)) unawaited(_startEditing());
       case SlideLoadDone():
         _finishLoad();
       case SlideLoadFailed(:final error):
@@ -409,6 +412,9 @@ class _PptViewerScreenState extends State<PptViewerScreen> {
   Future<void> _save({required bool copy}) async {
     final pkg = _pkg;
     if (pkg == null || _busy) return;
+    final named = await UntitledFiles.saveTarget(context, _file);
+    if (named == null || !mounted) return;
+    _file = named;
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -648,7 +654,7 @@ class _PptViewerScreenState extends State<PptViewerScreen> {
               value: false,
               icon: LucideIcons.save,
               label: 'Save',
-              enabled: _dirty,
+              enabled: _dirty || UntitledFiles.isUntitled(_file),
             ),
             viewerMenuItem(
               value: true,

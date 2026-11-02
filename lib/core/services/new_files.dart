@@ -4,10 +4,13 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter/widgets.dart' show IconData;
+import 'package:flutter/widgets.dart' show BuildContext, IconData;
 import 'package:image/image.dart' as img;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Where a new file is written.
+enum NewFileEditor { text, document, sheet, slides, none }
 
 /// A kind of file the + button can create.
 class NewFileKind {
@@ -25,8 +28,72 @@ class NewFileKind {
   /// What a text format starts with.
   final String starter;
 
-  String get fileName => '$baseName.$extension';
   String get menuLabel => '$label (.$extension)';
+
+  NewFileEditor get editor => switch (extension) {
+        'docx' || 'doc' || 'rtf' || 'odt' => NewFileEditor.document,
+        'xlsx' || 'xls' || 'ods' || 'csv' || 'tsv' => NewFileEditor.sheet,
+        'pptx' => NewFileEditor.slides,
+        'odp' || 'pdf' || 'png' || 'jpg' || 'bmp' || 'zip' || 'tar' => NewFileEditor.none,
+        _ => NewFileEditor.text,
+      };
+}
+
+/// A new file open in an editor, with no name until its first save. Meanwhile
+/// it's a blank file in a temporary folder of its own.
+class UntitledFile {
+  UntitledFile._(this.file, this.kind, this.folder, this._askName);
+
+  final File file;
+  final NewFileKind kind;
+
+  /// Where it's going.
+  final String folder;
+  final Future<String?> Function(BuildContext context, UntitledFile untitled) _askName;
+
+  /// Where it was saved, if it was.
+  String? savedPath;
+
+  /// The editor has closed.
+  Future<void> close() async {
+    UntitledFiles._open.remove(file.path);
+    try {
+      await file.parent.delete(recursive: true);
+    } on FileSystemException {
+      // Left for the system's temporary folder cleaning.
+    }
+  }
+}
+
+/// What editors ask before saving, so a new file gets its name then.
+abstract final class UntitledFiles {
+  static final _open = <String, UntitledFile>{};
+
+  static bool isUntitled(File file) => _open.containsKey(file.path);
+
+  static Future<UntitledFile> start(
+    NewFileKind kind,
+    String folder,
+    Future<String?> Function(BuildContext context, UntitledFile untitled) askName,
+  ) async {
+    final dir = await Directory.systemTemp.createTemp('explorer_new_');
+    final file = File('${dir.path}${Platform.pathSeparator}${kind.baseName}.${kind.extension}');
+    await file.writeAsBytes(await NewFiles.contents(kind), flush: true);
+    return _open[file.path] = UntitledFile._(file, kind, folder, askName);
+  }
+
+  /// Where a save of [file] goes: [file] itself or, for a new file, what the
+  /// user names it now; null if they cancelled. From then on that's the file.
+  static Future<File?> saveTarget(BuildContext context, File file) async {
+    final untitled = _open[file.path];
+    if (untitled == null) return file;
+    final name = await untitled._askName(context, untitled);
+    if (name == null) return null;
+    _open.remove(file.path);
+    final path = '${untitled.folder}${Platform.pathSeparator}$name';
+    untitled.savedPath = path;
+    return File(path);
+  }
 }
 
 /// The kinds of file that can be created, which of them the + button offers,
@@ -114,16 +181,17 @@ abstract final class NewFiles {
     await prefs.setStringList(_prefsKey, extensions.toList());
   }
 
-  /// [kind]'s default name, with a number if [folder] already has that one.
-  static String freeName(String folder, NewFileKind kind) {
+  /// [base] with its [extension], numbered if [folder] already has that name.
+  static String freeName(String folder, String base, String extension) {
+    final ending = extension.isEmpty ? '' : '.$extension';
     bool taken(String name) {
       final path = '$folder${Platform.pathSeparator}$name';
       return FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound;
     }
 
-    if (!taken(kind.fileName)) return kind.fileName;
+    if (!taken('$base$ending')) return '$base$ending';
     for (var n = 2;; n++) {
-      final name = '${kind.baseName} ($n).${kind.extension}';
+      final name = '$base ($n)$ending';
       if (!taken(name)) return name;
     }
   }

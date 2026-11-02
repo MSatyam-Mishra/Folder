@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
 import 'package:explorer/shared/layout/adaptive_layout.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
@@ -325,11 +326,20 @@ class _SpreadsheetScreenState extends State<SpreadsheetScreen> {
   Future<XlsxWriteResult> _buildXlsx(SpreadsheetController c, SpreadsheetFormat target) =>
       _writeXlsxInBackground(c.workbook, _packageBytes, target);
 
+  /// A new file gets its name now; everything saved goes beside it.
+  Future<bool> _nameIfNew() async {
+    final named = await UntitledFiles.saveTarget(context, _file);
+    if (named == null || !mounted) return false;
+    _file = named;
+    return true;
+  }
+
   /// Save (Ctrl+S): overwrite when possible, otherwise "Save as .xlsx".
   Future<bool> _save() async {
     final c = _ctrl;
     if (c == null || _saving || !_readyToSave()) return false;
     if (!_commitPending()) return false;
+    if (!await _nameIfNew()) return false;
     final fmt = c.workbook.format;
     if (fmt.isXlsxFamily) return _overwriteXlsx(c);
     if (fmt == SpreadsheetFormat.csv) return _saveCsv(c);
@@ -699,9 +709,9 @@ class _SpreadsheetScreenState extends State<SpreadsheetScreen> {
       case _Menu.header:
         c.setCsvHeader(!(c.workbook.csv?.hasHeader ?? false));
       case _Menu.saveCopy:
-        await _saveAsXlsx(c, switchToNew: false);
+        if (await _nameIfNew()) await _saveAsXlsx(c, switchToNew: false);
       case _Menu.exportCsv:
-        await _exportCsv();
+        if (await _nameIfNew()) await _exportCsv();
       case _Menu.openWith:
         await _openWith();
     }

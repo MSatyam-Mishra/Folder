@@ -24,6 +24,7 @@ class FileGridItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.onLongPress,
+    this.nameEditor,
     this.onSecondaryTapUp,
     this.gallery = false,
     this.zoom = 1,
@@ -38,6 +39,9 @@ class FileGridItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+
+  /// In place of the name, while it's being edited.
+  final Widget? nameEditor;
   /// Right-click, with where it happened (for a context menu).
   final GestureTapUpCallback? onSecondaryTapUp;
   final bool gallery;
@@ -112,7 +116,7 @@ class FileGridItem extends StatelessWidget {
           SizedBox(
             height: 34,
             child: Center(
-              child: Text(
+              child: nameEditor ?? Text(
                 title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -158,7 +162,7 @@ class FileGridItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              nameEditor ?? Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

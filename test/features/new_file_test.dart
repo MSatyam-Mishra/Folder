@@ -8,8 +8,13 @@ import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:explorer/features/file_explorere/widgets/new_file_button.dart';
+import 'package:explorer/features/viewer_office/document/document_loader.dart';
+import 'package:explorer/features/viewer_office/slides/pptx_parser.dart';
+import 'package:explorer/features/viewer_text/screens/tabbed_text_editor.dart';
+import 'package:explorer/features/viewer_text/screens/text_editor_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -64,10 +69,10 @@ void main() {
       final dir = await Directory.systemTemp.createTemp('explorer_new_file');
       addTearDown(() => dir.delete(recursive: true));
       final text = kind('txt');
-      expect(NewFiles.freeName(dir.path, text), 'New Text Document.txt');
+      expect(NewFiles.freeName(dir.path, text.baseName, 'txt'), 'New Text Document.txt');
       final path = p.join(dir.path, 'New Text Document.txt');
       await NewFiles.create(text, path);
-      expect(NewFiles.freeName(dir.path, text), 'New Text Document (2).txt');
+      expect(NewFiles.freeName(dir.path, text.baseName, 'txt'), 'New Text Document (2).txt');
 
       await File(path).writeAsString('keep me');
       await expectLater(NewFiles.create(text, path), throwsA(isA<FileSystemException>()));
@@ -122,7 +127,19 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('offers Text and Word at first, and creates what is picked', (tester) async {
+    Future<void> pickText(WidgetTester tester) async {
+      await openMenu(tester);
+      await tester.tap(find.text('Text file (.txt)'), kind: PointerDeviceKind.mouse);
+      for (var i = 0; i < 40 && find.byType(TabbedTextEditorScreen).evaluate().isEmpty; i++) {
+        await settle(tester);
+      }
+      await settle(tester);
+      expect(find.byType(TabbedTextEditorScreen), findsOneWidget);
+    }
+
+    bool inFolder(String name) => File(p.join(root.path, name)).existsSync();
+
+    testWidgets('offers Text and Word at first', (tester) async {
       await open(tester);
       await openMenu(tester);
       expect(find.text('New file'), findsOneWidget);
@@ -130,18 +147,88 @@ void main() {
       expect(find.text('Text file (.txt)'), findsOneWidget);
       expect(find.text('Word document (.docx)'), findsOneWidget);
       expect(find.text('Excel workbook (.xlsx)'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
 
-      await tester.tap(find.text('Word document (.docx)'), kind: PointerDeviceKind.mouse);
+    testWidgets('opens in its editor, and gets its name when saved', (tester) async {
+      await open(tester);
+      await pickText(tester);
+      expect(inFolder('New Text Document.txt'), isFalse, reason: 'nothing is made until it is saved');
+
+      await tester.enterText(find.byType(TextField).last, 'hello');
       await settle(tester);
-      expect(find.widgetWithText(TextField, 'New Word Document.docx'), findsOneWidget);
-      await tester.tap(find.text('Create'), kind: PointerDeviceKind.mouse);
-      for (var i = 0; i < 40 && find.text('New Word Document.docx').evaluate().isEmpty; i++) {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await settle(tester);
+
+      // The name is asked now.
+      expect(find.text('Save as'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'New Text Document.txt'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextField, 'New Text Document.txt'), 'notes for later');
+      await settle(tester);
+      await tester.tap(find.text('Save').last, kind: PointerDeviceKind.mouse);
+      await settle(tester);
+
+      final made = File(p.join(root.path, 'notes for later.txt'));
+      expect(await tester.runAsync(made.readAsString), 'hello', reason: 'the extension was added');
+      expect(find.byType(TabbedTextEditorScreen), findsOneWidget, reason: 'still editing');
+
+      // Saving again goes to that file, without asking.
+      await tester.enterText(find.byType(TextField).last, 'hello again');
+      await settle(tester);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await settle(tester);
+      expect(find.text('Save as'), findsNothing);
+      expect(await tester.runAsync(made.readAsString), 'hello again');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('leaves nothing behind if it is never saved', (tester) async {
+      await open(tester);
+      final before = root.listSync().length;
+      await pickText(tester);
+      final pane = tester.state<TextEditorPaneState>(find.byType(TextEditorPane));
+      final untitled = (pane.widget.file);
+      expect(UntitledFiles.isUntitled(untitled), isTrue);
+      await tester.pageBack();
+      for (var i = 0; i < 20 && find.byType(TabbedTextEditorScreen).evaluate().isNotEmpty; i++) {
         await settle(tester);
       }
-      final made = File(p.join(root.path, 'New Word Document.docx'));
-      expect(await tester.runAsync(made.exists), isTrue);
-      expect(find.text('New Word Document.docx'), findsOneWidget, reason: 'it shows in the folder');
+      await settle(tester);
+      expect(find.byType(TabbedTextEditorScreen), findsNothing);
+      expect(root.listSync(), hasLength(before));
+      expect(UntitledFiles.isUntitled(untitled), isFalse);
+      expect(await tester.runAsync(untitled.exists), isFalse, reason: 'the temporary file goes too');
       await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets("cancelling the name doesn't save", (tester) async {
+      await open(tester);
+      await pickText(tester);
+      await tester.enterText(find.byType(TextField).last, 'hello');
+      await settle(tester);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await settle(tester);
+      await tester.tap(find.text('Cancel').last, kind: PointerDeviceKind.mouse);
+      await settle(tester);
+      expect(inFolder('New Text Document.txt'), isFalse);
+      expect(find.byType(TabbedTextEditorScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    test("the blank files open in the app's own readers", () async {
+      Future<List<int>> blank(String extension) =>
+          NewFiles.contents(NewFiles.kinds.firstWhere((k) => k.extension == extension));
+      for (final extension in ['docx', 'doc', 'rtf', 'odt']) {
+        final model = await parseDocumentInBackground(Uint8List.fromList(await blank(extension)), extension);
+        expect(model.warnings, isNot(contains('plainText')), reason: extension);
+      }
+      expect(parsePptxBytes(Uint8List.fromList(await blank('pptx'))).slides, hasLength(1));
     });
 
     testWidgets('the settings row chooses what the menu has', (tester) async {

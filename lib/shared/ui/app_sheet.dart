@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:explorer/shared/ui/app_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// How a sheet appears on computers and wide screens, where bottom sheets
 /// look out of place: a centred [dialog] (choices, short forms) or a
@@ -166,7 +167,7 @@ class _SideSheet extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 child: IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: const Icon(LucideIcons.x, size: 20),
                   tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                   onPressed: () => Navigator.maybePop(context),
                 ),
