@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/macos_files.dart';
 import 'package:explorer/core/platform/macos_writable.dart';
+import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -41,6 +42,7 @@ class FileDragSource extends StatelessWidget {
       allowedOperations: () => const [DropOperation.move, DropOperation.copy],
       dragItemProvider: (_) => _item(entity),
       child: DraggableWidget(
+        isLocationDraggable: (position) => overDragPart(context, position),
         // The rest of the selection, also rows scrolled out of view, with
         // this row's picture.
         onDragConfiguration: (configuration, session) {

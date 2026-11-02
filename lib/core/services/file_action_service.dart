@@ -3,6 +3,7 @@ import 'package:archive/archive_io.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/services/bluetooth_share.dart';
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/clipboard/bloc/clipboard_bloc.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
@@ -508,6 +509,41 @@ class FileActionsService {
       debugPrint('Error creating folder: $e');
       if (blocContext.mounted) {
         _toast(blocContext, "Couldn't create the folder: ${_reason(e)}");
+      }
+    }
+  }
+
+  /// Asks for a name and creates a blank file of [kind].
+  Future<void> showCreateFileDialog(
+    BuildContext blocContext,
+    String parentPath,
+    NewFileKind kind,
+  ) async {
+    final name = await promptForName(
+      blocContext,
+      title: 'New ${kind.label}',
+      confirmLabel: 'Create',
+      initialValue: NewFiles.freeName(parentPath, kind),
+      selectBaseName: true,
+      validator: (name) {
+        if (FileSystemEntity.typeSync(p.join(parentPath, name)) != FileSystemEntityType.notFound) {
+          return 'An item with this name already exists.';
+        }
+        return null;
+      },
+    );
+    if (name == null || name.isEmpty) return;
+    try {
+      await NewFiles.create(kind, p.join(parentPath, name));
+      if (!blocContext.mounted) return;
+      final currentState = blocContext.read<FileExplorerBloc>().state;
+      if (currentState is FileExplorerLoaded) {
+        blocContext.read<FileExplorerBloc>().add(LoadDirectory(currentState.path));
+      }
+    } catch (e) {
+      debugPrint('Error creating file: $e');
+      if (blocContext.mounted) {
+        _toast(blocContext, "Couldn't create the file: ${_reason(e)}");
       }
     }
   }

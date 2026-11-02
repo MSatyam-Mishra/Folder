@@ -127,10 +127,11 @@ class _TabbedExplorerState extends State<TabbedExplorer> {
       canRequestFocus: false,
       skipTraversal: true,
       onKeyEvent: _onKey,
-      // The app's text style for the tab names; the tabs' pages have their
-      // own Material.
+      // The app's text style for the tab names. No colour: the bar and the
+      // tabs' pages paint their own, and a see-through background painted
+      // twice hides the window effect.
       child: Material(
-        color: context.colors.background,
+        type: MaterialType.transparency,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

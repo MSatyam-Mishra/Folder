@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 import 'entity_meta.dart';
+import 'selection_band.dart';
 import 'file_list_item.dart' show SelectionCheck;
 
 /// One file or folder in the explorer's grid and gallery views.
@@ -47,32 +48,36 @@ class FileGridItem extends StatelessWidget {
     final radius = BorderRadius.circular(12);
     final title = displayName.isEmpty ? entity.path : displayName;
 
-    return Material(
-      color: isSelected ? colors.accent : colors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(
-          color: isSelected ? colors.ring : colors.border,
-          width: isSelected ? 1.5 : 1,
+    return MetaData(
+      // A tile is grabbed anywhere; the gaps between them start a band.
+      metaData: itemDragPart,
+      child: Material(
+        color: isSelected ? colors.accent : colors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: isSelected ? colors.ring : colors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        onSecondaryTapUp: onSecondaryTapUp,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: gallery ? _gallery(context, title) : _grid(context, title),
-            ),
-            if (isSelectionMode)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: SelectionCheck(selected: isSelected),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          onSecondaryTapUp: onSecondaryTapUp,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: gallery ? _gallery(context, title) : _grid(context, title),
               ),
-          ],
+              if (isSelectionMode)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: SelectionCheck(selected: isSelected),
+                ),
+            ],
+          ),
         ),
       ),
     );

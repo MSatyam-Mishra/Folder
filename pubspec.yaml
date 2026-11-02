@@ -102,6 +102,7 @@ flutter:
   assets:
     # Folder and place icons of the Sweet and Dracula styles (GPL-3.0,
     # see assets/icon_themes/README.md)
+    - assets/new_files/
     - assets/icon_themes/sweet/
     - assets/icon_themes/dracula/
     # File and folder icons (lib/shared/file_icons)

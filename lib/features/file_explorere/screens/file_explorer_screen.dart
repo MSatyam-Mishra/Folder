@@ -23,6 +23,7 @@ import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:explorer/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:explorer/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
+import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/features/file_explorere/widgets/image_actions.dart';
 import 'package:explorer/features/file_explorere/widgets/paste_bar.dart';
 import 'package:explorer/features/localsend/screens/localsend_screen.dart';
@@ -56,11 +57,33 @@ class _Clicks {
   Offset position = Offset.zero;
   String? lastPath;
   DateTime lastTime = DateTime(0);
+
+  /// Where a Shift selection starts from.
   String? anchorPath;
+
+  /// The item the arrow keys move on from.
+  String? cursorPath;
+
+  void mark(String path) {
+    anchorPath = path;
+    cursorPath = path;
+  }
 
   /// A mouse clicks like on a desktop (click selects, double-click opens);
   /// touch taps like on a phone (tap opens).
   bool get mouse => kind == PointerDeviceKind.mouse;
+}
+
+/// Each browser's items on screen (tabs each have a browser).
+final _shownItems = Expando<ShownItems>();
+
+ShownItems _shownIn(FileExplorerBloc bloc) => _shownItems[bloc] ??= ShownItems();
+
+/// Whether the keyboard is in a text field, whose keys are its own.
+bool get _typing {
+  final context = FocusManager.instance.primaryFocus?.context;
+  return context != null &&
+      (context.widget is EditableText || context.findAncestorWidgetOfExactType<EditableText>() != null);
 }
 
 /// Ctrl, or Cmd on macOS.
@@ -72,6 +95,52 @@ bool get _commandPressed => Platform.isMacOS
 /// trackpads without secondary click).
 bool get _controlClick =>
     Platform.isMacOS && _clicks.mouse && HardwareKeyboard.instance.isControlPressed;
+
+/// Holds the keyboard for the browser's shortcuts. A text field that lets go
+/// of the keyboard (a click outside the search box) leaves it with the page's
+/// focus scope, above [onKey], where every shortcut would be dead: it's taken
+/// back from there.
+class _BrowserKeys extends StatefulWidget {
+  const _BrowserKeys({required this.onKey, required this.child});
+
+  final KeyEventResult Function(KeyEvent event) onKey;
+  final Widget child;
+
+  @override
+  State<_BrowserKeys> createState() => _BrowserKeysState();
+}
+
+class _BrowserKeysState extends State<_BrowserKeys> {
+  final _node = FocusNode(debugLabel: 'Browser keys');
+
+  void _takeBack() {
+    final scope = _node.enclosingScope;
+    if (scope != null && identical(FocusManager.instance.primaryFocus, scope)) {
+      _node.requestFocus();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_takeBack);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_takeBack);
+    _node.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Focus(
+        focusNode: _node,
+        autofocus: true,
+        onKeyEvent: (_, event) => widget.onKey(event),
+        child: widget.child,
+      );
+}
 
 class FileExplorerScreen extends StatefulWidget {
   const FileExplorerScreen({super.key, this.initialPath, this.onFolderChanged});
@@ -342,25 +411,21 @@ class _FileExplorerUI extends StatelessWidget {
           context.read<FileExplorerBloc>().add(LoadDirectory(parentPath));
         }
       },
-      child: Focus(
-        autofocus: true,
-        onKeyEvent: (_, event) => _onKey(context, event),
+      child: _BrowserKeys(
+        onKey: (event) => _onKey(context, event),
         child: docked
-            ? ColoredBox(
-                color: context.colors.background,
-                // Its border can be dragged.
-                child: ValueListenableBuilder<double>(
-                  valueListenable: SidebarWidth.instance,
-                  builder: (context, width, _) => AdaptiveSplitView(
-                    secondaryWidth: math.min(
-                      width,
-                      math.max(SidebarWidth.min, MediaQuery.sizeOf(context).width / 2),
-                    ),
-                    onResize: SidebarWidth.instance.set,
-                    onResizeReset: () => SidebarWidth.instance.set(SidebarWidth.usual),
-                    primary: page,
-                    secondary: const DockedSidebar(child: MainDrawerContent()),
+            // Its border can be dragged. Each pane paints its own background.
+            ? ValueListenableBuilder<double>(
+                valueListenable: SidebarWidth.instance,
+                builder: (context, width, _) => AdaptiveSplitView(
+                  secondaryWidth: math.min(
+                    width,
+                    math.max(SidebarWidth.min, MediaQuery.sizeOf(context).width / 2),
                   ),
+                  onResize: SidebarWidth.instance.set,
+                  onResizeReset: () => SidebarWidth.instance.set(SidebarWidth.usual),
+                  primary: page,
+                  secondary: const DockedSidebar(child: MainDrawerContent()),
                 ),
               )
             : page,
@@ -374,9 +439,7 @@ class _FileExplorerUI extends StatelessWidget {
       return KeyEventResult.ignored;
     }
     // Typing in a text field: the keys are the field's.
-    if (FocusManager.instance.primaryFocus?.context?.widget is EditableText) {
-      return KeyEventResult.ignored;
-    }
+    if (_typing) return KeyEventResult.ignored;
     final bloc = context.read<FileExplorerBloc>();
     final state = bloc.state;
     if (state is! FileExplorerLoaded) return KeyEventResult.ignored;
@@ -450,10 +513,62 @@ class _FileExplorerUI extends StatelessWidget {
       final parent = ExplorerPaths.parentOf(state.path);
       if (parent == null) return KeyEventResult.ignored;
       bloc.add(LoadDirectory(parent));
-    } else {
+    } else if (thisPc || command || keys.isAltPressed || !_moveCursor(bloc, state, key)) {
       return KeyEventResult.ignored;
     }
     return KeyEventResult.handled;
+  }
+
+  /// The arrow keys, Home, End, Page Up and Page Down go through the items;
+  /// with Shift the selection stretches from where it started.
+  bool _moveCursor(FileExplorerBloc bloc, FileExplorerLoaded state, LogicalKeyboardKey key) {
+    final items = state.displayEntities;
+    if (items.isEmpty) return false;
+    final shown = _shownIn(bloc);
+    final grid = state.viewMode == ViewMode.grid || state.viewMode == ViewMode.gallery;
+    final columns = grid ? shown.columns : 1;
+    final last = items.length - 1;
+    final paths = [for (final e in items) e.path];
+    final at = paths.indexOf(_clicks.cursorPath ?? '');
+    final int? wanted;
+    if (key == LogicalKeyboardKey.arrowDown) {
+      // On the last row a grid stays put, as there's nothing under it.
+      wanted = at < 0 ? 0 : (at + columns > last && at ~/ columns == last ~/ columns ? at : at + columns);
+    } else if (key == LogicalKeyboardKey.arrowUp) {
+      wanted = at < 0 ? last : (at - columns < 0 ? at : at - columns);
+    } else if (grid && key == LogicalKeyboardKey.arrowRight) {
+      wanted = at + 1;
+    } else if (grid && key == LogicalKeyboardKey.arrowLeft) {
+      wanted = at < 0 ? 0 : at - 1;
+    } else if (key == LogicalKeyboardKey.home) {
+      wanted = 0;
+    } else if (key == LogicalKeyboardKey.end) {
+      wanted = last;
+    } else if (key == LogicalKeyboardKey.pageDown) {
+      wanted = at < 0 ? 0 : at + columns * shown.rowsOnPage;
+    } else if (key == LogicalKeyboardKey.pageUp) {
+      wanted = at < 0 ? 0 : at - columns * shown.rowsOnPage;
+    } else {
+      wanted = null;
+    }
+    if (wanted == null) return false;
+    final to = wanted.clamp(0, last);
+    final target = items[to];
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      var from = paths.indexOf(_clicks.anchorPath ?? '');
+      if (from < 0) {
+        from = at < 0 ? to : at;
+        _clicks.anchorPath = paths[from];
+      }
+      _clicks.cursorPath = target.path;
+      final range = items.sublist(math.min(from, to), math.max(from, to) + 1).toSet();
+      bloc.add(SetSelection(range, selectionMode: range.length > 1));
+    } else {
+      _clicks.mark(target.path);
+      bloc.add(SetSelection({target}));
+    }
+    shown.reveal(target.path, to, items.length);
+    return true;
   }
 
   Widget _buildDockedTopBar(
@@ -548,6 +663,9 @@ class _FileExplorerUI extends StatelessWidget {
       onSortChanged: loaded == null
           ? null
           : (option, order) => bloc.add(ChangeSortOrder(option, order)),
+      onNewFile: canCreate && loaded != null
+          ? (kind) => fileActionsService.showCreateFileDialog(context, loaded.path, kind)
+          : null,
       onNewFolder: canCreate && loaded != null
           ? () =>
                 fileActionsService.showCreateFolderDialog(context, loaded.path)
@@ -724,6 +842,10 @@ class _FileExplorerUI extends StatelessWidget {
     void drop(List<String> paths, String folder, bool move) =>
         context.read<ClipboardBloc>().add(TransferFiles(paths, folder, move: move));
 
+    final shown = _shownIn(bloc)
+      ..top = top
+      ..bottom = bottom;
+
     // Every item can be dragged (with the rest of the selection); folders
     // take drops, but not macOS packages (apps), which would be damaged.
     // With tabs, the middle button opens a folder in a new one, behind.
@@ -743,12 +865,16 @@ class _FileExplorerUI extends StatelessWidget {
               ),
             )
           : item;
-      return FileDragSource(
+      return ShownItem(
+        items: shown,
         entity: entity,
-        selection: () => state.selectedItems.contains(entity)
-            ? [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e]
-            : const [],
-        child: target,
+        child: FileDragSource(
+          entity: entity,
+          selection: () => state.selectedItems.contains(entity)
+              ? [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e]
+              : const [],
+          child: target,
+        ),
       );
     }
 
@@ -882,11 +1008,15 @@ class _FileExplorerUI extends StatelessWidget {
             builder: (context, hovering) =>
                 DropHighlight(active: hovering, radius: 0, child: scroller),
           );
-    return ZoomGestures(child: Listener(
+    return ZoomGestures(child: Builder(builder: (context) => Listener(
       // Before the item's tap fires: was it a mouse or a finger, and where?
-      onPointerDown: (event) => _clicks
-        ..kind = event.kind
-        ..position = event.position,
+      // A click also gives the list the keyboard (Ctrl+A, the arrow keys).
+      onPointerDown: (event) {
+        _clicks
+          ..kind = event.kind
+          ..position = event.position;
+        Focus.maybeOf(context)?.requestFocus();
+      },
       child: GestureDetector(
         // Only where no item took the click: the space around them.
         onTap: () {
@@ -900,9 +1030,26 @@ class _FileExplorerUI extends StatelessWidget {
             ? (details) =>
                 _showFolderMenu(context, state, details.globalPosition)
             : null,
-        child: list,
+        child: Desktop.isDesktop && !ExplorerPaths.isWindowsRoots(state.path)
+            ? SelectionBand(
+                items: shown,
+                selected: () => state.selectedItems,
+                onChanged: (items, {required done}) {
+                  if (done) {
+                    final first = state.displayEntities.where(items.contains).firstOrNull;
+                    if (first != null) _clicks.mark(first.path);
+                  }
+                  bloc.add(SetSelection(
+                    items,
+                    // The checkboxes come in afterwards, not under the band.
+                    selectionMode: done ? items.length > 1 : state.isSelectionMode,
+                  ));
+                },
+                child: list,
+              )
+            : list,
       ),
-    ));
+    )));
   }
 
   /// Opens a folder or file, as a tap does. macOS packages (apps, document
@@ -958,8 +1105,16 @@ class _FileExplorerUI extends StatelessWidget {
     if (_commandPressed) {
       final items = {...state.selectedItems};
       if (!items.remove(entity)) items.add(entity);
-      _clicks.anchorPath = entity.path;
+      _clicks.mark(entity.path);
       bloc.add(SetSelection(items, selectionMode: items.length > 1));
+      return;
+    }
+    // The checkboxes are showing: a click ticks or unticks, the others stay.
+    if (state.isSelectionMode && !keys.isShiftPressed) {
+      final items = {...state.selectedItems};
+      if (!items.remove(entity)) items.add(entity);
+      _clicks.mark(entity.path);
+      bloc.add(SetSelection(items, selectionMode: items.isNotEmpty));
       return;
     }
     final anchor = _clicks.anchorPath;
@@ -972,11 +1127,12 @@ class _FileExplorerUI extends StatelessWidget {
         final range = shown
             .sublist(math.min(from, to), math.max(from, to) + 1)
             .toSet();
+        _clicks.cursorPath = entity.path;
         bloc.add(SetSelection(range, selectionMode: range.length > 1));
         return;
       }
     }
-    _clicks.anchorPath = entity.path;
+    _clicks.mark(entity.path);
     bloc.add(SetSelection({entity}));
   }
 
@@ -993,7 +1149,7 @@ class _FileExplorerUI extends StatelessWidget {
       _showSelectionMenu(context, state, position);
       return;
     }
-    _clicks.anchorPath = entity.path;
+    _clicks.mark(entity.path);
     context.read<FileExplorerBloc>().add(SetSelection({entity}));
     final bloc = context.read<FileExplorerBloc>();
     final thisPc = ExplorerPaths.isWindowsRoots(state.path);
@@ -1186,6 +1342,7 @@ class _FileExplorerUI extends StatelessWidget {
     FileSystemEntity entity,
   ) {
     HapticFeedback.selectionClick();
+    _clicks.mark(entity.path);
     if (!state.isSelectionMode) {
       context.read<FileExplorerBloc>().add(ToggleSelectionMode(enable: true));
     }

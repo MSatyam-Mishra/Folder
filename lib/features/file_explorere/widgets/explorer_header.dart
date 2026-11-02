@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
+import 'package:explorer/core/services/new_files.dart';
 import 'package:explorer/features/file_explorere/bloc/grouping.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 import 'explorer_menu.dart';
+import 'new_file_button.dart';
 
 /// Menu icons for sorting and grouping.
 IconData sortIcon(SortOption option) => switch (option) {
@@ -87,6 +89,7 @@ class ExplorerHeader extends StatelessWidget {
     this.onSortChanged,
     this.onOptionsPressed,
     this.onNewFolder,
+    this.onNewFile,
     this.onNewWindow,
     this.groupBy,
     this.onGroupByChanged,
@@ -113,6 +116,9 @@ class ExplorerHeader extends StatelessWidget {
   final void Function(SortOption option, SortOrder order)? onSortChanged;
   final VoidCallback? onOptionsPressed;
   final VoidCallback? onNewFolder;
+
+  /// The + next to New folder creates a file of this kind.
+  final ValueChanged<NewFileKind>? onNewFile;
 
   /// Opens this folder in another window (desktop).
   final VoidCallback? onNewWindow;
@@ -176,6 +182,10 @@ class ExplorerHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              if (onNewFile != null) ...[
+                NewFileButton(onCreate: onNewFile!),
+                const SizedBox(width: 8),
+              ],
             ],
             if (viewMode != null && onViewModeChanged != null)
               _ViewMenuButton(mode: viewMode!, onChanged: onViewModeChanged!),
@@ -622,7 +632,7 @@ class _SearchFieldState extends State<_SearchField> {
       final focused = states.contains(WidgetState.focused);
       return OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: focused ? colors.ring : colors.input, width: focused ? 2 : 1),
+        borderSide: BorderSide(color: focused ? colors.ring : colors.input),
       );
     });
     return CallbackShortcuts(

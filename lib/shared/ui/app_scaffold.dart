@@ -78,7 +78,7 @@ class AppTopBarScaffold extends StatelessWidget {
                   filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: colors.background.withValues(alpha: 0.82),
+                      color: colors.background.withValues(alpha: colors.background.a * 0.82),
                       border: Border(bottom: BorderSide(color: colors.border)),
                     ),
                     child: Padding(

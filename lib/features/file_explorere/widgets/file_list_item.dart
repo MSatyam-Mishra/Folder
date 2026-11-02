@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 import 'entity_meta.dart';
+import 'selection_band.dart';
 
 /// How a [FileListItem] lays out its details.
 enum FileRowStyle {
@@ -82,13 +83,17 @@ class FileListItem extends StatelessWidget {
 
     final row = Row(
       children: [
-        entity is File
-            ? FileThumbnail(
-                path: entity.path,
-                size: iconSize,
-                fallback: EntityIcon(entity: entity, size: iconSize),
-              )
-            : EntityIcon(entity: entity, size: iconSize),
+        MetaData(
+          metaData: itemDragPart,
+          behavior: HitTestBehavior.opaque,
+          child: entity is File
+              ? FileThumbnail(
+                  path: entity.path,
+                  size: iconSize,
+                  fallback: EntityIcon(entity: entity, size: iconSize),
+                )
+              : EntityIcon(entity: entity, size: iconSize),
+        ),
         SizedBox(width: style == FileRowStyle.compact ? 10 : 12),
         Expanded(child: _details(context, title)),
         if (isSelectionMode) ...[
@@ -100,21 +105,26 @@ class FileListItem extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-      child: Material(
-        color: isSelected ? colors.accent : Colors.transparent,
-        borderRadius: radius,
-        child: InkWell(
+      child: MetaData(
+        // A selected row is grabbed anywhere; others by the icon and name,
+        // and the rest of the row starts a selection band.
+        metaData: isSelected ? itemDragPart : null,
+        child: Material(
+          color: isSelected ? colors.accent : Colors.transparent,
           borderRadius: radius,
-          onTap: onTap,
-          onLongPress: onLongPress,
-          onSecondaryTapUp: onSecondaryTapUp,
-          child: SizedBox(
-            height: heightFor(style, zoom),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: style == FileRowStyle.compact ? 10 : 12,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            onLongPress: onLongPress,
+            onSecondaryTapUp: onSecondaryTapUp,
+            child: SizedBox(
+              height: heightFor(style, zoom),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: style == FileRowStyle.compact ? 10 : 12,
+                ),
+                child: row,
               ),
-              child: row,
             ),
           ),
         ),
@@ -134,13 +144,16 @@ class FileListItem extends StatelessWidget {
     final detail = isSelected ? colors.accentForeground.withValues(alpha: 0.8) : colors.mutedForeground;
     final detailStyle = text.bodySmall?.copyWith(color: detail);
     final where = location;
+    final label = MetaData(
+      metaData: itemDragPart,
+      behavior: HitTestBehavior.opaque,
+      child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
+    );
     final Widget name = where == null || style == FileRowStyle.comfortable
-        ? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle)
+        ? Align(alignment: Alignment.centerLeft, heightFactor: 1, child: label)
         : Row(
             children: [
-              Flexible(
-                child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
-              ),
+              Flexible(child: label),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(

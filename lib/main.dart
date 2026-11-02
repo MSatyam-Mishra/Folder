@@ -159,6 +159,9 @@ class App extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
               ],
               builder: (context, child) => ShadAppBuilder(
+                // With a window effect each page paints the one see-through
+                // background; a second one under it would hide the effect.
+                backgroundColor: settings.windowEffect && WindowEffects.supported ? Colors.transparent : null,
                 child: ListenableBuilder(
                   listenable: BackgroundMode.instance,
                   // The app stays as it was behind the Tasks view.
