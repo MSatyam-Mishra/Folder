@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/repositories/file_repository.dart';
+import 'package:explorer/core/theme/icon_strokes.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
@@ -27,6 +28,8 @@ void main() {
 
   testWidgets('menus and sheets on glass; This PC and a category', (tester) async {
     SharedPreferences.setMockInitialValues({});
+    // As main() does: the app's icon font.
+    await tester.runAsync(IconStrokes.useLight);
     final root = (await tester.runAsync(() async {
       final dir = await Directory.systemTemp.createTemp('explorer_glass');
       final picture = img.Image(width: 320, height: 200);

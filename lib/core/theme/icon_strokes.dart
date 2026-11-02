@@ -8,7 +8,7 @@ abstract final class IconStrokes {
   /// ones), so `LucideIcons.x` is all the code ever says.
   static Future<void> useLight() async {
     final loader = FontLoader('packages/lucide_icons_flutter/Lucide')
-      ..addFont(rootBundle.load('packages/lucide_icons_flutter/assets/build_font/LucideVariable-w300.ttf'));
+      ..addFont(rootBundle.load('assets/fonts/app_icons.ttf'));
     await loader.load();
   }
 }
