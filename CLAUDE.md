@@ -69,7 +69,7 @@ GitHub **pre-releases** tagged `vX.Y.Z`:
 
 ## Where things stand (2026-11-02)
 
-- **Done since v1.0.8, not released yet** (on `main`; all below plus thumbnails, icon zoom, per-style window buttons and icons, the window effect settings, categories as folders, This PC, the resizable sidebar, blurred menus and sheets):
+- **Done since v1.0.8, released in v1.0.9** (all below plus thumbnails, icon zoom, per-style window buttons and icons, the window effect settings, categories as folders, This PC, the resizable sidebar, blurred menus and sheets):
   - Downloader: the link and preview clear once queued; a copied link is put in the empty field when it opens or the app comes back (not on macOS).
   - Windows Open with registration (installer and MSIX). Checked here: the installer built from the installed v1.0.8 files registered 377 types, and Windows lists Explorer in the Open with menu of each; the MSIX layout registered and showed up too (removed again).
   - Tabs (see Map). Checked on Windows in the real window: tabs in the title bar, caption buttons, title follows the tab.
@@ -81,6 +81,7 @@ GitHub **pre-releases** tagged `vX.Y.Z`:
   3. Tabs on macOS and Linux (the bar sits under the system title bar there).
   4. The macOS style with San Francisco on a Mac, and the Windows style with Segoe UI Variable.
 
+- **v1.0.9** was published on 2026-11-02 with its APKs (built here, as Actions has no signing key). Its Windows and Linux packages come from the `release` run 41461179708 of desktop-release.yml: check that the release has 16 files; if a job failed, re-run it (Releases, step 5). No macOS DMG yet. Not tried by hand yet: dragging from WinRAR into a folder (`windows_drop_files`), the mouse selection band, new Office files in real Office. The Hi-icons folder has no licence file; the owner was asked to confirm it may be redistributed.
 - **v1.0.7** is complete.
 - **v1.0.8** (convert and resize, background tasks and tray, translucent window, side sheets and dialogs, menu icons) is published with its APKs. Its Windows and Linux packages come from the `release` run of desktop-release.yml started on 2026-10-23. Check that the release has 16 files (17 now: the macOS DMG was added by hand on 2026-10-24); if a job failed, re-run it (Releases, step 5) or attach what was built with `tool/release/upload_desktop.py`.
 - The repo sidebar listed "claude" as a contributor long after the co-author lines were removed from history (a stale cache). Switching the default branch to a temporary branch and back made GitHub recompute it; it now shows only the owner.
