@@ -28,12 +28,44 @@ abstract final class ExplorerMenu {
       ),
       Offset.zero & overlay.size,
     );
+    return _open<T>(anchorContext, position, items, minWidth);
+  }
+
+  /// Opens [items]; with the window effect on, on a blurred, see-through
+  /// surface like the window's.
+  static Future<T?> _open<T>(
+    BuildContext context,
+    RelativeRect position,
+    List<PopupMenuEntry<T>> items,
+    double minWidth,
+  ) {
+    final constraints = BoxConstraints(minWidth: minWidth, maxWidth: 320);
+    if (!AppGlass.isOn(context)) {
+      return showMenu<T>(
+        context: context,
+        position: position,
+        items: items,
+        constraints: constraints,
+        menuPadding: const EdgeInsets.symmetric(vertical: 4),
+      );
+    }
+    final colors = context.colors;
     return showMenu<T>(
-      context: anchorContext,
+      context: context,
       position: position,
-      items: items,
-      constraints: BoxConstraints(minWidth: minWidth, maxWidth: 320),
-      menuPadding: const EdgeInsets.symmetric(vertical: 4),
+      items: [_GlassMenuBody<T>(items: items)],
+      constraints: constraints,
+      menuPadding: EdgeInsets.zero,
+      color: Colors.transparent,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: colors.border),
+      ),
+      // At once: a blur can't fade in with the rest of the menu.
+      popUpAnimationStyle: AnimationStyle.noAnimation,
     );
   }
 
@@ -47,15 +79,14 @@ abstract final class ExplorerMenu {
     final overlay =
         Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
     final point = overlay.globalToLocal(globalPosition);
-    return showMenu<T>(
-      context: context,
-      position: RelativeRect.fromRect(
+    return _open<T>(
+      context,
+      RelativeRect.fromRect(
         point & const Size(1, 1),
         Offset.zero & overlay.size,
       ),
-      items: items,
-      constraints: BoxConstraints(minWidth: minWidth, maxWidth: 320),
-      menuPadding: const EdgeInsets.symmetric(vertical: 4),
+      items,
+      minWidth,
     );
   }
 
@@ -141,6 +172,38 @@ abstract final class ExplorerMenu {
   static PopupMenuEntry<T> divider<T>() => const PopupMenuDivider(height: 9);
 }
 
+/// All of a menu's rows on one blurred surface: the menu itself has no room
+/// for a blur behind its rows.
+class _GlassMenuBody<T> extends PopupMenuEntry<T> {
+  const _GlassMenuBody({required this.items});
+
+  final List<PopupMenuEntry<T>> items;
+
+  @override
+  double get height => items.fold(8, (sum, item) => sum + item.height);
+
+  @override
+  bool represents(T? value) => items.any((item) => item.represents(value));
+
+  @override
+  State<_GlassMenuBody<T>> createState() => _GlassMenuBodyState<T>();
+}
+
+class _GlassMenuBodyState<T> extends State<_GlassMenuBody<T>> {
+  @override
+  Widget build(BuildContext context) => GlassSurface(
+        color: context.colors.popover,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: widget.items,
+          ),
+        ),
+      );
+}
+
 class _Submenu<T> extends PopupMenuEntry<T> {
   const _Submenu({required this.label, required this.items, this.icon});
 
@@ -179,12 +242,11 @@ class _SubmenuState<T> extends State<_Submenu<T>> {
       box.localToGlobal(Offset(box.size.width, box.size.height), ancestor: overlay),
     );
     setState(() => _open = true);
-    final value = await showMenu<T>(
-      context: context,
-      position: RelativeRect.fromRect(rect, Offset.zero & overlay.size),
-      items: widget.items,
-      constraints: const BoxConstraints(minWidth: 200, maxWidth: 320),
-      menuPadding: const EdgeInsets.symmetric(vertical: 4),
+    final value = await ExplorerMenu._open<T>(
+      context,
+      RelativeRect.fromRect(rect, Offset.zero & overlay.size),
+      widget.items,
+      200,
     );
     if (!mounted) return;
     setState(() => _open = false);

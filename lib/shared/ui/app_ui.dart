@@ -5,6 +5,7 @@
 library;
 
 export 'package:explorer/shared/ui/app_compact.dart';
+export 'package:explorer/shared/ui/app_glass.dart';
 export 'package:explorer/shared/ui/app_panel.dart';
 export 'package:explorer/shared/ui/app_scaffold.dart';
 export 'package:explorer/shared/ui/app_sheet.dart';

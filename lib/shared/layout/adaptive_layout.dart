@@ -1,6 +1,7 @@
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
 import 'package:explorer/shared/ui/app_tokens.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Material 3 window size classes, used to adapt layouts for phones,
@@ -78,7 +79,16 @@ class AdaptiveSplitView extends StatelessWidget {
     this.minWidthForSplit = 840,
     this.secondaryOnLeading = true,
     this.divider = true,
+    this.onResize,
+    this.onResizeReset,
   });
+
+  /// The border between the panes was dragged: the width [secondary] should
+  /// have (a leading pane). Null keeps its width fixed.
+  final ValueChanged<double>? onResize;
+
+  /// The border was double-clicked.
+  final VoidCallback? onResizeReset;
 
   final Widget primary;
   final Widget secondary;
@@ -123,7 +133,74 @@ class AdaptiveSplitView extends StatelessWidget {
       if (!secondaryOnLeading && divider) const VerticalDivider(width: 1),
       if (!secondaryOnLeading) side,
     ];
-    return Row(children: children);
+    final resize = onResize;
+    if (resize == null || !secondaryOnLeading) return Row(children: children);
+    return Stack(
+      children: [
+        Row(children: children),
+        Positioned(
+          // Mostly over the page: the sidebar's scrollbar is just left of it.
+          left: secondaryWidth - 2,
+          top: 0,
+          bottom: 0,
+          width: 8,
+          child: _ResizeHandle(width: secondaryWidth, onResize: resize, onReset: onResizeReset),
+        ),
+      ],
+    );
+  }
+}
+
+/// The draggable border between a sidebar and the page, marked while the
+/// pointer is on it.
+class _ResizeHandle extends StatefulWidget {
+  const _ResizeHandle({required this.width, required this.onResize, this.onReset});
+
+  final double width;
+  final ValueChanged<double> onResize;
+  final VoidCallback? onReset;
+
+  @override
+  State<_ResizeHandle> createState() => _ResizeHandleState();
+}
+
+class _ResizeHandleState extends State<_ResizeHandle> {
+  bool _hovered = false;
+  bool _dragging = false;
+  double _fromWidth = 0;
+  double _fromX = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: widget.onReset,
+        // Counted from where it was pressed, so the border stays under the
+        // pointer.
+        dragStartBehavior: DragStartBehavior.down,
+        onHorizontalDragStart: (details) {
+          _fromWidth = widget.width;
+          _fromX = details.globalPosition.dx;
+          setState(() => _dragging = true);
+        },
+        onHorizontalDragUpdate: (details) =>
+            widget.onResize(_fromWidth + details.globalPosition.dx - _fromX),
+        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+        onHorizontalDragCancel: () => setState(() => _dragging = false),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(left: 1),
+            width: 2,
+            color: _hovered || _dragging ? context.colors.primary : Colors.transparent,
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -59,7 +59,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final ascending = fileState.sortOrder == SortOrder.ascending;
 
-    return CompactText(child: Column(
+    return CompactText(by: 2, child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [

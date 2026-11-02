@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:explorer/shared/layout/sidebar_width.dart';
+import 'package:explorer/features/file_explorere/widgets/this_pc_view.dart';
 import 'package:explorer/features/file_explorere/explorer_zoom.dart';
 import 'package:explorer/shared/widgets/scrollbar_scroll_view.dart';
 import 'package:explorer/core/platform/desktop.dart';
@@ -215,9 +217,6 @@ String? _pathOf(FileExplorerState state) => switch (state) {
 class _FileExplorerUI extends StatelessWidget {
   const _FileExplorerUI();
 
-  /// Sidebar width when it's docked next to the files (tablets, desktops).
-  static const double _sidebarWidth = 280;
-
   @override
   Widget build(BuildContext context) {
     // We listen to multiple BLoCs to build the final UI
@@ -243,7 +242,7 @@ class _FileExplorerUI extends StatelessWidget {
         ? clipboardState
         : null;
     final bool canCreate =
-        loaded != null && !ExplorerPaths.isWindowsRoots(loaded.path);
+        loaded != null && !ExplorerPaths.isVirtual(loaded.path);
     final bool showFab =
         !docked &&
         canCreate &&
@@ -280,7 +279,7 @@ class _FileExplorerUI extends StatelessWidget {
                 clipboard: pasteState,
                 onCancel: () =>
                     context.read<ClipboardBloc>().add(ClearClipboard()),
-                onPaste: loaded == null || ExplorerPaths.isWindowsRoots(path!)
+                onPaste: loaded == null || ExplorerPaths.isVirtual(path!)
                     ? null
                     : () => context.read<ClipboardBloc>().add(
                         PasteFromClipboard(loaded.path),
@@ -349,10 +348,19 @@ class _FileExplorerUI extends StatelessWidget {
         child: docked
             ? ColoredBox(
                 color: context.colors.background,
-                child: AdaptiveSplitView(
-                  secondaryWidth: _sidebarWidth,
-                  primary: page,
-                  secondary: const DockedSidebar(child: MainDrawerContent()),
+                // Its border can be dragged.
+                child: ValueListenableBuilder<double>(
+                  valueListenable: SidebarWidth.instance,
+                  builder: (context, width, _) => AdaptiveSplitView(
+                    secondaryWidth: math.min(
+                      width,
+                      math.max(SidebarWidth.min, MediaQuery.sizeOf(context).width / 2),
+                    ),
+                    onResize: SidebarWidth.instance.set,
+                    onResizeReset: () => SidebarWidth.instance.set(SidebarWidth.usual),
+                    primary: page,
+                    secondary: const DockedSidebar(child: MainDrawerContent()),
+                  ),
                 ),
               )
             : page,
@@ -377,14 +385,18 @@ class _FileExplorerUI extends StatelessWidget {
     final command = _commandPressed;
     final selected = state.selectedItems.toList();
     final single = selected.length == 1 ? selected.single : null;
-    final inFolder = !ExplorerPaths.isWindowsRoots(state.path);
+    final inFolder = !ExplorerPaths.isVirtual(state.path);
     final clipboard = context.read<ClipboardBloc>();
+    // This PC's drives and libraries aren't for moving, renaming or deleting.
+    final thisPc = ExplorerPaths.isWindowsRoots(state.path);
 
     if (command && key == LogicalKeyboardKey.keyA) {
+      if (thisPc) return KeyEventResult.ignored;
       bloc.add(SelectAll());
     } else if (command && key == LogicalKeyboardKey.keyC && selected.isNotEmpty) {
       clipboard.add(CopyToClipboard(selected));
     } else if (command && key == LogicalKeyboardKey.keyX && selected.isNotEmpty) {
+      if (thisPc) return KeyEventResult.ignored;
       clipboard.add(CutToClipboard(selected));
     } else if (command && key == LogicalKeyboardKey.keyV) {
       // On macOS files another app copied are looked at only now.
@@ -421,8 +433,10 @@ class _FileExplorerUI extends StatelessWidget {
             // ⌘⌫ on macOS, where the delete key is backspace.
             (Platform.isMacOS && command && key == LogicalKeyboardKey.backspace)) &&
         selected.isNotEmpty) {
+      if (thisPc) return KeyEventResult.ignored;
       fileActionsService.deleteFiles(context, selected);
     } else if (key == LogicalKeyboardKey.f2 && single != null) {
+      if (thisPc) return KeyEventResult.ignored;
       fileActionsService.showRenameDialog(context, single);
     } else if (key == LogicalKeyboardKey.escape && selected.isNotEmpty) {
       bloc.add(ToggleSelectionMode(enable: false));
@@ -509,6 +523,8 @@ class _FileExplorerUI extends StatelessWidget {
     final loaded = fileExplorerState is FileExplorerLoaded
         ? fileExplorerState
         : null;
+    // This PC has one layout: nothing to arrange.
+    final thisPc = path != null && ExplorerPaths.isWindowsRoots(path);
     return ExplorerHeader(
       crumbs: path == null
           ? const []
@@ -516,9 +532,9 @@ class _FileExplorerUI extends StatelessWidget {
       wide: docked,
       onNavigate: (target) => bloc.add(LoadDirectory(target)),
       onMenuPressed: docked ? null : () => Scaffold.of(context).openDrawer(),
-      viewMode: loaded?.viewMode,
-      sortOption: loaded?.sortOption,
-      sortOrder: loaded?.sortOrder,
+      viewMode: thisPc ? null : loaded?.viewMode,
+      sortOption: thisPc ? null : loaded?.sortOption,
+      sortOrder: thisPc ? null : loaded?.sortOrder,
       groupBy: loaded?.groupBy,
       onGroupByChanged: loaded == null ? null : (g) => bloc.add(ChangeGroupBy(g)),
       searchOpen: loaded?.searchOpen ?? false,
@@ -668,8 +684,9 @@ class _FileExplorerUI extends StatelessWidget {
 
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
-      if (!searching) return null;
       final dir = p.dirname(e.path);
+      if (ExplorerPaths.isCategory(state.path)) return p.basename(dir);
+      if (!searching) return null;
       return p.equals(dir, state.path) ? null : p.relative(dir, from: state.path);
     }
 
@@ -737,7 +754,26 @@ class _FileExplorerUI extends StatelessWidget {
 
     final zoom = ExplorerZoom.instance.value;
     final List<Widget> slivers;
-    if (state.viewMode == ViewMode.grid || state.viewMode == ViewMode.gallery) {
+    if (ExplorerPaths.isWindowsRoots(state.path)) {
+      slivers = [
+        ...thisPcSlivers(
+          entities: entities,
+          labelOf: state.labelFor,
+          isSelected: state.selectedItems.contains,
+          top: top,
+          zoom: zoom,
+          onTap: onTap,
+          onSecondaryTap: onSecondaryTap,
+          // Files can be dropped on them; they aren't dragged away.
+          wrap: (entity, item) => FileDropTarget(
+            folder: entity.path,
+            onDrop: (paths, move) => drop(paths, entity.path, move),
+            builder: (context, hovering) => DropHighlight(active: hovering, child: item),
+          ),
+        ),
+        if (searching) footer,
+      ];
+    } else if (state.viewMode == ViewMode.grid || state.viewMode == ViewMode.gallery) {
       final gallery = state.viewMode == ViewMode.gallery;
       final pad = wide ? 24.0 : 16.0;
       final spacing = wide ? 12.0 : 10.0;
@@ -838,7 +874,7 @@ class _FileExplorerUI extends StatelessWidget {
       ],
     );
     // Dropped on the space around the items: into this folder.
-    final list = ExplorerPaths.isWindowsRoots(state.path)
+    final list = ExplorerPaths.isVirtual(state.path)
         ? scroller
         : FileDropTarget(
             folder: state.path,
@@ -915,6 +951,10 @@ class _FileExplorerUI extends StatelessWidget {
       _open(context, state, entity);
       return;
     }
+    if (ExplorerPaths.isWindowsRoots(state.path)) {
+      bloc.add(SetSelection({entity}));
+      return;
+    }
     if (_commandPressed) {
       final items = {...state.selectedItems};
       if (!items.remove(entity)) items.add(entity);
@@ -955,10 +995,17 @@ class _FileExplorerUI extends StatelessWidget {
     }
     _clicks.anchorPath = entity.path;
     context.read<FileExplorerBloc>().add(SetSelection({entity}));
+    final bloc = context.read<FileExplorerBloc>();
+    final thisPc = ExplorerPaths.isWindowsRoots(state.path);
     fileActionsService.showContextMenu(
       context,
       entity,
       position,
+      protected: thisPc,
+      // From a category or a search of subfolders: where it really is.
+      onShowInFolder: !thisPc && !p.equals(p.dirname(entity.path), state.path)
+          ? () => bloc.add(LoadDirectory(p.dirname(entity.path)))
+          : null,
       onOpen: () => _open(context, state, entity),
       onShowContents: () =>
           context.read<FileExplorerBloc>().add(LoadDirectory(entity.path)),
@@ -1046,7 +1093,7 @@ class _FileExplorerUI extends StatelessWidget {
   ) async {
     final bloc = context.read<FileExplorerBloc>();
     final clipboard = context.read<ClipboardBloc>();
-    final inFolder = !ExplorerPaths.isWindowsRoots(state.path);
+    final inFolder = !ExplorerPaths.isVirtual(state.path);
     // Also files another app copied (macOS), read when pasting.
     final canPaste = inFolder && clipboard.canPaste;
     final action = await ExplorerMenu.showAt<Object>(
@@ -1182,7 +1229,8 @@ class _FileExplorerUI extends StatelessWidget {
 
       try {
         final destPath = p.join(
-          state.path,
+          // A category isn't a folder: next to the first file.
+          ExplorerPaths.isVirtual(state.path) ? p.dirname(filesOnly.first.path) : state.path,
           fileName.endsWith('.zip') ? fileName : '$fileName.zip',
         );
         await ArchiveService().compressFiles(filesOnly, File(destPath));
@@ -1212,7 +1260,7 @@ class _FileExplorerUI extends StatelessWidget {
     FileExplorerState state,
   ) async {
     if (state is! FileExplorerLoaded ||
-        ExplorerPaths.isWindowsRoots(state.path)) {
+        ExplorerPaths.isVirtual(state.path)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Open a folder to share it')),
       );

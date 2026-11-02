@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:explorer/shared/ui/app_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -72,21 +73,35 @@ class AppSheet extends StatelessWidget {
     required WidgetBuilder builder,
     SheetStyle style = SheetStyle.dialog,
   }) {
+    // With the window effect on, a lighter shade behind and a blurred,
+    // see-through surface like the window's.
+    final glass = AppGlass.isOn(context);
+    final barrier = Colors.black.withValues(alpha: glass ? 0.15 : 0.35);
     if (style == SheetStyle.dialog) {
       return showDialog<T>(
         context: context,
+        barrierColor: glass ? barrier : null,
         builder: (dialog) {
           final size = MediaQuery.sizeOf(dialog);
+          final theme = Theme.of(dialog);
+          final content = ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: builder(dialog),
+            ),
+          );
           return Dialog(
             insetPadding: const EdgeInsets.all(24),
             clipBehavior: Clip.antiAlias,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.85),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: builder(dialog),
-              ),
-            ),
+            backgroundColor: glass ? Colors.transparent : null,
+            elevation: glass ? 0 : null,
+            child: glass
+                ? GlassSurface(
+                    color: theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface,
+                    child: content,
+                  )
+                : content,
           );
         },
       );
@@ -95,7 +110,7 @@ class AppSheet extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
+      barrierColor: barrier,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (sheet, _, _) => _SideSheet(child: Builder(builder: builder)),
       transitionBuilder: (_, animation, _, child) => SlideTransition(
@@ -137,36 +152,39 @@ class _SideSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final width = math.min(460.0, MediaQuery.sizeOf(context).width * 0.9);
+    final glass = AppGlass.isOn(context);
+    final solid = theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface;
+    final sheet = SizedBox(
+      width: width,
+      height: double.infinity,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
-        color: theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface,
-        elevation: 8,
+        color: glass ? Colors.transparent : solid,
+        elevation: glass ? 0 : 8,
         shadowColor: Colors.black45,
         shape: Border(left: BorderSide(color: theme.dividerColor)),
-        child: SizedBox(
-          width: width,
-          height: double.infinity,
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                    child: IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                      onPressed: () => Navigator.maybePop(context),
-                    ),
-                  ),
-                ),
-                Expanded(child: child),
-              ],
-            ),
-          ),
-        ),
+        child: glass ? GlassSurface(color: solid, child: sheet) : sheet,
       ),
     );
   }

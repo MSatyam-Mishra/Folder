@@ -596,15 +596,35 @@ class _SearchField extends StatefulWidget {
 
 class _SearchFieldState extends State<_SearchField> {
   late final _controller = TextEditingController(text: widget.query);
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Ready to type. `autofocus` isn't enough: it only applies when nothing
+    // has the keyboard yet, and the file list has it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final border = WidgetStateInputBorder.resolveWith((states) {
+      final focused = states.contains(WidgetState.focused);
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: focused ? colors.ring : colors.input, width: focused ? 2 : 1),
+      );
+    });
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () => widget.onClosed?.call(),
@@ -613,11 +633,12 @@ class _SearchFieldState extends State<_SearchField> {
         height: 38,
         child: TextField(
           controller: _controller,
-          autofocus: true,
+          focusNode: _focus,
           onChanged: widget.onChanged,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
             isDense: true,
+            border: border,
             hintText: widget.hint,
             prefixIcon: const Icon(LucideIcons.search, size: 16),
             prefixIconConstraints: const BoxConstraints(minWidth: 36),

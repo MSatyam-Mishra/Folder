@@ -51,7 +51,10 @@ class FolderPrefsService {
   ViewMode getViewMode(String path) {
     final key = _getPathKey(path);
     final jsonString = _prefs.getString(key);
-    if (jsonString == null) return ViewMode.list; // Default
+    if (jsonString == null) {
+      final pictures = path == ExplorerPaths.categoryPath('Photos') || path == ExplorerPaths.categoryPath('Video');
+      return pictures ? ViewMode.gallery : ViewMode.list; // Default
+    }
 
     final map = jsonDecode(jsonString);
     return ViewMode.values[map['viewMode'] ?? 0];
@@ -60,7 +63,9 @@ class FolderPrefsService {
   SortOption getSortOption(String path) {
     final key = _getPathKey(path);
     final jsonString = _prefs.getString(key);
-    if (jsonString == null) return SortOption.name; // Default
+    if (jsonString == null) {
+      return ExplorerPaths.isCategory(path) ? SortOption.date : SortOption.name; // Default
+    }
 
     final map = jsonDecode(jsonString);
     return SortOption.values[map['sortOption'] ?? 0];
@@ -69,7 +74,9 @@ class FolderPrefsService {
   SortOrder getSortOrder(String path) {
     final key = _getPathKey(path);
     final jsonString = _prefs.getString(key);
-    if (jsonString == null) return SortOrder.ascending; // Default
+    if (jsonString == null) {
+      return ExplorerPaths.isCategory(path) ? SortOrder.descending : SortOrder.ascending; // Default
+    }
 
     final map = jsonDecode(jsonString);
     return SortOrder.values[map['sortOrder'] ?? 0];

@@ -78,13 +78,17 @@ class FileActionsService {
 
   /// Desktop right-click menu for [entity] at [position], with the actions
   /// of [showFileOptionsMenu]. [onOpen] opens it as a click would;
-  /// [onShowContents] browses inside a macOS package.
+  /// [onShowContents] browses inside a macOS package; [onShowInFolder] goes
+  /// to its folder. [protected] leaves out moving, renaming and deleting
+  /// (This PC's drives and libraries).
   Future<void> showContextMenu(
     BuildContext context,
     FileSystemEntity entity,
     Offset position, {
     required VoidCallback onOpen,
     VoidCallback? onShowContents,
+    VoidCallback? onShowInFolder,
+    bool protected = false,
   }) async {
     final isFile = entity is File;
     final package = isPackage(entity);
@@ -120,26 +124,34 @@ class FileActionsService {
               value: _EntityAction.openWith,
               label: 'Open with…',
               icon: LucideIcons.squareArrowOutUpRight),
+        if (onShowInFolder != null)
+          ExplorerMenu.item(context,
+              value: _EntityAction.showInFolder,
+              label: 'Show in folder',
+              icon: LucideIcons.folderSearch),
         if (imageEntries.isNotEmpty) ...[
           ExplorerMenu.divider(),
           ...imageEntries,
         ],
         ExplorerMenu.divider(),
-        ExplorerMenu.item(context,
-            value: _EntityAction.copy,
-            label: 'Copy',
-            icon: LucideIcons.copy,
-            shortcut: shortcut('C')),
-        ExplorerMenu.item(context,
-            value: _EntityAction.cut,
-            label: 'Cut',
-            icon: LucideIcons.scissors,
-            shortcut: shortcut('X')),
-        ExplorerMenu.item(context,
-            value: _EntityAction.rename,
-            label: 'Rename',
-            icon: LucideIcons.pencil,
-            shortcut: 'F2'),
+        if (!protected) ...[
+          ExplorerMenu.item(context,
+              value: _EntityAction.copy,
+              label: 'Copy',
+              icon: LucideIcons.copy,
+              shortcut: shortcut('C')),
+          ExplorerMenu.item(context,
+              value: _EntityAction.cut,
+              label: 'Cut',
+              icon: LucideIcons.scissors,
+              shortcut: shortcut('X')),
+          ExplorerMenu.item(context,
+              value: _EntityAction.rename,
+              label: 'Rename',
+              icon: LucideIcons.pencil,
+              shortcut: 'F2'),
+          ExplorerMenu.divider(),
+        ],
         ExplorerMenu.divider(),
         shareSubmenu(context, [entity],
             label: isFile ? 'Share file' : 'Share folder'),
@@ -153,13 +165,15 @@ class FileActionsService {
             label: 'Properties',
             icon: LucideIcons.info,
             shortcut: Platform.isMacOS ? '⌘I' : 'Alt+Enter'),
-        ExplorerMenu.divider(),
-        ExplorerMenu.item(context,
-            value: _EntityAction.delete,
-            label: 'Delete',
-            icon: LucideIcons.trash2,
-            destructive: true,
-            shortcut: deleteShortcut),
+        if (!protected) ...[
+          ExplorerMenu.divider(),
+          ExplorerMenu.item(context,
+              value: _EntityAction.delete,
+              label: 'Delete',
+              icon: LucideIcons.trash2,
+              destructive: true,
+              shortcut: deleteShortcut),
+        ],
       ],
     );
     if (action == null || !context.mounted) return;
@@ -170,6 +184,8 @@ class FileActionsService {
         onOpen();
       case _EntityAction.showContents:
         onShowContents?.call();
+      case _EntityAction.showInFolder:
+        onShowInFolder?.call();
       case _EntityAction.newTab:
         ExplorerTabs.instance.open(entity.path);
       case _EntityAction.newWindow:
@@ -1183,6 +1199,7 @@ enum ShareMethod { web, ftp, localSend, bluetooth, apps }
 enum _EntityAction {
   open,
   showContents,
+  showInFolder,
   newTab,
   newWindow,
   openWith,

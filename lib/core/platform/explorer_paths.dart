@@ -9,6 +9,27 @@ abstract final class ExplorerPaths {
   /// Virtual folder listing drives + libraries on Windows.
   static const String windowsRoots = 'explorer://windows-roots';
 
+  static const String _categoryPrefix = 'explorer://category/';
+
+  /// A category (Video, Documents...) as a folder holding its files.
+  static String categoryPath(String name) => '$_categoryPrefix$name';
+
+  static bool isCategory(String path) => path.startsWith(_categoryPrefix);
+
+  /// Listed by the app, not a folder on disk: nothing can be created or
+  /// pasted there, and it has no folder to watch.
+  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path);
+
+  /// Whether the category [name] opens as such a folder: on computers,
+  /// where its files are plain files. macOS's photos and videos are in the
+  /// Photos library and phones have their media library; those keep their
+  /// own screens.
+  static bool categoryIsFolder(String name) => switch (name) {
+        'Audio' || 'Documents' || 'Archives' => isDesktop,
+        'Photos' || 'Video' => Platform.isWindows || Platform.isLinux,
+        _ => false,
+      };
+
   static bool get isDesktop =>
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
@@ -41,6 +62,7 @@ abstract final class ExplorerPaths {
 
   /// Parent path for back navigation; returns null when already at app root.
   static String? parentOf(String path) {
+    if (isCategory(path)) return homePath;
     if (isAppRoot(path)) return null;
     if (Platform.isWindows && isDriveRoot(path)) return windowsRoots;
 
@@ -54,6 +76,7 @@ abstract final class ExplorerPaths {
 
   static String titleForPath(String path) {
     if (isWindowsRoots(path)) return 'This PC';
+    if (isCategory(path)) return path.substring(_categoryPrefix.length);
     if (Platform.isAndroid && path == androidInternalStorage) return 'Files';
     if (isDriveRoot(path)) {
       return 'Local Disk (${path[0].toUpperCase()}:)';

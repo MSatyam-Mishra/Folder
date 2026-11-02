@@ -176,8 +176,9 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       for (final e in current.entities)
         if (matcher.matches(current.labelFor(e))) e,
     ];
-    // This PC lists drives: searching all of them would take ages.
-    final deep = !ExplorerPaths.isWindowsRoots(current.path);
+    // This PC lists drives: searching all of them would take ages. A
+    // category's files are all listed already.
+    final deep = !ExplorerPaths.isVirtual(current.path);
     var shown = current.copyWith(searchOpen: true, query: query, searchResults: List.of(results), searching: deep);
     emit(shown.copyWith(groups: await _group(shown)));
     if (!deep) return;
@@ -240,7 +241,7 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
     _changed?.cancel();
     _changed = null;
     _watched = path;
-    if (ExplorerPaths.isWindowsRoots(path)) return;
+    if (ExplorerPaths.isVirtual(path)) return;
     try {
       _watcher = Directory(path).watch().listen(
         (_) {

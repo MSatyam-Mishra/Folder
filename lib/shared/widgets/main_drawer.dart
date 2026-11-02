@@ -173,6 +173,11 @@ class MainDrawerContent extends StatelessWidget {
 
   static Future<void> _openCategory(BuildContext context, String name) async {
     dismissDrawer(context);
+    // On computers: a folder holding its files, in the browser.
+    if (ExplorerPaths.categoryIsFolder(name)) {
+      context.read<FileExplorerBloc>().add(LoadDirectory(ExplorerPaths.categoryPath(name)));
+      return;
+    }
     final type = switch (name) {
       'Photos' => RequestType.image,
       'Video' => RequestType.video,
@@ -225,7 +230,7 @@ class MainDrawerContent extends StatelessWidget {
     final current = explorer.state;
     final folder =
         current is FileExplorerLoaded &&
-            !ExplorerPaths.isWindowsRoots(current.path)
+            !ExplorerPaths.isVirtual(current.path)
         ? current.path
         : Platform.isAndroid
         ? ExplorerPaths.androidInternalStorage
@@ -289,8 +294,14 @@ class _SidebarHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Explorer', style: text.titleSmall),
-                Text('Files, viewers and tools', style: text.bodySmall),
+                Text('Explorer', maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleSmall),
+                // One line, however narrow the sidebar is made.
+                Text(
+                  'Files, viewers and tools',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall,
+                ),
               ],
             ),
           ),

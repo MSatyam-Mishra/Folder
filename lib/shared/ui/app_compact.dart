@@ -1,20 +1,21 @@
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:flutter/material.dart';
 
-/// Text in [child] about 1 px smaller (14 px becomes 13) on computers, for
-/// panes read up close beside the files: the sidebar and Options. Phones
-/// keep their sizes.
+/// Text in [child] about [by] px smaller (with 1, 14 px becomes 13) on
+/// computers, for panes read up close beside the files: the sidebar and
+/// Options. Phones keep their sizes.
 class CompactText extends StatelessWidget {
-  const CompactText({super.key, required this.child});
+  const CompactText({super.key, required this.child, this.by = 1});
 
   final Widget child;
+  final double by;
 
   @override
   Widget build(BuildContext context) {
     if (!Desktop.isDesktop) return child;
     final media = MediaQuery.of(context);
     // On top of the system's own text size.
-    final scale = media.textScaler.scale(14) / 14 * (13 / 14);
+    final scale = media.textScaler.scale(14) / 14 * ((14 - by) / 14);
     return MediaQuery(data: media.copyWith(textScaler: TextScaler.linear(scale)), child: child);
   }
 }

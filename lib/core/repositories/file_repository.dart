@@ -1,5 +1,9 @@
 import 'dart:io';
 
+import 'package:photo_manager/photo_manager.dart' show RequestType;
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:explorer/core/services/device_files.dart';
+import 'package:explorer/features/category_view/home_media.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/platform/macos_files.dart';
 import 'package:explorer/core/platform/windows_locations.dart';
@@ -23,8 +27,27 @@ abstract class FileRepository {
 }
 
 class LocalFileRepository implements FileRepository {
+  /// The files of a category; tests replace it.
+  @visibleForTesting
+  static Future<List<FileSystemEntity>> Function(String name) categoryFiles = _findCategory;
+
+  static Future<List<FileSystemEntity>> _findCategory(String name) async {
+    final files = await switch (name) {
+      'Photos' => HomeMedia.find(RequestType.image),
+      'Video' => HomeMedia.find(RequestType.video),
+      'Audio' => HomeMedia.find(RequestType.audio),
+      'Documents' => DeviceFiles.find(DeviceFileGroup.documents),
+      'Archives' => DeviceFiles.find(DeviceFileGroup.archives),
+      _ => Future.value(const <DeviceFile>[]),
+    };
+    return [for (final file in files) File(file.path)];
+  }
+
   @override
   Future<List<FileSystemEntity>> listEntities(String path) async {
+    if (ExplorerPaths.isCategory(path)) {
+      return categoryFiles(ExplorerPaths.titleForPath(path));
+    }
     if (ExplorerPaths.isWindowsRoots(path)) {
       final locations = await WindowsLocations.listAll();
       final entities = <FileSystemEntity>[];
@@ -129,7 +152,7 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<bool> exists(String path) {
-    if (ExplorerPaths.isWindowsRoots(path)) {
+    if (ExplorerPaths.isVirtual(path)) {
       return Future.value(true);
     }
     return FileSystemEntity.type(

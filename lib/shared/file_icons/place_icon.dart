@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/thumbnails/system_icons.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:flutter/material.dart';
@@ -114,7 +115,9 @@ class PlaceIcon extends StatelessWidget {
     }
     final mac = look.style == AppStyle.macos;
     final symbol = Icon(mac ? place?.finderGlyph ?? icon : icon, size: size, color: color);
-    final folder = path ?? place?.folder;
+    // A category has its place's icon: it's no folder on disk.
+    final path = this.path;
+    final folder = path != null && !ExplorerPaths.isCategory(path) ? path : place?.folder;
     if (look.systemIcons && !mac && folder != null) {
       return SystemIcon(path: folder, size: size, fallback: symbol);
     }
