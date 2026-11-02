@@ -7,6 +7,7 @@ import macos_window_utils
 class MainFlutterWindow: NSWindow {
   private var imageText: ImageTextChannel?
   private var fileClipboard: FileClipboardChannel?
+  private var systemIcons: SystemIconsChannel?
 
   override func awakeFromNib() {
     // macos_window_utils (used by flutter_acrylic for the translucent
@@ -24,8 +25,52 @@ class MainFlutterWindow: NSWindow {
     let messenger = flutterViewController.engine.binaryMessenger
     imageText = ImageTextChannel(messenger: messenger)
     fileClipboard = FileClipboardChannel(messenger: messenger)
+    systemIcons = SystemIconsChannel(messenger: messenger)
 
     super.awakeFromNib()
+  }
+}
+
+/// The icons Finder shows for folders, for the macOS style.
+///
+/// `icon` {path, size} gives the icon of the file or folder at path, as a
+/// PNG size pixels wide.
+class SystemIconsChannel {
+  private let channel: FlutterMethodChannel
+
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "explorer/system_icons", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "icon" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let args = call.arguments as? [String: Any],
+        let path = args["path"] as? String,
+        let size = args["size"] as? Int
+      else {
+        result(nil)
+        return
+      }
+      result(SystemIconsChannel.png(path: path, size: size))
+    }
+  }
+
+  private static func png(path: String, size: Int) -> FlutterStandardTypedData? {
+    let icon = NSWorkspace.shared.icon(forFile: path)
+    guard
+      let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size, bitsPerSample: 8,
+        samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+        bytesPerRow: 0, bitsPerPixel: 0)
+    else { return nil }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+    icon.draw(
+      in: NSRect(x: 0, y: 0, width: size, height: size), from: .zero, operation: .copy, fraction: 1)
+    NSGraphicsContext.restoreGraphicsState()
+    guard let data = bitmap.representation(using: .png, properties: [:]) else { return nil }
+    return FlutterStandardTypedData(bytes: data)
   }
 }
 

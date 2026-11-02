@@ -59,7 +59,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final ascending = fileState.sortOrder == SortOrder.ascending;
 
-    return Column(
+    return CompactText(child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -71,10 +71,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
           style: _compactSegments,
           showSelectedIcon: false,
           segments: const [
-            ButtonSegment(value: ViewMode.list, icon: Icon(LucideIcons.list, size: 16), label: Text('List')),
-            ButtonSegment(value: ViewMode.grid, icon: Icon(LucideIcons.layoutGrid, size: 16), label: Text('Grid')),
-            ButtonSegment(value: ViewMode.compact, icon: Icon(LucideIcons.rows3, size: 16), label: Text('Dense')),
-            ButtonSegment(value: ViewMode.gallery, icon: Icon(LucideIcons.images, size: 16), label: Text('Gallery')),
+            ButtonSegment(value: ViewMode.list, icon: Icon(LucideIcons.list, size: 15), label: Text('List')),
+            ButtonSegment(value: ViewMode.grid, icon: Icon(LucideIcons.layoutGrid, size: 15), label: Text('Grid')),
+            ButtonSegment(value: ViewMode.compact, icon: Icon(LucideIcons.rows3, size: 15), label: Text('Dense')),
+            ButtonSegment(value: ViewMode.gallery, icon: Icon(LucideIcons.images, size: 15), label: Text('Gallery')),
           ],
           selected: {fileState.viewMode},
           onSelectionChanged: (s) => onViewModeChanged(s.first),
@@ -87,7 +87,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
             children: [
               Tooltip(
                 message: 'Icon size',
-                child: Icon(LucideIcons.image, size: 14, color: context.colors.mutedForeground),
+                child: Icon(LucideIcons.image, size: 13, color: context.colors.mutedForeground),
               ),
               Expanded(
                 child: Slider(
@@ -98,7 +98,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
                   onChanged: ExplorerZoom.instance.set,
                 ),
               ),
-              Icon(LucideIcons.image, size: 22, color: context.colors.mutedForeground),
+              Icon(LucideIcons.image, size: 21, color: context.colors.mutedForeground),
               SizedBox(
                 width: 48,
                 child: Text('${(zoom * 100).round()}%', textAlign: TextAlign.end, style: text.bodySmall),
@@ -127,10 +127,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
                 style: _compactSegments,
                 showSelectedIcon: false,
                 segments: const [
-                  ButtonSegment(value: SortOption.name, icon: Icon(LucideIcons.arrowDownAZ, size: 16), label: Text('Name')),
-                  ButtonSegment(value: SortOption.date, icon: Icon(LucideIcons.calendarClock, size: 16), label: Text('Date')),
-                  ButtonSegment(value: SortOption.size, icon: Icon(LucideIcons.ruler, size: 16), label: Text('Size')),
-                  ButtonSegment(value: SortOption.type, icon: Icon(LucideIcons.shapes, size: 16), label: Text('Type')),
+                  ButtonSegment(value: SortOption.name, icon: Icon(LucideIcons.arrowDownAZ, size: 15), label: Text('Name')),
+                  ButtonSegment(value: SortOption.date, icon: Icon(LucideIcons.calendarClock, size: 15), label: Text('Date')),
+                  ButtonSegment(value: SortOption.size, icon: Icon(LucideIcons.ruler, size: 15), label: Text('Size')),
+                  ButtonSegment(value: SortOption.type, icon: Icon(LucideIcons.shapes, size: 15), label: Text('Type')),
                 ],
                 selected: {fileState.sortOption},
                 onSelectionChanged: (s) =>
@@ -153,7 +153,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
                   ascending
                       ? LucideIcons.arrowUpNarrowWide
                       : LucideIcons.arrowDownWideNarrow,
-                  size: 18,
+                  size: 17,
                 ),
               ),
             ),
@@ -179,17 +179,17 @@ class ExplorerOptionsSheet extends StatelessWidget {
           segments: const [
             ButtonSegment(
               value: ThemeMode.system,
-              icon: Icon(LucideIcons.monitor, size: 16),
+              icon: Icon(LucideIcons.monitor, size: 15),
               label: Text('System'),
             ),
             ButtonSegment(
               value: ThemeMode.light,
-              icon: Icon(LucideIcons.sun, size: 16),
+              icon: Icon(LucideIcons.sun, size: 15),
               label: Text('Light'),
             ),
             ButtonSegment(
               value: ThemeMode.dark,
-              icon: Icon(LucideIcons.moon, size: 16),
+              icon: Icon(LucideIcons.moon, size: 15),
               label: Text('Dark'),
             ),
           ],
@@ -213,7 +213,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
               for (final backdrop in WindowBackdrop.available)
                 ButtonSegment(
                   value: backdrop,
-                  icon: Icon(backdrop.icon, size: 16),
+                  icon: Icon(backdrop.icon, size: 15),
                   label: Text(backdrop.label),
                 ),
             ],
@@ -227,7 +227,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(LucideIcons.blend, size: 16, color: context.colors.mutedForeground),
+              Icon(LucideIcons.blend, size: 15, color: context.colors.mutedForeground),
               const SizedBox(width: 10),
               Text('Transparency', style: text.bodyMedium),
               const Spacer(),
@@ -260,7 +260,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
         ],
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          secondary: const Icon(LucideIcons.images, size: 18),
+          secondary: const Icon(LucideIcons.images, size: 17),
           value: settings.showThumbnails,
           onChanged: cubit.setShowThumbnails,
           title: const Text('Thumbnails'),
@@ -273,7 +273,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
             for (final style in FileIconStyle.values)
               ButtonSegment(
                 value: style,
-                icon: FileIcon(path: 'preview.pdf', size: 18, style: style),
+                icon: FileIcon(path: 'preview.pdf', size: 17, style: style),
                 label: Text(style.label),
               ),
           ],
@@ -291,7 +291,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
           },
         ),
       ],
-    );
+    ));
   }
 }
 
@@ -493,7 +493,7 @@ class _Swatch extends StatelessWidget {
               border: Border.all(color: colors.border),
             ),
             child: selected
-                ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
+                ? const Icon(LucideIcons.check, size: 15, color: Colors.white)
                 : null,
           ),
         ),
@@ -539,7 +539,7 @@ class _ActionRow extends StatelessWidget {
                   color: colors.muted,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 18, color: colors.foreground),
+                child: Icon(icon, size: 17, color: colors.foreground),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -557,7 +557,7 @@ class _ActionRow extends StatelessWidget {
               ),
               Icon(
                 LucideIcons.chevronRight,
-                size: 18,
+                size: 17,
                 color: colors.mutedForeground,
               ),
             ],

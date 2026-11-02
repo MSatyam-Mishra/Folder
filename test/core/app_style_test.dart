@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/core/theme/app_theme.dart';
 import 'package:explorer/core/theme/app_theme_settings.dart';
@@ -16,6 +19,25 @@ void main() {
     expect((await ThemePreferences.load()).style, AppStyle.dracula);
     expect(AppStyle.parse('nope'), AppStyle.standard);
     expect(AppStyle.parse(null), AppStyle.standard);
+  });
+
+  test('until chosen, Windows has Acrylic at 65%; a window effect turned off stays off', () async {
+    SharedPreferences.setMockInitialValues({});
+    final fresh = await ThemePreferences.load();
+    expect(fresh.backdrop, WindowBackdrop.standard);
+    expect(fresh.transparency, WindowBackdrop.standardTransparency);
+    if (Platform.isWindows) {
+      expect(fresh.backdrop, WindowBackdrop.acrylic);
+      expect(fresh.transparency, 0.65);
+    }
+    // Set off in 1.0.8, when it was only on or off.
+    SharedPreferences.setMockInitialValues({'window_effect': false});
+    expect((await ThemePreferences.load()).backdrop, WindowBackdrop.off);
+    // What the user picked stays.
+    SharedPreferences.setMockInitialValues({'window_backdrop': 'clear', 'window_transparency': 0.2});
+    final picked = await ThemePreferences.load();
+    expect(picked.backdrop, WindowBackdrop.clear);
+    expect(picked.transparency, 0.2);
   });
 
   test('Sweet and Dracula are always dark', () {

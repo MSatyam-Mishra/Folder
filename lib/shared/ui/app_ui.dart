@@ -4,6 +4,7 @@
 /// so screens work in light and dark mode with every colour scheme.
 library;
 
+export 'package:explorer/shared/ui/app_compact.dart';
 export 'package:explorer/shared/ui/app_panel.dart';
 export 'package:explorer/shared/ui/app_scaffold.dart';
 export 'package:explorer/shared/ui/app_sheet.dart';

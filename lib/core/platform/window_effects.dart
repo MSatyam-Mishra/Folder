@@ -77,12 +77,11 @@ enum WindowBackdrop {
     ];
   }
 
-  /// The one used until the user picks: Mica on Windows 11, as File
-  /// Explorer has, Acrylic on Windows 10.
+  /// The one used until the user picks.
   static WindowBackdrop get standard {
     if (Platform.isMacOS) return vibrancy;
     if (Platform.isLinux) return clear;
-    return WindowEffects.windowsBuild >= 22000 ? mica : acrylic;
+    return acrylic;
   }
 
   static WindowBackdrop parse(String? name) {
@@ -91,9 +90,11 @@ enum WindowBackdrop {
   }
 
   /// How see-through the app's backgrounds are, until the user sets it:
-  /// half, as File Explorer's items pane over Mica; little on Linux, where
-  /// nothing may blur.
-  static double get standardTransparency => Platform.isLinux ? 0.12 : 0.5;
+  /// little on Linux, where nothing may blur.
+  static double get standardTransparency {
+    if (Platform.isWindows) return 0.65;
+    return Platform.isLinux ? 0.12 : 0.5;
+  }
 }
 
 /// The window's backdrop ([WindowBackdrop]) through flutter_acrylic. The

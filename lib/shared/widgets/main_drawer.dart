@@ -54,7 +54,7 @@ class MainDrawerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return CompactText(child: Column(
       children: [
         const _SidebarHeader(),
         Divider(height: 1, color: context.colors.border),
@@ -151,7 +151,7 @@ class MainDrawerContent extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ));
   }
 
   static IconData? _categoryIcon(String name) => switch (name) {
@@ -280,7 +280,7 @@ class _SidebarHeader extends StatelessWidget {
             ),
             child: Icon(
               LucideIcons.folderOpen,
-              size: 18,
+              size: 17,
               color: colors.primaryForeground,
             ),
           ),
@@ -295,7 +295,7 @@ class _SidebarHeader extends StatelessWidget {
             ),
           ),
           AppIconButton(
-            icon: Icon(icon, size: 18),
+            icon: Icon(icon, size: 17),
             tooltip: '$label · tap to change',
             onPressed: () => context.read<ThemeCubit>().setThemeMode(next),
           ),

@@ -88,7 +88,7 @@ class AppSidebarItem extends StatelessWidget {
                   // Sweet and Dracula: their folder icons for places.
                   place: Place.named(label),
                   icon: icon,
-                  size: 18,
+                  size: 17,
                   // Finder tints the sidebar's icons; Sweet and Dracula
                   // colour them.
                   color: selected ? fg : context.look.sidebarIcons ?? context.look.iconColor(icon, fg),

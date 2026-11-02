@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:explorer/core/services/thumbnails/system_icons.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -53,6 +55,25 @@ enum Place {
     return pack == null ? null : 'assets/icon_themes/$pack/$_file.svg';
   }
 
+  /// The place's folder, for its icon; null if it has no fixed one.
+  String? get folder {
+    final home = Platform.environment[Platform.isWindows ? 'USERPROFILE' : 'HOME'];
+    if (home == null || home.isEmpty) return null;
+    return switch (this) {
+      Place.home => home,
+      Place.desktop => p.join(home, 'Desktop'),
+      Place.documents => p.join(home, 'Documents'),
+      Place.downloads => p.join(home, 'Downloads'),
+      Place.music => p.join(home, 'Music'),
+      Place.pictures => p.join(home, 'Pictures'),
+      Place.videos => p.join(home, 'Videos'),
+      Place.templates || Place.public => null,
+    };
+  }
+
+  /// Its symbol in Finder's sidebar.
+  IconData get finderGlyph => this == Place.downloads ? LucideIcons.circleArrowDown : glyph;
+
   /// The symbol on its folder where the style draws folders itself.
   IconData get glyph => switch (this) {
         Place.home => LucideIcons.house,
@@ -67,25 +88,96 @@ enum Place {
       };
 }
 
-/// A sidebar icon: the style's own for a [place] (Sweet's or Dracula's
-/// folder), else [icon].
+/// A sidebar or tab icon: Sweet's or Dracula's folder for a [place], the
+/// system's own for [path] or the [place] in the Windows style (Finder's
+/// sidebar has blue symbols, as the macOS style), else [icon].
 class PlaceIcon extends StatelessWidget {
-  const PlaceIcon({super.key, required this.place, required this.icon, this.size = 18, this.color});
+  const PlaceIcon({super.key, required this.place, required this.icon, this.path, this.size = 17, this.color});
 
   final Place? place;
   final IconData icon;
+  final String? path;
   final double size;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final asset = place?.assetFor(context.look);
-    if (asset == null) return Icon(icon, size: size, color: color);
-    // The folder art is wider than tall: drawn a little bigger than the
-    // symbols, in the same room so the labels stay in line.
+    final look = context.look;
+    final asset = place?.assetFor(look);
+    if (asset != null) {
+      // The folder art is wider than tall: drawn a little bigger than the
+      // symbols, in the same room so the labels stay in line.
+      return SizedBox.square(
+        dimension: size,
+        child: Transform.scale(scale: 1.25, child: SvgPicture.asset(asset, fit: BoxFit.contain)),
+      );
+    }
+    final mac = look.style == AppStyle.macos;
+    final symbol = Icon(mac ? place?.finderGlyph ?? icon : icon, size: size, color: color);
+    final folder = path ?? place?.folder;
+    if (look.systemIcons && !mac && folder != null) {
+      return SystemIcon(path: folder, size: size, fallback: symbol);
+    }
+    return symbol;
+  }
+}
+
+/// The icon the system itself shows for [path] ([SystemIcons]), or
+/// [fallback] until it comes, or if there's none.
+class SystemIcon extends StatefulWidget {
+  const SystemIcon({super.key, required this.path, required this.size, required this.fallback});
+
+  final String path;
+  final double size;
+  final Widget fallback;
+
+  @override
+  State<SystemIcon> createState() => _SystemIconState();
+}
+
+class _SystemIconState extends State<SystemIcon> {
+  Uint8List? _bytes;
+  String? _for;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _request();
+  }
+
+  @override
+  void didUpdateWidget(SystemIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _request();
+  }
+
+  void _request() {
+    final pixels = (widget.size * MediaQuery.devicePixelRatioOf(context)).ceil();
+    final key = '${widget.path}|$pixels';
+    if (key == _for) return;
+    _for = key;
+    _bytes = SystemIcons.known(widget.path, pixels);
+    SystemIcons.load(widget.path, pixels).then((bytes) {
+      if (mounted && _for == key && bytes != null && !identical(bytes, _bytes)) {
+        setState(() => _bytes = bytes);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = _bytes;
     return SizedBox.square(
-      dimension: size,
-      child: Transform.scale(scale: 1.25, child: SvgPicture.asset(asset, fit: BoxFit.contain)),
+      dimension: widget.size,
+      child: bytes == null
+          ? widget.fallback
+          : Image.memory(
+              bytes,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (_, _, _) => widget.fallback,
+            ),
     );
   }
 }

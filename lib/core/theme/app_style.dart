@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:explorer/core/services/thumbnails/system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -77,11 +78,13 @@ enum AppStyle {
           style: this,
           folder: const (Color(0xFF6FBDF6), Color(0xFF4AA3EC)),
           sidebarIcons: dark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
+          systemIcons: SystemIcons.supported && Platform.isMacOS,
         ),
       // File Explorer: yellow folders.
-      AppStyle.windows => const AppLook(
+      AppStyle.windows => AppLook(
           style: AppStyle.windows,
-          folder: (Color(0xFFFFD15E), Color(0xFFF0B22E)),
+          folder: const (Color(0xFFFFD15E), Color(0xFFF0B22E)),
+          systemIcons: SystemIcons.supported && Platform.isWindows,
         ),
       AppStyle.sweet => const AppLook(
           style: AppStyle.sweet,
@@ -118,7 +121,14 @@ enum AppStyle {
 /// What a style changes besides its colours, for widgets to read with
 /// `context.look`.
 class AppLook extends ThemeExtension<AppLook> {
-  const AppLook({required this.style, this.folder, this.iconPalette, this.sidebarIcons, this.iconPack});
+  const AppLook({
+    required this.style,
+    this.folder,
+    this.iconPalette,
+    this.sidebarIcons,
+    this.iconPack,
+    this.systemIcons = false,
+  });
 
   final AppStyle style;
 
@@ -134,6 +144,10 @@ class AppLook extends ThemeExtension<AppLook> {
   /// The folder and place icons the style has (`assets/icon_themes/<pack>`):
   /// Sweet's and Dracula's.
   final String? iconPack;
+
+  /// Folders show the system's own icons: the Windows style on Windows, the
+  /// macOS style on a Mac. Elsewhere [folder] draws them.
+  final bool systemIcons;
 
   /// The colour for [icon] in a colourful style: the same icon always gets
   /// the same colour, and kinds of action get fitting ones (delete red,
@@ -202,6 +216,7 @@ class AppLook extends ThemeExtension<AppLook> {
         iconPalette: iconPalette,
         sidebarIcons: sidebarIcons,
         iconPack: iconPack,
+        systemIcons: systemIcons,
       );
 
   @override

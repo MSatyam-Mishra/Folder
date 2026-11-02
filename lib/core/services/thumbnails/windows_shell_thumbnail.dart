@@ -9,7 +9,15 @@ import 'package:win32/win32.dart';
 /// side, as JPEG (PNG when it has transparency); null when Windows has
 /// none (it doesn't make pictures of a type's icon here). Blocking: run it
 /// in a background isolate.
-Uint8List? windowsShellThumbnail(String path, int size) {
+Uint8List? windowsShellThumbnail(String path, int size) =>
+    _shellImage(path, size, SIIGBF_THUMBNAILONLY | SIIGBF_BIGGERSIZEOK);
+
+/// The icon File Explorer shows for [path] (a file, a folder, a drive, or a
+/// shell name such as This PC's), [size] pixels wide, as PNG. Blocking: run
+/// it in a background isolate.
+Uint8List? windowsShellIcon(String path, int size) => _shellImage(path, size, SIIGBF_ICONONLY);
+
+Uint8List? _shellImage(String path, int size, int flags) {
   CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
   try {
     return using((arena) {
@@ -26,8 +34,7 @@ Uint8List? windowsShellThumbnail(String path, int size) {
       final want = arena<SIZE>()
         ..ref.cx = size
         ..ref.cy = size;
-      // Only a real thumbnail; a bigger one is fine (it's scaled anyway).
-      final result = factory.getImage(want.ref, SIIGBF_THUMBNAILONLY | SIIGBF_BIGGERSIZEOK, bitmap);
+      final result = factory.getImage(want.ref, flags, bitmap);
       factory.release();
       if (FAILED(result) || bitmap.value == 0) return null;
       try {
@@ -77,6 +84,8 @@ Uint8List? _encode(int bitmap, Arena arena) {
     for (var i = 3; i < bytes.length; i += 4) {
       bytes[i] = 255;
     }
+  } else {
+    _straightenAlpha(bytes);
   }
   final image = img.Image.fromBytes(
     width: width,
@@ -86,4 +95,21 @@ Uint8List? _encode(int bitmap, Arena arena) {
     order: img.ChannelOrder.bgra,
   );
   return opaque ? img.encodeJpg(image, quality: 85) : img.encodePng(image, level: 1);
+}
+
+/// The shell's images with transparency come premultiplied (colours already
+/// scaled by their alpha), PNGs hold them straight; without this, soft edges
+/// turn dark. A colour above its alpha means they're straight already.
+void _straightenAlpha(Uint8List bgra) {
+  for (var i = 0; i < bgra.length; i += 4) {
+    final alpha = bgra[i + 3];
+    if (bgra[i] > alpha || bgra[i + 1] > alpha || bgra[i + 2] > alpha) return;
+  }
+  for (var i = 0; i < bgra.length; i += 4) {
+    final alpha = bgra[i + 3];
+    if (alpha == 0 || alpha == 255) continue;
+    bgra[i] = (bgra[i] * 255 / alpha).round().clamp(0, 255);
+    bgra[i + 1] = (bgra[i + 1] * 255 / alpha).round().clamp(0, 255);
+    bgra[i + 2] = (bgra[i + 2] * 255 / alpha).round().clamp(0, 255);
+  }
 }

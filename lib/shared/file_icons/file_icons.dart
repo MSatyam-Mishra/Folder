@@ -358,6 +358,10 @@ class FolderIcon extends StatelessWidget {
     } else {
       art = SvgPicture.asset(FileIcons.folderAsset, fit: BoxFit.contain);
     }
+    // The system's own, on its system; what's above until it comes.
+    if (look.systemIcons && path != null) {
+      return SystemIcon(path: path, size: size, fallback: art);
+    }
     // The folder art isn't square; keep it inside a size×size box.
     return SizedBox.square(dimension: size, child: art);
   }

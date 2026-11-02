@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:explorer/shared/file_icons/place_icon.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
@@ -374,7 +375,13 @@ class _TabButtonState extends State<_TabButton> {
                 ),
                 child: Row(
                   children: [
-                    Icon(_iconFor(folder), size: 15, color: active ? colors.primary : colors.mutedForeground),
+                    PlaceIcon(
+                      place: Place.of(folder),
+                      path: folder,
+                      icon: _iconFor(folder),
+                      size: 15,
+                      color: active ? colors.primary : colors.mutedForeground,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

@@ -85,8 +85,9 @@ class _StorageDrawerItemState extends State<StorageDrawerItem> {
             children: [
               PlaceIcon(
                 place: Place.named(widget.title) ?? Place.of(widget.path),
+                path: widget.path,
                 icon: widget.icon,
-                size: 18,
+                size: 17,
                 color: context.look.sidebarIcons ?? context.look.iconColor(widget.icon, colors.foreground),
               ),
               const SizedBox(width: 12),
