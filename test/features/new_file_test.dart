@@ -9,7 +9,10 @@ import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:explorer/features/file_explorere/widgets/new_file_button.dart';
 import 'package:explorer/features/viewer_office/document/document_loader.dart';
+import 'package:explorer/features/viewer_office/screens/ppt_viewer_screen.dart';
+import 'package:explorer/features/viewer_office/screens/word_viewer_screen.dart';
 import 'package:explorer/features/viewer_office/slides/pptx_parser.dart';
+import 'package:explorer/features/viewer_sheets/screens/spreadsheet_screen.dart';
 import 'package:explorer/features/viewer_text/screens/tabbed_text_editor.dart';
 import 'package:explorer/features/viewer_text/screens/text_editor_screen.dart';
 import 'package:flutter/gestures.dart';
@@ -220,6 +223,50 @@ void main() {
       expect(find.byType(TabbedTextEditorScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
+
+    // Each editor: nothing in the folder until Save, which asks for the name.
+    for (final (label, name, ext, screen) in [
+      ('Word document (.docx)', 'Word', 'docx', WordViewerScreen),
+      ('Excel workbook (.xlsx)', 'Excel', 'xlsx', SpreadsheetScreen),
+      ('PowerPoint presentation (.pptx)', 'PowerPoint', 'pptx', PptViewerScreen),
+    ]) {
+      testWidgets('$name: opens to edit, and Save asks for the name', (tester) async {
+        SharedPreferences.setMockInitialValues({'new_file_kinds': [ext]});
+        await open(tester);
+        await openMenu(tester);
+        await tester.tap(find.text(label), kind: PointerDeviceKind.mouse);
+        for (var i = 0; i < 40 && find.byType(screen).evaluate().isEmpty; i++) {
+          await settle(tester);
+        }
+        final save = find.byTooltip('Save');
+        for (var i = 0; i < 80 && save.evaluate().isEmpty; i++) {
+          await settle(tester);
+        }
+        expect(save, findsWidgets, reason: 'in edit mode, with Save showing');
+        expect(root.listSync().map((e) => p.basename(e.path)), ['notes.txt'], reason: 'nothing made yet');
+
+        await tester.tap(save.first, kind: PointerDeviceKind.mouse);
+        await settle(tester);
+        // PowerPoint's Save is a menu.
+        if (find.text('Save as').evaluate().isEmpty) {
+          await tester.tap(find.text('Save').last, kind: PointerDeviceKind.mouse);
+          await settle(tester);
+        }
+        expect(find.text('Save as'), findsOneWidget);
+        await tester.enterText(find.byType(TextField).last, 'My $name file');
+        await settle(tester);
+        await tester.tap(find.text('Save').last, kind: PointerDeviceKind.mouse);
+
+        final made = File(p.join(root.path, 'My $name file.$ext'));
+        for (var i = 0; i < 80 && !made.existsSync(); i++) {
+          await settle(tester);
+        }
+        expect(made.existsSync(), isTrue);
+        expect(find.byType(screen), findsOneWidget, reason: 'still editing');
+        await tester.pumpWidget(const SizedBox());
+        await settle(tester);
+      });
+    }
 
     test("the blank files open in the app's own readers", () async {
       Future<List<int>> blank(String extension) =>

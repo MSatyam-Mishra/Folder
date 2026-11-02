@@ -139,8 +139,6 @@ class _PptViewerScreenState extends State<PptViewerScreen> {
         });
         _showThumbsAfterThisFrame();
         _finishLoad();
-        // A new file is there to be written in.
-        if (UntitledFiles.isUntitled(_file)) unawaited(_startEditing());
       case SlideLoadDone():
         _finishLoad();
       case SlideLoadFailed(:final error):
@@ -178,7 +176,10 @@ class _PptViewerScreenState extends State<PptViewerScreen> {
   void _finishLoad() {
     _loader = null;
     if (!_loaded.isCompleted) _loaded.complete();
-    if (mounted) setState(() => _loadDone = true);
+    if (!mounted) return;
+    setState(() => _loadDone = true);
+    // A new file is there to be written in.
+    if (UntitledFiles.isUntitled(_file) && !_editing && _error == null) unawaited(_startEditing());
   }
 
   void _showThumbsAfterThisFrame() {
