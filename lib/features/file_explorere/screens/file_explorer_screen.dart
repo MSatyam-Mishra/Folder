@@ -749,19 +749,12 @@ class _FileExplorerUI extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(pad, 0, pad, group.label.isEmpty ? 0 : 12),
           sliver: SliverGrid(
             // Column count follows the window width (phones ≈3, tablets 6+).
-            gridDelegate: gallery
-                ? SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: (wide ? 200 : 180) * zoom,
-                    childAspectRatio: 0.84,
-                    crossAxisSpacing: spacing,
-                    mainAxisSpacing: spacing,
-                  )
-                : SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: (wide ? 144 : 128) * zoom,
-                    childAspectRatio: 0.84,
-                    crossAxisSpacing: spacing,
-                    mainAxisSpacing: spacing,
-                  ),
+            gridDelegate: ZoomedGridDelegate(
+              maxTile: gallery ? (wide ? 200 : 180) : (wide ? 144 : 128),
+              aspectRatio: 0.84,
+              spacing: spacing,
+              zoom: zoom,
+            ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final entity = group.entities[index];
               return dragAndDrop(entity, FileGridItem(

@@ -1,11 +1,15 @@
 import 'dart:io';
 
+import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:explorer/features/file_explorere/explorer_zoom.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,6 +84,20 @@ void main() {
     testWidgets('style ${style.name} ${mode.name}', (tester) async {
       await window(tester, style, mode);
       await saveScreenshot(tester, 'style_${style.name}_${mode.name}');
+    }, skip: !screenshotsEnabled);
+  }
+
+  for (final mode in [ViewMode.grid, ViewMode.gallery]) {
+    testWidgets('zoomed ${mode.name}', (tester) async {
+      await window(tester, AppStyle.macos, ThemeMode.light);
+      BlocProvider.of<FileExplorerBloc>(tester.element(find.text('Roadmap.pdf'))).add(ChangeViewMode(mode));
+      await frames(tester);
+      await saveScreenshot(tester, 'zoom_${mode.name}_100');
+      ExplorerZoom.instance.set(2);
+      addTearDown(() => ExplorerZoom.instance.value = 1);
+      await tester.pump(const Duration(milliseconds: 500));
+      await frames(tester);
+      await saveScreenshot(tester, 'zoom_${mode.name}_200');
     }, skip: !screenshotsEnabled);
   }
 

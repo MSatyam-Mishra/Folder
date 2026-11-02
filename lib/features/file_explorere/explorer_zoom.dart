@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,6 +56,50 @@ class ExplorerZoom extends ValueNotifier<double> {
   /// Ctrl (Cmd on macOS) is held: the wheel zooms instead of scrolling.
   static bool get zoomKeyPressed =>
       Platform.isMacOS ? HardwareKeyboard.instance.isMetaPressed : HardwareKeyboard.instance.isControlPressed;
+}
+
+/// The grid and gallery at a zoom: tiles exactly [zoom] times the size they
+/// have at 100%, so every step shows. At 100% it's the usual grid (tiles up
+/// to [maxTile] wide, filling the row); zoomed, as many tiles as fit, with
+/// the row's spare room left at its end, as in File Explorer.
+class ZoomedGridDelegate extends SliverGridDelegate {
+  const ZoomedGridDelegate({
+    required this.maxTile,
+    required this.aspectRatio,
+    required this.spacing,
+    required this.zoom,
+  });
+
+  final double maxTile;
+  final double aspectRatio;
+  final double spacing;
+  final double zoom;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final room = constraints.crossAxisExtent;
+    final usual = math.max(1, (room / (maxTile + spacing)).ceil());
+    final usualTile = math.max(0.0, room - spacing * (usual - 1)) / usual;
+    final tile = math.min(usualTile * zoom, room);
+    // The small amount: at 100% the sum comes out a hair under `usual`.
+    final count = math.max(1, ((room + spacing) / (tile + spacing) + 1e-6).floor());
+    final height = tile / aspectRatio;
+    return SliverGridRegularTileLayout(
+      crossAxisCount: count,
+      mainAxisStride: height + spacing,
+      crossAxisStride: tile + spacing,
+      childMainAxisExtent: height,
+      childCrossAxisExtent: tile,
+      reverseCrossAxis: axisDirectionIsReversed(constraints.crossAxisDirection),
+    );
+  }
+
+  @override
+  bool shouldRelayout(ZoomedGridDelegate oldDelegate) =>
+      oldDelegate.maxTile != maxTile ||
+      oldDelegate.aspectRatio != aspectRatio ||
+      oldDelegate.spacing != spacing ||
+      oldDelegate.zoom != zoom;
 }
 
 /// Scrolling, except while Ctrl is held: the wheel then zooms (see

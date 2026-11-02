@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:explorer/shared/file_icons/file_thumbnail.dart';
 import 'package:explorer/core/files/file_types.dart';
@@ -84,17 +85,23 @@ class FileGridItem extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: entity is File
-                ? LayoutBuilder(
-                    builder: (context, constraints) => Center(
-                      child: FileThumbnail(
-                        path: entity.path,
-                        size: constraints.biggest.shortestSide.clamp(32.0, 600.0),
-                        fallback: Center(child: EntityIcon(entity: entity, size: 44 * zoom)),
-                      ),
-                    ),
-                  )
-                : Center(child: EntityIcon(entity: entity, size: 44 * zoom)),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final room = constraints.biggest.shortestSide;
+                // The icon grows with the room it has: the name below stays
+                // the same height, so that room grows faster than the zoom.
+                final icon = Center(
+                  child: EntityIcon(
+                    entity: entity,
+                    size: math.min(room, math.max(44 * zoom, room * 0.65)),
+                  ),
+                );
+                if (entity is! File) return icon;
+                return Center(
+                  child: FileThumbnail(path: entity.path, size: room.clamp(32.0, 1200.0), fallback: icon),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -202,23 +209,28 @@ class _Thumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon = Center(child: EntityIcon(entity: entity, size: 56));
-    if (entity is Directory) return icon;
     final isVideo = FileTypes.kindOf(entity.path) == FileKind.video;
     return LayoutBuilder(
-      builder: (context, constraints) => Stack(
-        fit: StackFit.expand,
-        children: [
-          FileThumbnail(
-            path: entity.path,
-            size: constraints.biggest.longestSide.isFinite ? constraints.biggest.longestSide : 200,
-            cover: true,
-            radius: 0,
-            fallback: icon,
-          ),
-          if (isVideo) Positioned(left: 6, bottom: 6, child: _Badge(LucideIcons.play)),
-        ],
-      ),
+      builder: (context, constraints) {
+        // In proportion to the tile: 56 at the usual size.
+        final icon = Center(
+          child: EntityIcon(entity: entity, size: (constraints.biggest.shortestSide * 0.35).clamp(24.0, 400.0)),
+        );
+        if (entity is Directory) return icon;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            FileThumbnail(
+              path: entity.path,
+              size: constraints.biggest.longestSide.isFinite ? constraints.biggest.longestSide : 200,
+              cover: true,
+              radius: 0,
+              fallback: icon,
+            ),
+            if (isVideo) Positioned(left: 6, bottom: 6, child: _Badge(LucideIcons.play)),
+          ],
+        );
+      },
     );
   }
 }
