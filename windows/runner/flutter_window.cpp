@@ -5,6 +5,7 @@
 
 #include <optional>
 
+#include "drop_files.h"
 #include "flutter/generated_plugin_registrant.h"
 #include "resource.h"
 
@@ -82,6 +83,29 @@ bool FlutterWindow::OnCreate() {
           return;
         }
         result->Success();
+      });
+
+  drop_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "explorer/drop",
+          &flutter::StandardMethodCodec::GetInstance());
+  drop_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        const auto& method = call.method_name();
+        if (method == "wrap") {
+          result->Success(flutter::EncodableValue(WrapDropTarget(
+              flutter_controller_->view()->GetNativeWindow())));
+        } else if (method == "lastFiles") {
+          flutter::EncodableList files;
+          for (const auto& file : LastDroppedFiles()) {
+            files.push_back(flutter::EncodableValue(file));
+          }
+          result->Success(flutter::EncodableValue(files));
+        } else {
+          result->NotImplemented();
+        }
       });
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

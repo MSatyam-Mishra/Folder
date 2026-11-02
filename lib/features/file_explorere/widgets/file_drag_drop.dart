@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/macos_files.dart';
 import 'package:explorer/core/platform/macos_writable.dart';
+import 'package:explorer/core/platform/windows_drop_files.dart';
 import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/services.dart';
@@ -122,7 +123,9 @@ class _FileDropTargetState extends State<FileDropTarget> {
         // macOS narrows a drag's operations by the keys held, and Cmd
         // leaves none that read here; drags from this app allow both.
         if (Platform.isMacOS && allowed.isEmpty && sources.isNotEmpty) return wanted;
-        return allowed.contains(DropOperation.copy) ? DropOperation.copy : DropOperation.none;
+        // Whatever the source allows: some apps only let their files be moved.
+        if (allowed.contains(DropOperation.copy)) return DropOperation.copy;
+        return allowed.contains(DropOperation.move) ? DropOperation.move : DropOperation.none;
       },
       onPerformDrop: (event) async {
         _hover(false);
@@ -142,6 +145,12 @@ class _FileDropTargetState extends State<FileDropTarget> {
   /// The local paths of [items]: from this app directly, else the file
   /// URIs other apps give.
   static Future<List<String>> droppedPaths(List<DropItem> items) async {
+    // From another app, what it gives now is the truth: WinRAR's earlier list
+    // has names inside the archive, not files.
+    if (items.any((item) => _localPath(item) == null)) {
+      final files = await WindowsDropFiles.last();
+      if (files.isNotEmpty) return files;
+    }
     final paths = <String>[];
     for (final item in items) {
       final local = _localPath(item);

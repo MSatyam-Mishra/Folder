@@ -87,7 +87,15 @@ void main() {
 
     tearDown(() async {
       ExplorerTabs.instance.reset();
-      await root.delete(recursive: true);
+      // Windows' thumbnailer may still be reading a new document.
+      for (var tries = 0; tries < 20; tries++) {
+        try {
+          await root.delete(recursive: true);
+          return;
+        } on FileSystemException {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+        }
+      }
     });
 
     Future<void> settle(WidgetTester tester) async {

@@ -1,5 +1,6 @@
 // FILE PATH: lib/main.dart
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:explorer/shared/layout/sidebar_width.dart';
@@ -8,6 +9,7 @@ import 'package:explorer/core/app/app_bloc_observer.dart';
 import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/platform/background_mode.dart';
 import 'package:explorer/core/platform/window_effects.dart';
+import 'package:explorer/core/platform/windows_drop_files.dart';
 import 'package:explorer/core/theme/icon_strokes.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -87,6 +89,7 @@ void main(List<String> args) async {
   // behaves as usual.
   final startItem = launchItem is IncomingRoute ? null : launchItem;
   runApp(App(launchItem: startItem));
+  unawaited(WindowsDropFiles.init());
   // macOS: a window opened for a folder or a file (from Finder or another
   // Explorer window) comes to the front once it's up, rather than staying
   // behind the app that asked for it.

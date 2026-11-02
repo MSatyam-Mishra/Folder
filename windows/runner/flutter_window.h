@@ -31,6 +31,9 @@ class FlutterWindow : public Win32Window {
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
 
+  // "explorer/drop" (wrap, lastFiles), see drop_files.h.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> drop_channel_;
+
   // The notification-area icon shown while work goes on with the window
   // closed ("explorer/tray": show, hide, notify; it sends clicked, open,
   // quit).
