@@ -67,6 +67,23 @@ void main() {
     );
   });
 
+  test('in dark mode a line is lighter than what it lies on, glass too; light mode keeps its grey', () {
+    final settings = AppThemeSettings.defaults();
+    for (final style in AppStyle.values) {
+      final colors = AppTheme.shad(settings.copyWith(style: style), Brightness.dark).colorScheme;
+      for (final behind in [colors.background, colors.card, const Color(0xFF4A4A4A)]) {
+        final solid = behind.withValues(alpha: 1);
+        expect(
+          Color.alphaBlend(colors.border, solid).computeLuminance(),
+          greaterThan(solid.computeLuminance()),
+          reason: '$style on $solid',
+        );
+      }
+    }
+    final light = AppTheme.shad(settings.copyWith(style: AppStyle.windows), Brightness.light).colorScheme;
+    expect(light.border, const Color(0xFFE5E5E5));
+  });
+
   test('colourful icons: the same icon, the same colour; fitting ones for actions', () {
     final dracula = AppStyle.dracula.look(Brightness.dark);
     const plain = Color(0xFF000000);

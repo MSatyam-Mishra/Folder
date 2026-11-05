@@ -429,6 +429,8 @@ class _FileExplorerUI extends StatelessWidget {
                     width,
                     math.max(SidebarWidth.min, MediaQuery.sizeOf(context).width / 2),
                   ),
+                  // The sidebar draws its own, along its rounded corners.
+                  divider: false,
                   onResize: SidebarWidth.instance.set,
                   onResizeReset: () => SidebarWidth.instance.set(SidebarWidth.usual),
                   primary: page,

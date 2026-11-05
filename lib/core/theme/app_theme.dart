@@ -28,9 +28,17 @@ abstract final class AppTheme {
   /// Corner radius of surfaces (cards, dialogs, sheets): shadcn `rounded-xl`.
   static const double surfaceRadius = 12;
 
+  /// The sidebar's and the phone menu's corners, on the side next to the page.
+  static const BorderRadius sidebarRadius = BorderRadius.horizontal(right: Radius.circular(surfaceRadius));
+
   static ShadThemeData shad(AppThemeSettings settings, Brightness brightness) {
     final style = settings.style;
     var scheme = style.schemeFor(brightness) ?? settings.colorTheme.schemeFor(brightness);
+    // Lines lighter than whatever they lie on: a solid dark grey comes out as
+    // a dark line on glass, which is lighter than it.
+    if (style.darkOnly || brightness == Brightness.dark) {
+      scheme = scheme.copyWith(border: Colors.white.withValues(alpha: 0.16));
+    }
     // A see-through window: the main background and the panes (sidebar,
     // tab bar) let the backdrop show through, as much as set.
     if (settings.windowEffect && WindowEffects.supported) {
@@ -274,8 +282,10 @@ abstract final class AppTheme {
         elevation: 0,
         width: 300,
         scrimColor: Colors.black.withValues(alpha: 0.5),
-        shape: Border(right: BorderSide(color: c.border)),
-        endShape: Border(left: BorderSide(color: c.border)),
+        shape: const RoundedRectangleBorder(borderRadius: sidebarRadius),
+        endShape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(surfaceRadius)),
+        ),
       ),
       listTileTheme: ListTileThemeData(
         iconColor: c.foreground,

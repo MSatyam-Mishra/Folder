@@ -202,6 +202,20 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!-- The RAM cleaner's Extreme mode: presses Force stop during a run the user started. -->
+        <service
+            android:name=".AppCloserService"
+            android:exported="false"
+            android:label="@string/app_closer_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/app_closer_service"/>
+        </service>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
@@ -212,6 +226,12 @@
     </application>
 
     <queries>
+        <!-- Who shows an app's info page, and its Force stop button's words, in the phone's language. -->
+        <package android:name="com.android.settings"/>
+        <intent>
+            <action android:name="android.settings.APPLICATION_DETAILS_SETTINGS"/>
+            <data android:scheme="package"/>
+        </intent>
         <!-- The apps the RAM cleaner can close. -->
         <intent>
             <action android:name="android.intent.action.MAIN"/>

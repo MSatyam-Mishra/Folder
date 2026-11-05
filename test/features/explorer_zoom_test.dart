@@ -79,8 +79,8 @@ void main() {
       expect(bigIcon / tester.getSize(item).height, greaterThanOrEqualTo(usualIcon / usualItem * 0.95),
           reason: 'the icon keeps its share of the item');
 
-      // Every step shows: a little more zoom, a bigger icon.
-      await zoomTo(tester, 2.3);
+      // Further still, a bigger icon again.
+      await zoomTo(tester, 3);
       expect(tester.getSize(folder).width, greaterThan(bigIcon));
 
       await zoomTo(tester, 0.75);
@@ -126,20 +126,23 @@ void main() {
       }
     });
 
-    test('tiles grow on every step and fit the row, with the usual gap', () {
-      const width = 950.0;
-      var before = 0.0;
-      for (var zoom = 0.75; zoom <= 3; zoom *= 1.15) {
-        final grid = layout(width, zoom);
-        expect(grid.childCrossAxisExtent, greaterThan(before), reason: 'zoom $zoom');
-        before = grid.childCrossAxisExtent;
-        expect(grid.crossAxisStride, moreOrLessEquals(grid.childCrossAxisExtent + 12), reason: 'zoom $zoom');
-        // As many as fit: the last tile ends inside the row, and one more
-        // wouldn't.
-        final end = grid.crossAxisStride * (grid.crossAxisCount - 1) + grid.childCrossAxisExtent;
-        expect(end, lessThanOrEqualTo(width + 1e-3), reason: 'zoom $zoom');
-        expect(end + grid.crossAxisStride, greaterThan(width), reason: 'zoom $zoom');
+    test('tiles fill the row at any zoom and width, with no gap at its end', () {
+      for (final width in [358.0, 392.0, 700.0, 950.0, 1600.0]) {
+        var before = 0.0;
+        for (var zoom = 0.75; zoom <= 3; zoom *= 1.15) {
+          final grid = layout(width, zoom);
+          expect(grid.childCrossAxisExtent, greaterThanOrEqualTo(before), reason: 'never smaller on zooming in');
+          before = grid.childCrossAxisExtent;
+          expect(grid.crossAxisStride, moreOrLessEquals(grid.childCrossAxisExtent + 12), reason: 'zoom $zoom');
+          final end = grid.crossAxisStride * (grid.crossAxisCount - 1) + grid.childCrossAxisExtent;
+          expect(end, moreOrLessEquals(width), reason: '$width wide at zoom $zoom');
+        }
       }
+    });
+
+    test('zooming changes how many fit in a row', () {
+      expect(layout(950, 0.75).crossAxisCount, greaterThan(layout(950, 1).crossAxisCount));
+      expect(layout(950, 2).crossAxisCount, lessThan(layout(950, 1).crossAxisCount));
     });
 
     test('a tile is never wider than the window', () {

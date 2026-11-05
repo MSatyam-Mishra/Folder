@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:explorer/core/formats/archive_backend.dart';
+import 'package:explorer/core/platform/system_bars.dart';
 import 'package:explorer/core/router/file_opener.dart';
 import 'package:explorer/core/services/bookmark_service.dart';
 import 'package:explorer/features/viewer_archive/archive_ui_utils.dart';
@@ -75,7 +76,7 @@ class _ComicViewerScreenState extends State<ComicViewerScreen> {
     _controller?.dispose();
     _focusNode.dispose();
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      unawaited(SystemBars.show());
     }
     super.dispose();
   }
@@ -210,9 +211,7 @@ class _ComicViewerScreenState extends State<ComicViewerScreen> {
   void _setChrome(bool visible) {
     setState(() => _chrome = visible);
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      SystemChrome.setEnabledSystemUIMode(
-        visible ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
-      );
+      unawaited(visible ? SystemBars.show() : SystemBars.hide());
     }
   }
 

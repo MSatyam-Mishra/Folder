@@ -1,5 +1,6 @@
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
+import 'package:explorer/core/theme/app_theme.dart';
 import 'package:explorer/shared/ui/app_tokens.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -206,7 +207,7 @@ class _ResizeHandleState extends State<_ResizeHandle> {
 
 /// Full-height navigation pane for wide screens, in the style of the
 /// shadcn/ui sidebar: a lightly tinted surface below the status bar. Put it
-/// in [AdaptiveSplitView.secondary] (which draws the hairline border).
+/// in [AdaptiveSplitView.secondary], with no divider: it draws its own border.
 class DockedSidebar extends StatelessWidget {
   const DockedSidebar({super.key, required this.child});
 
@@ -223,11 +224,51 @@ class DockedSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: backgroundOf(context),
-      child: SafeArea(right: false, child: child),
+    final colors = context.colors;
+    return CustomPaint(
+      painter: _SidebarPainter(pane: backgroundOf(context), page: colors.background, edge: colors.border),
+      child: Material(
+        type: MaterialType.transparency,
+        child: SafeArea(right: false, child: child),
+      ),
     );
   }
+}
+
+/// The sidebar's background with its corners next to the page rounded, the
+/// page's colour in those corners, and the border along that side alone.
+class _SidebarPainter extends CustomPainter {
+  const _SidebarPainter({required this.pane, required this.page, required this.edge});
+
+  final Color pane;
+  final Color page;
+  final Color edge;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final whole = Offset.zero & size;
+    final shape = AppTheme.sidebarRadius.toRRect(whole);
+    canvas.drawRRect(shape, Paint()..color = pane);
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, Path()..addRect(whole), Path()..addRRect(shape)),
+      Paint()..color = page,
+    );
+    const radius = Radius.circular(AppTheme.surfaceRadius);
+    final x = size.width - 0.5;
+    canvas.drawPath(
+      Path()
+        ..moveTo(x - radius.x, 0)
+        ..arcToPoint(Offset(x, radius.y), radius: radius)
+        ..lineTo(x, size.height - radius.y)
+        ..arcToPoint(Offset(x - radius.x, size.height), radius: radius),
+      Paint()
+        ..color = edge
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SidebarPainter old) => old.pane != pane || old.page != page || old.edge != edge;
 }
 
 /// Centers [child] and caps its width so reading content doesn't stretch

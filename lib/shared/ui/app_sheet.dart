@@ -62,6 +62,8 @@ class AppSheet extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 640),
       backgroundColor: liquid ? Colors.transparent : null,
       elevation: liquid ? 0 : null,
+      // The glass has its own edge; the theme's would show as a second one.
+      shape: liquid ? const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))) : null,
       showDragHandle: liquid ? false : null,
       barrierColor: liquid ? Colors.black.withValues(alpha: 0.2) : null,
       builder: (sheet) {
@@ -171,8 +173,8 @@ class AppSheet extends StatelessWidget {
   }
 }
 
-/// A panel along the window's right edge, the full height, with a close
-/// button.
+/// A rounded panel floating along the window's right edge, the full height,
+/// with a close button.
 class _SideSheet extends StatelessWidget {
   const _SideSheet({required this.child});
 
@@ -184,6 +186,7 @@ class _SideSheet extends StatelessWidget {
     final width = math.min(460.0, MediaQuery.sizeOf(context).width * 0.9);
     final glass = AppGlass.isOn(context);
     final solid = theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface;
+    final radius = BorderRadius.circular(24);
     final sheet = SizedBox(
       width: width,
       height: double.infinity,
@@ -209,12 +212,20 @@ class _SideSheet extends StatelessWidget {
     );
     return Align(
       alignment: Alignment.centerRight,
-      child: Material(
-        color: glass ? Colors.transparent : solid,
-        elevation: glass ? 0 : 8,
-        shadowColor: Colors.black45,
-        shape: Border(left: BorderSide(color: theme.dividerColor)),
-        child: glass ? GlassSurface(color: solid, child: sheet) : sheet,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Material(
+          color: glass ? Colors.transparent : solid,
+          elevation: glass ? 0 : 8,
+          shadowColor: Colors.black45,
+          clipBehavior: Clip.antiAlias,
+          // Liquid glass draws its own edge.
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: AppGlass.isLiquid(context) ? BorderSide.none : BorderSide(color: theme.dividerColor),
+          ),
+          child: glass ? GlassSurface(color: solid, borderRadius: radius, child: sheet) : sheet,
+        ),
       ),
     );
   }

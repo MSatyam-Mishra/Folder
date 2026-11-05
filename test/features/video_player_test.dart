@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:explorer/core/services/device_files.dart';
@@ -5,6 +6,7 @@ import 'package:explorer/features/toolbox/toolbox_menu.dart';
 import 'package:explorer/features/video_player/play_queue.dart';
 import 'package:explorer/features/video_player/video_library.dart';
 import 'package:explorer/features/video_player/video_library_screen.dart';
+import 'package:explorer/features/video_player/video_player_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -95,6 +97,64 @@ void main() {
     expect(found, ['/v/movie.2024.SRT', '/v/Movie.2024.en.srt', '/v/Movie.2024.fr.ass']);
   });
 
+  group('an error from mpv', () {
+    const video = '/v/Movie.mkv';
+
+    test('about a subtitle file is no reason to stop', () {
+      expect(isSubtitleError('Can not open external file /v/Movie.eng.srt.', video), isTrue);
+      expect(isSubtitleError("Cannot open file '/v/Movie.ASS': Permission denied", video), isTrue);
+    });
+
+    test('about the video is', () {
+      expect(isSubtitleError("Cannot open file '/v/Movie.mkv': No such file", video), isFalse);
+      expect(isSubtitleError('Failed to recognize file format.', video), isFalse);
+      expect(isSubtitleError("Cannot open file '/v/my.ass.mp4'", '/v/my.ass.mp4'), isFalse, reason: 'its name just looks like one');
+    });
+  });
+
+  group('zooming', () {
+    const screen = Size(1000, 500);
+
+    test('stays between its limits', () {
+      expect(const VideoView().adjusted(zoom: 100, screen: screen).zoom, VideoView.maxZoom);
+      expect(const VideoView().adjusted(zoom: 0.01, screen: screen).zoom, VideoView.minZoom);
+    });
+
+    test('moves only as far as the picture reaches', () {
+      final twice = const VideoView().adjusted(zoom: 2, pan: const Offset(9999, -9999), screen: screen);
+      expect(twice.pan, const Offset(500, -250));
+    });
+
+    test('smaller than the screen stays in the middle', () {
+      final small = const VideoView().adjusted(zoom: 0.5, pan: const Offset(100, 100), screen: screen);
+      expect(small.pan, Offset.zero);
+    });
+
+    test('zooming back in brings a far pan along', () {
+      final far = const VideoView().adjusted(zoom: 3, pan: const Offset(1000, 0), screen: screen);
+      expect(far.adjusted(zoom: 1.5, screen: screen).pan, const Offset(250, 0));
+    });
+
+    test('settles at its own size when close, and only then', () {
+      expect(const VideoView(zoom: 1.02, pan: Offset(5, 5)).settled().isPlain, isTrue);
+      expect(const VideoView(zoom: 1.3).settled().zoom, 1.3);
+    });
+  });
+
+  group('the decoder', () {
+    test('is HW at first', () async {
+      final settings = VideoPlayerSettings.instance;
+      settings.decoder = VideoDecoder.hw;
+      expect(settings.decoder.short, 'HW');
+    });
+
+    test('computers have no HW+, and all have the others', () {
+      final available = VideoDecoder.available;
+      expect(available, containsAll([VideoDecoder.hw, VideoDecoder.sw]));
+      if (!Platform.isAndroid) expect(available, isNot(contains(VideoDecoder.hwPlus)));
+    });
+  });
+
   test('times, titles and addresses', () {
     expect(formatVideoTime(const Duration(seconds: 65)), '01:05');
     expect(formatVideoTime(const Duration(hours: 1, minutes: 2, seconds: 3)), '1:02:03');
@@ -125,14 +185,13 @@ void main() {
       expect(folders.last.videos, hasLength(2));
     });
 
-    test('new is recent and never played', () async {
-      final now = DateTime(2026, 11, 5);
-      final fresh = video('/m/a.mp4', modified: now.subtract(const Duration(days: 2)));
-      final old = video('/m/b.mp4', modified: now.subtract(const Duration(days: 30)));
-      expect(history.isNew(fresh, now: now), isTrue);
-      expect(history.isNew(old, now: now), isFalse);
-      await history.record(fresh.path, const Duration(seconds: 1), const Duration(minutes: 1));
-      expect(history.isNew(fresh, now: now), isFalse);
+    test("unplayed is whatever hasn't been played, however old", () async {
+      final old = video('/m/old.mp4', modified: DateTime(2001));
+      final recent = video('/m/recent.mp4', modified: DateTime.now());
+      expect(history.isUnplayed(old), isTrue);
+      expect(history.isUnplayed(recent), isTrue);
+      await history.record(old.path, const Duration(seconds: 1), const Duration(minutes: 1));
+      expect(history.isUnplayed(old), isFalse);
     });
 
     test('remembers where it stopped, and what came last, across runs', () async {
@@ -195,7 +254,7 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('folders, how many videos, how many new, and the last played marked', (tester) async {
+    testWidgets('folders, how many videos, how many unplayed, and the last played marked', (tester) async {
       final recent = DateTime.now().subtract(const Duration(days: 1));
       await history.load();
       await history.record('/m/Beach/seen.mp4', const Duration(seconds: 5), const Duration(minutes: 1));
@@ -209,7 +268,8 @@ void main() {
       expect(find.text('Beach'), findsOneWidget);
       expect(find.text('3 videos'), findsOneWidget);
       expect(find.text('1 video'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget, reason: 'two new in Beach, none in Work');
+      expect(find.text('2'), findsOneWidget, reason: 'two not played in Beach');
+      expect(find.text('1'), findsOneWidget, reason: "one in Work, though it's old");
 
       Color? colorOf(String name) => tester.widget<Text>(find.text(name)).style?.color;
       expect(colorOf('Beach'), isNot(colorOf('Work')), reason: 'where playing was last');
@@ -219,7 +279,9 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('a folder lists its videos, the new ones marked', (tester) async {
+    testWidgets('a folder lists its videos, those not played marked', (tester) async {
+      await history.load();
+      await history.record('/m/Beach/old.mp4', const Duration(seconds: 5), const Duration(minutes: 1));
       await openLibrary(tester, [
         video('/m/Beach/fresh.mp4', modified: DateTime.now().subtract(const Duration(days: 1))),
         video('/m/Beach/old.mp4'),

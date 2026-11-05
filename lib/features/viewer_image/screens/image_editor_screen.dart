@@ -5,6 +5,7 @@ import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/files/safe_write.dart';
 import 'package:explorer/features/viewer_image/image_codec.dart';
 import 'package:explorer/features/viewer_image/raw_image.dart';
+import 'package:explorer/features/viewer_image/widgets/crop_frame.dart';
 import 'package:explorer/shared/layout/adaptive_layout.dart';
 import 'package:explorer/features/viewer_kit/viewer_kit.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
@@ -320,38 +321,49 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Room around the image to take hold of the frame's edges at its border.
+        const margin = CropFrame.margin;
         final scale = math.min(
-          constraints.maxWidth / size.width,
-          constraints.maxHeight / size.height,
+          (constraints.maxWidth - margin * 2) / size.width,
+          (constraints.maxHeight - margin * 2) / size.height,
         );
         final display = Size(size.width * scale, size.height * scale);
-        return Center(
-          child: SizedBox.fromSize(
-            size: display,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                image,
-                if (_tool == _Tool.crop)
-                  _CropOverlay(
-                    rect: _edits.crop ?? const Rect.fromLTWH(0, 0, 1, 1),
-                    displaySize: display,
-                    pixelAspect: _aspect == null
-                        ? null
-                        : _aspect! * size.height / size.width,
-                    onChanged: (r) => setState(() {
-                      final full = r.left <= 0.001 &&
-                          r.top <= 0.001 &&
-                          r.right >= 0.999 &&
-                          r.bottom >= 0.999;
-                      _edits.crop = full ? null : r;
-                    }),
-                  )
-                else if (_edits.crop != null)
-                  CustomPaint(painter: _DimPainter(_edits.crop!)),
-              ],
+        final imageRect = Rect.fromCenter(
+          center: constraints.biggest.center(Offset.zero),
+          width: display.width,
+          height: display.height,
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: SizedBox.fromSize(
+                size: display,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // The frame repaints as it's dragged, and this shouldn't.
+                    RepaintBoundary(child: image),
+                    if (_tool != _Tool.crop && _edits.crop != null)
+                      CustomPaint(painter: _DimPainter(_edits.crop!)),
+                  ],
+                ),
+              ),
             ),
-          ),
+            if (_tool == _Tool.crop)
+              Positioned.fill(
+                child: CropFrame(
+                  imageRect: imageRect,
+                  rect: _edits.crop ?? const Rect.fromLTWH(0, 0, 1, 1),
+                  pixelSize: size,
+                  aspect: _aspect == null ? null : _aspect! * size.height / size.width,
+                  onChanged: (r) => setState(() {
+                    final full = r.left <= 0.001 && r.top <= 0.001 && r.right >= 0.999 && r.bottom >= 0.999;
+                    _edits.crop = full ? null : r;
+                  }),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -693,150 +705,4 @@ class _DimPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DimPainter old) => old.rect != rect;
-}
-
-/// Interactive crop rectangle in normalised coordinates.
-class _CropOverlay extends StatelessWidget {
-  const _CropOverlay({
-    required this.rect,
-    required this.displaySize,
-    required this.onChanged,
-    this.pixelAspect,
-  });
-
-  final Rect rect;
-  final Size displaySize;
-
-  /// Required normalised width/height ratio, or null for free cropping.
-  final double? pixelAspect;
-  final ValueChanged<Rect> onChanged;
-
-  static const _minSize = 0.05;
-  static const _handle = 28.0;
-
-  Rect _clamp(Rect r) {
-    final w = r.width.clamp(_minSize, 1.0);
-    final h = r.height.clamp(_minSize, 1.0);
-    final left = r.left.clamp(0.0, 1.0 - w);
-    final top = r.top.clamp(0.0, 1.0 - h);
-    return Rect.fromLTWH(left, top, w, h);
-  }
-
-  void _dragCorner(Alignment corner, Offset delta) {
-    final dx = delta.dx / displaySize.width;
-    final dy = delta.dy / displaySize.height;
-    var left = rect.left, top = rect.top, right = rect.right, bottom = rect.bottom;
-    if (corner.x < 0) {
-      left += dx;
-    } else {
-      right += dx;
-    }
-    if (corner.y < 0) {
-      top += dy;
-    } else {
-      bottom += dy;
-    }
-    left = left.clamp(0.0, right - _minSize);
-    right = right.clamp(left + _minSize, 1.0);
-    top = top.clamp(0.0, bottom - _minSize);
-    bottom = bottom.clamp(top + _minSize, 1.0);
-    final aspect = pixelAspect;
-    if (aspect != null) {
-      final width = right - left;
-      var height = width / aspect;
-      if (corner.y < 0) {
-        top = bottom - height;
-        if (top < 0) {
-          top = 0;
-          height = bottom;
-        }
-      } else {
-        bottom = top + height;
-        if (bottom > 1) {
-          bottom = 1;
-          height = 1 - top;
-        }
-      }
-      final fixedWidth = height * aspect;
-      if (corner.x < 0) {
-        left = right - fixedWidth;
-      } else {
-        right = left + fixedWidth;
-      }
-    }
-    onChanged(_clamp(Rect.fromLTRB(left, top, right, bottom)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final r = Rect.fromLTRB(
-      rect.left * displaySize.width,
-      rect.top * displaySize.height,
-      rect.right * displaySize.width,
-      rect.bottom * displaySize.height,
-    );
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned.fill(child: CustomPaint(painter: _DimPainter(rect))),
-        Positioned.fromRect(
-          rect: r,
-          child: GestureDetector(
-            onPanUpdate: (d) => onChanged(_clamp(rect.shift(Offset(
-              d.delta.dx / displaySize.width,
-              d.delta.dy / displaySize.height,
-            )))),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: CustomPaint(painter: _GridPainter()),
-            ),
-          ),
-        ),
-        for (final corner in const [
-          Alignment.topLeft,
-          Alignment.topRight,
-          Alignment.bottomLeft,
-          Alignment.bottomRight,
-        ])
-          Positioned(
-            left: (corner.x < 0 ? r.left : r.right) - _handle / 2,
-            top: (corner.y < 0 ? r.top : r.bottom) - _handle / 2,
-            width: _handle,
-            height: _handle,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanUpdate: (d) => _dragCorner(corner, d.delta),
-              child: Center(
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white54
-      ..strokeWidth = 0.5;
-    for (var i = 1; i < 3; i++) {
-      canvas.drawLine(Offset(size.width * i / 3, 0), Offset(size.width * i / 3, size.height), paint);
-      canvas.drawLine(Offset(0, size.height * i / 3), Offset(size.width, size.height * i / 3), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter oldDelegate) => false;
 }

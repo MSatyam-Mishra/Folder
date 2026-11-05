@@ -58,6 +58,21 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets("a bottom sheet has one edge at its top corners: the glass's, not the theme's too", (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await open(tester, TargetPlatform.android);
+    await tester.tap(find.text('Open'));
+    await tester.pump(const Duration(milliseconds: 500));
+    final sheet = find.ancestor(of: find.text('The sheet'), matching: find.byType(BottomSheet));
+    final shape = tester.widget<BottomSheet>(sheet).shape! as RoundedRectangleBorder;
+    expect(shape.side, BorderSide.none);
+    expect(shape.borderRadius, tester.widget<LiquidGlass>(glassAround('The sheet')).borderRadius);
+    await tester.pumpWidget(const SizedBox());
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('the choice is remembered', (tester) async {
     final cubit = await open(tester, TargetPlatform.android);
     expect(cubit.state.liquidGlass, isTrue);

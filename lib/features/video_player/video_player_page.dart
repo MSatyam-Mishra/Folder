@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
+import 'package:explorer/core/platform/system_bars.dart';
 import 'package:explorer/core/services/file_action_service.dart';
 import 'package:explorer/core/services/media_controls.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
@@ -55,6 +56,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   var _attempt = 0;
   late var _playlist = widget.playlist;
   late var _index = widget.index;
+  Duration? _startAt;
 
   @override
   Widget build(BuildContext context) => _Player(
@@ -62,10 +64,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         playlist: _playlist,
         index: _index,
         withFolder: widget.withFolder && _attempt == 0,
-        onRestart: (playlist, index) => setState(() {
+        startAt: _startAt,
+        onRestart: (playlist, index, position) => setState(() {
           _attempt++;
           _playlist = playlist;
           _index = index;
+          _startAt = position;
         }),
       );
 }
@@ -76,17 +80,24 @@ class _Player extends StatefulWidget {
     required this.playlist,
     required this.index,
     required this.withFolder,
+    required this.startAt,
     required this.onRestart,
   });
 
   final List<String> playlist;
   final int index;
   final bool withFolder;
-  final void Function(List<String> playlist, int index) onRestart;
+
+  /// Where to begin, after a restart.
+  final Duration? startAt;
+  final void Function(List<String> playlist, int index, Duration position) onRestart;
 
   @override
   State<_Player> createState() => _PlayerState();
 }
+
+/// What a finger drag on the picture has turned out to be.
+enum _Drag { seek, level, zoom }
 
 class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   static const _seekStep = Duration(seconds: 10);
@@ -106,10 +117,14 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
       logLevel: MPVLogLevel.warn,
     ),
   );
-  final _videoKey = GlobalKey<VideoState>();
+  final _subtitleKey = GlobalKey<SubtitleViewState>();
+  final _view = ValueNotifier(const VideoView());
   VideoController? _controller;
   final _subs = <StreamSubscription<Object?>>[];
   late final PlayQueue _queue = PlayQueue(widget.playlist, index: widget.index);
+
+  /// Where the first video begins, after a restart.
+  late Duration? _restartAt = widget.startAt;
 
   final _position = ValueNotifier(Duration.zero);
   var _duration = Duration.zero;
@@ -143,6 +158,19 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   Timer? _flashEnd;
   Duration? _dragTo;
   double? _dragFrom;
+  _Drag? _drag;
+  var _dragTotal = Offset.zero;
+  var _zoomFrom = 1.0;
+
+  /// A finger is still down after a pinch: it shouldn't turn into a seek.
+  var _pinched = false;
+
+  /// An error waits to see if the video starts anyway.
+  Timer? _errorWait;
+
+  /// Set once the position has moved: for what has no duration, like a live stream.
+  Duration? _firstPosition;
+  var _moving = false;
   Offset? _doubleTapAt;
   Timer? _save;
   Timer? _sleep;
@@ -163,7 +191,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     // Coming from a stream's address, the keyboard would stay over the picture.
     unawaited(SystemChannels.textInput.invokeMethod<void>('TextInput.hide'));
     _subs.addAll([
-      _player.stream.position.listen((position) => _position.value = position),
+      _player.stream.position.listen(_onPosition),
       _player.stream.duration.listen(_onDuration),
       _player.stream.playing.listen(_onPlaying),
       _player.stream.buffering.listen((buffering) => _set(() => _buffering = buffering)),
@@ -190,14 +218,18 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     _pipSupported = await MediaControls.instance.pipSupported;
     if (!mounted) return;
     // Here, as a player restarting gets the last one's goodbye before this.
-    if (_phone) unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
+    if (_phone) unawaited(SystemBars.hide());
     _controller = VideoController(
       _player,
-      configuration: _settings.directOutput
+      configuration: _direct
           ? const VideoControllerConfiguration(vo: 'mediacodec_embed', hwdec: 'mediacodec')
-          : VideoControllerConfiguration(enableHardwareAcceleration: _settings.hardwareDecoding),
+          : VideoControllerConfiguration(enableHardwareAcceleration: _settings.decoder != VideoDecoder.sw),
     );
     unawaited(_native?.setProperty('volume-max', '${_maxVolume.toInt()}'));
+    // This page finds them, once a video has opened: on its own, mpv would
+    // load them twice, and its errors would come before the video has started.
+    await _native?.setProperty('sub-auto', 'no');
+    if (!mounted) return;
     setState(() {});
     await _openCurrent();
     _save = Timer.periodic(const Duration(seconds: 5), (_) => _saveProgress());
@@ -219,8 +251,15 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   Future<void> _openCurrent() async {
     final path = _queue.current;
     final progress = _settings.resume ? _history.progressOf(path) : null;
-    final resumeAt =
-        progress != null && !progress.finished && progress.position > const Duration(seconds: 5) ? progress.position : null;
+    final restartAt = _restartAt;
+    _restartAt = null;
+    final resumeAt = restartAt ??
+        (progress != null && !progress.finished && progress.position > const Duration(seconds: 5)
+            ? progress.position
+            : null);
+    _errorWait?.cancel();
+    _firstPosition = null;
+    _moving = false;
     setState(() {
       _error = null;
       _loaded = null;
@@ -235,8 +274,26 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     _updateOutside();
   }
 
+  void _onPosition(Duration position) {
+    _position.value = position;
+    final first = _firstPosition;
+    if (first == null) {
+      _firstPosition = position;
+    } else if (position != first && !_moving) {
+      _moving = true;
+      _playingAfterAll();
+    }
+  }
+
+  /// Whatever mpv complained of, the video is going: no message stays over it.
+  void _playingAfterAll() {
+    _errorWait?.cancel();
+    if (_error != null) _set(() => _error = null);
+  }
+
   void _onDuration(Duration duration) {
     _set(() => _duration = duration);
+    if (duration > Duration.zero) _playingAfterAll();
     final path = _queue.current;
     if (duration > Duration.zero && _loaded != path) {
       _loaded = path;
@@ -258,7 +315,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     if (!Platform.isAndroid) return;
     await Future<void>.delayed(const Duration(seconds: 2));
     // With Android's decoder drawing, libmpv has no frame to give.
-    if (!mounted || _queue.current != path || _settings.directOutput) return;
+    if (!mounted || _queue.current != path || _direct) return;
     unawaited(MediaControls.instance.artwork(await _player.screenshot(format: 'image/jpeg')));
   }
 
@@ -275,11 +332,23 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   }
 
   void _onError(String message) {
+    if (!mounted) return;
+    final path = _queue.current;
+    if (isSubtitleError(message, path)) {
+      _say("That subtitle file can't be read");
+      return;
+    }
     // After playback started a bad frame doesn't stop it.
-    if (_duration > Duration.zero || !mounted) return;
-    setState(() {
-      _error = message;
-      _buffering = false;
+    if (_duration > Duration.zero || _moving) return;
+    // mpv also reports what it gets past, like a sound device that won't open:
+    // only a video that really doesn't start has failed.
+    _errorWait?.cancel();
+    _errorWait = Timer(const Duration(seconds: 3), () {
+      if (!mounted || _queue.current != path || _duration > Duration.zero || _moving) return;
+      setState(() {
+        _error = message;
+        _buffering = false;
+      });
     });
   }
 
@@ -288,10 +357,33 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     // No picture, on graphics that refuse libmpv's context (some phones and
     // emulators): once and for all, Android's decoder draws it instead.
     final refused = log.level == 'fatal' && log.prefix.startsWith('vo/gpu');
-    if (!refused || !Platform.isAndroid || _settings.directOutput || !mounted) return;
+    if (!refused || !Platform.isAndroid || _direct || !mounted) return;
+    unawaited(_settings.update(gpuRefused: true));
+    _restart();
+  }
+
+  /// Anew, at the same place: a controller keeps the output it was made with.
+  void _restart() {
     _saveProgress();
-    unawaited(_settings.update(directOutput: true));
-    widget.onRestart(_queue.items, _queue.index);
+    widget.onRestart(_queue.items, _queue.index, _position.value);
+  }
+
+  /// Android's decoder draws: HW+, or all this phone's graphics can do.
+  bool get _direct =>
+      Platform.isAndroid && (_settings.gpuRefused || _settings.decoder == VideoDecoder.hwPlus);
+
+  String get _decoderLabel => _direct ? VideoDecoder.hwPlus.short : _settings.decoder.short;
+
+  Future<void> _setDecoder(VideoDecoder decoder) async {
+    final wasDirect = _direct;
+    await _settings.update(decoder: decoder);
+    if (!mounted) return;
+    if (_direct != wasDirect) return _restart();
+    _say('${decoder.short} decoder');
+    setState(() {});
+    if (!_direct) {
+      unawaited(_native?.setProperty('hwdec', decoder == VideoDecoder.sw ? 'no' : 'auto-safe'));
+    }
   }
 
   void _onVideoParams(VideoParams params) {
@@ -468,7 +560,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   void _setControlsShown(bool shown) {
     _set(() => _controlsShown = shown);
     // Subtitles stand clear of the controls.
-    _videoKey.currentState?.setSubtitleViewPadding(
+    _subtitleKey.currentState?.setPadding(
       EdgeInsets.fromLTRB(16, 0, 16, shown && !_inPip ? 132 : 24),
       duration: const Duration(milliseconds: 150),
     );
@@ -507,11 +599,65 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
 
   bool get _gesturesOn => _phone && _settings.gestures && !_locked && !_inPip;
 
-  void _onSeekDrag(DragUpdateDetails details) {
+  bool get _zoomOn => !_locked && !_inPip && (Desktop.isDesktop || _settings.gestures);
+
+  void _setView({double? zoom, Offset? pan}) {
+    final size = context.size;
+    if (size == null) return;
+    final next = _view.value.adjusted(zoom: zoom, pan: pan, screen: size);
+    if (next.zoom != _view.value.zoom) _say('Zoom ${(next.zoom * 100).round()}%');
+    _view.value = next;
+  }
+
+  void _settleView() {
+    final settled = _view.value.settled();
+    if (settled.isPlain && !_view.value.isPlain) _say('Zoom 100%');
+    _view.value = settled;
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _drag = null;
+    _dragTotal = Offset.zero;
+    _zoomFrom = _view.value.zoom;
+    _dragFrom = details.localFocalPoint.dx;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (details.pointerCount >= 2) {
+      if (!_zoomOn) return;
+      if (_dragTo != null) _set(() => _dragTo = null);
+      _drag = _Drag.zoom;
+      _setView(zoom: _zoomFrom * details.scale, pan: _view.value.pan + details.focalPointDelta);
+      return;
+    }
+    if (!_gesturesOn || _pinched || _drag == _Drag.zoom) return;
+    if (_drag == null) {
+      _dragTotal += details.focalPointDelta;
+      if (_dragTotal.distance < kTouchSlop) return;
+      _drag = _dragTotal.dx.abs() > _dragTotal.dy.abs() ? _Drag.seek : _Drag.level;
+    }
+    if (_drag == _Drag.seek) {
+      _onSeekDrag(details.focalPointDelta.dx);
+    } else {
+      _onLevelDrag(details.focalPointDelta.dy);
+    }
+  }
+
+  void _onScaleEnd(ScaleEndDetails details) {
+    if (_drag == _Drag.seek) _onSeekDragEnd();
+    if (_drag == _Drag.zoom) {
+      _settleView();
+      _pinched = true;
+    }
+    if (details.pointerCount == 0) _pinched = false;
+    _drag = null;
+  }
+
+  void _onSeekDrag(double dx) {
     final width = context.size?.width ?? 1;
     final from = _dragTo ?? _position.value;
     // A whole screen's width is a hundred seconds.
-    final by = Duration(milliseconds: (details.delta.dx / width * 100000).round());
+    final by = Duration(milliseconds: (dx / width * 100000).round());
     var to = from + by;
     if (to < Duration.zero) to = Duration.zero;
     if (_duration > Duration.zero && to > _duration) to = _duration;
@@ -519,24 +665,18 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     _say('${formatVideoTime(to)} / ${formatVideoTime(_duration)}');
   }
 
-  void _onSeekDragEnd(DragEndDetails _) {
+  void _onSeekDragEnd() {
     final to = _dragTo;
     _set(() => _dragTo = null);
     if (to != null) unawaited(_seek(to));
   }
 
-  void _onLevelDragStart(DragStartDetails details) {
-    final width = context.size?.width ?? 0;
-    // Left is brightness, right is volume.
-    _dragFrom = details.localPosition.dx;
-    if (details.localPosition.dx < width / 2) _brightness ??= 0.5;
-  }
-
-  void _onLevelDrag(DragUpdateDetails details) {
+  /// Left is brightness, right is volume.
+  void _onLevelDrag(double dy) {
     final size = context.size;
     final from = _dragFrom;
     if (size == null || from == null) return;
-    final by = -details.delta.dy / size.height;
+    final by = -dy / size.height;
     if (from < size.width / 2) {
       final level = ((_brightness ?? 0.5) + by).clamp(0.01, 1.0);
       _brightness = level;
@@ -555,6 +695,11 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
 
   void _onScroll(PointerSignalEvent event) {
     if (event is! PointerScrollEvent) return;
+    if (HardwareKeyboard.instance.isControlPressed) {
+      _setView(zoom: _view.value.zoom * (event.scrollDelta.dy < 0 ? 1.1 : 1 / 1.1));
+      _settleView();
+      return;
+    }
     _setVolume(_volume - event.scrollDelta.dy.sign * 5);
   }
 
@@ -568,6 +713,13 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
         unawaited(_toggleFullscreen());
       } else if (key == LogicalKeyboardKey.keyM) {
         _setVolume(_volume > 0 ? 0 : 100);
+      } else if (key == LogicalKeyboardKey.equal || key == LogicalKeyboardKey.numpadAdd) {
+        _setView(zoom: _view.value.zoom * 1.25);
+      } else if (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.numpadSubtract) {
+        _setView(zoom: _view.value.zoom / 1.25);
+      } else if (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0) {
+        _view.value = const VideoView();
+        _say('Zoom 100%');
       } else if (key == LogicalKeyboardKey.keyN) {
         unawaited(_next());
       } else if (key == LogicalKeyboardKey.keyP) {
@@ -610,6 +762,8 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     _save?.cancel();
     _sleep?.cancel();
     _position.dispose();
+    _view.dispose();
+    _errorWait?.cancel();
     _focus.dispose();
     unawaited(_player.dispose());
     final controls = MediaControls.instance;
@@ -617,7 +771,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     unawaited(controls.setAutoPip(on: false));
     if (_brightness != null) unawaited(controls.setBrightness(null));
     if (_phone) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      unawaited(SystemBars.show());
       SystemChrome.setPreferredOrientations(const []);
     } else {
       if (_fullscreen) unawaited(windowManager.setFullScreen(false));
@@ -665,27 +819,46 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   }
 
   Widget _video(VideoController controller) {
-    return ListenableBuilder(
-      listenable: _settings,
-      builder: (_, _) => Video(
-        key: _videoKey,
-        controller: controller,
-        fit: _fit.box,
-        aspectRatio: _fit.aspectRatio,
-        fill: Colors.black,
-        controls: NoVideoControls,
-        pauseUponEnteringBackgroundMode: false,
-        subtitleViewConfiguration: SubtitleViewConfiguration(
-          style: TextStyle(
-            height: 1.35,
-            fontSize: _settings.subtitleSize * 1.5,
-            fontWeight: FontWeight.w500,
-            color: subtitleColors[_settings.subtitleColor],
-            backgroundColor: _settings.subtitleBox ? const Color(0x99000000) : null,
-            shadows: _settings.subtitleBox ? null : const [Shadow(blurRadius: 6)],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRect(
+          child: ValueListenableBuilder<VideoView>(
+            valueListenable: _view,
+            builder: (_, view, child) => Transform.translate(
+              offset: view.pan,
+              child: Transform.scale(scale: view.zoom, child: child),
+            ),
+            child: Video(
+              controller: controller,
+              fit: _fit.box,
+              aspectRatio: _fit.aspectRatio,
+              fill: Colors.black,
+              controls: NoVideoControls,
+              pauseUponEnteringBackgroundMode: false,
+              // Its own would zoom with the picture, and off the screen.
+              subtitleViewConfiguration: const SubtitleViewConfiguration(visible: false),
+            ),
           ),
         ),
-      ),
+        ListenableBuilder(
+          listenable: _settings,
+          builder: (_, _) => SubtitleView(
+            key: _subtitleKey,
+            controller: controller,
+            configuration: SubtitleViewConfiguration(
+              style: TextStyle(
+                height: 1.35,
+                fontSize: _settings.subtitleSize * 1.5,
+                fontWeight: FontWeight.w500,
+                color: subtitleColors[_settings.subtitleColor],
+                backgroundColor: _settings.subtitleBox ? const Color(0x99000000) : null,
+                shadows: _settings.subtitleBox ? null : const [Shadow(blurRadius: 6)],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -738,10 +911,9 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
       },
       onDoubleTapDown: (details) => _doubleTapAt = details.localPosition,
       onDoubleTap: Desktop.isDesktop ? () => unawaited(_toggleFullscreen()) : _onDoubleTap,
-      onHorizontalDragUpdate: _gesturesOn ? _onSeekDrag : null,
-      onHorizontalDragEnd: _gesturesOn ? _onSeekDragEnd : null,
-      onVerticalDragStart: _gesturesOn ? _onLevelDragStart : null,
-      onVerticalDragUpdate: _gesturesOn ? _onLevelDrag : null,
+      onScaleStart: _onScaleStart,
+      onScaleUpdate: _onScaleUpdate,
+      onScaleEnd: _onScaleEnd,
     );
   }
 
@@ -860,6 +1032,22 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
           ),
           _button(LucideIcons.captions, 'Subtitles', () => unawaited(_showSubtitles())),
           _button(LucideIcons.audioLines, 'Audio', () => unawaited(_showAudio())),
+          Tooltip(
+            message: 'Decoder',
+            child: TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                minimumSize: const Size(44, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              onPressed: () {
+                unawaited(_showDecoder());
+                _hideLater();
+              },
+              child: Text(_decoderLabel),
+            ),
+          ),
           if (_pipSupported || Desktop.isDesktop)
             _button(LucideIcons.pictureInPicture2, 'Picture in picture', () => unawaited(_enterPip())),
           _button(LucideIcons.settings2, 'Settings', () => unawaited(_showSettings())),
@@ -939,7 +1127,9 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
               _button(LucideIcons.skipForward, 'Next', _queue.hasNext ? _next : null),
               const Spacer(),
               _button(LucideIcons.scan, 'Picture: ${_fit.label}', () {
-                setState(() => _fit = _fit.next);
+                // After a pinch, first back to how it fits.
+                if (_view.value.isPlain) setState(() => _fit = _fit.next);
+                _view.value = const VideoView();
                 _say(_fit.label);
               }),
               if (_phone)
@@ -983,6 +1173,8 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
         child: Text(text, style: Theme.of(context).textTheme.titleSmall),
       );
 
+  static final _rowShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+
   static Widget _choice(
     BuildContext context, {
     required IconData icon,
@@ -994,7 +1186,9 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     final colors = context.colors;
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      shape: _rowShape,
+      tileColor: selected ? colors.primary.withValues(alpha: 0.1) : null,
       leading: Icon(icon, size: 18, color: selected ? colors.primary : colors.mutedForeground),
       title: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: detail == null ? null : Text(detail),
@@ -1170,6 +1364,43 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
         );
       });
 
+  Future<void> _showDecoder() => _sheet((sheet, setSheet) {
+        return ListenableBuilder(
+          listenable: _settings,
+          builder: (_, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _heading(sheet, 'Decoder'),
+              for (final decoder in VideoDecoder.available)
+                _choice(
+                  sheet,
+                  icon: LucideIcons.cpu,
+                  label: '${decoder.short} · ${decoder.label}',
+                  detail: decoder.description,
+                  selected: _decoderLabel == decoder.short,
+                  // All this phone's graphics can do is HW+.
+                  onTap: _settings.gpuRefused && decoder != VideoDecoder.hwPlus
+                      ? null
+                      : () {
+                          // A restart would leave this sheet on a player that's gone.
+                          Navigator.pop(sheet);
+                          unawaited(_setDecoder(decoder));
+                        },
+                ),
+              if (_settings.gpuRefused)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: Text(
+                    "This device's graphics can only show video with HW+.",
+                    style: Theme.of(sheet).textTheme.bodySmall,
+                  ),
+                ),
+            ],
+          ),
+        );
+      });
+
   Future<void> _showAudio() => _sheet((sheet, setSheet) {
         final current = _track.audio;
         final tracks = [
@@ -1268,6 +1499,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                 children: [
                   for (final speed in _speeds)
                     ChoiceChip(
+                      shape: const StadiumBorder(),
                       label: Text('$speed×'),
                       selected: _speed == speed,
                       onSelected: (_) {
@@ -1289,6 +1521,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                   onTap: () {
                     setSheet(() => _fit = fit);
                     setState(() {});
+                    _view.value = const VideoView();
                   },
                 ),
               _heading(sheet, 'Playing'),
@@ -1341,6 +1574,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                 children: [
                   for (final minutes in _sleepMinutes)
                     ActionChip(
+                      shape: const StadiumBorder(),
                       avatar: const Icon(LucideIcons.timer, size: 14),
                       label: Text('$minutes min'),
                       onPressed: () {
@@ -1369,18 +1603,6 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                   ),
               ],
               _heading(sheet, 'Advanced'),
-              SwitchListTile(
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                secondary: const Icon(LucideIcons.cpu, size: 18),
-                title: const Text('Hardware decoding'),
-                subtitle: const Text('Off if the picture looks wrong; uses more battery'),
-                value: _settings.hardwareDecoding,
-                onChanged: (on) {
-                  unawaited(_settings.update(hardwareDecoding: on));
-                  unawaited(_native?.setProperty('hwdec', on ? 'auto-safe' : 'no'));
-                },
-              ),
               if (_phone)
                 SwitchListTile(
                   dense: true,

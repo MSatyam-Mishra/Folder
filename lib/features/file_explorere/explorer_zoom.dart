@@ -58,10 +58,10 @@ class ExplorerZoom extends ValueNotifier<double> {
       Platform.isMacOS ? HardwareKeyboard.instance.isMetaPressed : HardwareKeyboard.instance.isControlPressed;
 }
 
-/// The grid and gallery at a zoom: tiles exactly [zoom] times the size they
-/// have at 100%, so every step shows. At 100% it's the usual grid (tiles up
-/// to [maxTile] wide, filling the row); zoomed, as many tiles as fit, with
-/// the row's spare room left at its end, as in File Explorer.
+/// The grid and gallery at a zoom: as many tiles as fit at [zoom] times the
+/// size they have at 100%, sharing all the row's room, so no gap is left at its
+/// end. At 100% it's the usual grid, tiles up to [maxTile] wide. So a tile's
+/// size moves in steps, as the number in a row changes.
 class ZoomedGridDelegate extends SliverGridDelegate {
   const ZoomedGridDelegate({
     required this.maxTile,
@@ -80,9 +80,10 @@ class ZoomedGridDelegate extends SliverGridDelegate {
     final room = constraints.crossAxisExtent;
     final usual = math.max(1, (room / (maxTile + spacing)).ceil());
     final usualTile = math.max(0.0, room - spacing * (usual - 1)) / usual;
-    final tile = math.min(usualTile * zoom, room);
+    final wanted = math.min(usualTile * zoom, room);
     // The small amount: at 100% the sum comes out a hair under `usual`.
-    final count = math.max(1, ((room + spacing) / (tile + spacing) + 1e-6).floor());
+    final count = math.max(1, ((room + spacing) / (wanted + spacing) + 1e-6).floor());
+    final tile = math.max(0.0, room - spacing * (count - 1)) / count;
     final height = tile / aspectRatio;
     return SliverGridRegularTileLayout(
       crossAxisCount: count,

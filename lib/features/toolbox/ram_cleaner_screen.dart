@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
 import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
+import 'package:explorer/features/toolbox/ram_extreme_view.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Memory in use, live, and a button that frees what the system allows. What
 /// it says it freed is measured, before and after.
@@ -23,6 +26,13 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
   bool _cleaning = false;
   String? _result;
   Timer? _timer;
+
+  /// Extreme mode, which only Android has: elsewhere the button already does
+  /// what the system allows, and closing programs could lose unsaved work.
+  bool _extreme = false;
+  static const _modeKey = 'ram_cleaner_extreme';
+
+  bool get _hasExtreme => defaultTargetPlatform == TargetPlatform.android;
 
   Future<void> _refresh() async {
     final stats = await RamCleaner.read();
@@ -66,7 +76,8 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
     return _canCleanOthers
         ? 'Background apps are closed. Android may start some of them again.'
         : "Android 14 and newer don't let any app close other apps, so this clears what Explorer itself holds. "
-            'Android frees the rest by itself when something needs it.';
+            'Android frees the rest by itself when something needs it, and Extreme mode closes apps through an '
+            'Accessibility service.';
   }
 
   @override
@@ -76,6 +87,11 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
     RamCleaner.canCleanOthers().then((can) {
       if (mounted) setState(() => _canCleanOthers = can);
     });
+    if (_hasExtreme) {
+      SharedPreferences.getInstance().then((prefs) {
+        if (mounted) setState(() => _extreme = prefs.getBool(_modeKey) ?? false);
+      });
+    }
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!_cleaning) _refresh();
     });
@@ -86,6 +102,19 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
     _timer?.cancel();
     super.dispose();
   }
+
+  Widget _modeSwitch() => SegmentedButton<bool>(
+        expandedInsets: EdgeInsets.zero,
+        segments: const [
+          ButtonSegment(value: false, label: Text('Normal'), icon: Icon(LucideIcons.eraser, size: 16)),
+          ButtonSegment(value: true, label: Text('Extreme'), icon: Icon(LucideIcons.zap, size: 16)),
+        ],
+        selected: {_extreme},
+        onSelectionChanged: (mode) {
+          setState(() => _extreme = mode.first);
+          SharedPreferences.getInstance().then((prefs) => prefs.setBool(_modeKey, mode.first));
+        },
+      );
 
   Widget _figure(String label, int bytes) {
     final text = Theme.of(context).textTheme;
@@ -107,9 +136,12 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
     final stats = _stats;
     return ExplorerScaffold(
       title: 'RAM cleaner',
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(24, DockedGlossyTopBar.contentTopInset(context) + 32, 24, 32),
+      body: _extreme
+          ? ExtremeRamView(header: _modeSwitch(), stats: stats)
+          : ListView(
+        padding: EdgeInsets.fromLTRB(24, DockedGlossyTopBar.contentTopInset(context) + (_hasExtreme ? 16 : 32), 24, 32),
         children: [
+          if (_hasExtreme) ...[_modeSwitch(), const SizedBox(height: 24)],
           Center(
             child: SizedBox.square(
               dimension: 190,

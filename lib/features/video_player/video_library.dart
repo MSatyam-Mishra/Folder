@@ -89,9 +89,6 @@ class VideoHistory extends ChangeNotifier {
   static const _streamsKey = 'video_streams';
   static const _maxStreams = 20;
 
-  /// A video nobody played is new for this long.
-  static const newFor = Duration(days: 7);
-
   final _played = <String, VideoProgress>{};
   final _streams = <String>[];
   Future<void>? _loading;
@@ -119,9 +116,8 @@ class VideoHistory extends ChangeNotifier {
 
   VideoProgress? progressOf(String path) => _played[path];
 
-  /// Not played yet, and recent.
-  bool isNew(DeviceFile video, {DateTime? now}) =>
-      !_played.containsKey(video.path) && (now ?? DateTime.now()).difference(video.modified) < newFor;
+  /// Not played yet, however old it is: the count on a folder, and NEW on a video.
+  bool isUnplayed(DeviceFile video) => !_played.containsKey(video.path);
 
   /// What's been played, newest first.
   List<String> get recent {

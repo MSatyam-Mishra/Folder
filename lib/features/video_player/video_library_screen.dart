@@ -246,7 +246,7 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// A folder's icon with how many of its videos are new.
+/// A folder's icon with how many of its videos haven't been played.
 class _FolderIcon extends StatelessWidget {
   const _FolderIcon({required this.folder, required this.size});
 
@@ -257,12 +257,12 @@ class _FolderIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final history = VideoHistory.instance;
     final colors = context.colors;
-    final fresh = folder.videos.where(history.isNew).length;
+    final unplayed = folder.videos.where(history.isUnplayed).length;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         EntityIcon(entity: Directory(folder.path), size: size),
-        if (fresh > 0)
+        if (unplayed > 0)
           Positioned(
             top: -2,
             right: -4,
@@ -275,7 +275,7 @@ class _FolderIcon extends StatelessWidget {
                   child: Center(
                     widthFactor: 1,
                     child: Text(
-                      '$fresh',
+                      '$unplayed',
                       style: TextStyle(color: colors.destructiveForeground, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -464,7 +464,7 @@ class VideoRow extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      if (history.isNew(video)) ...[
+                      if (history.isUnplayed(video)) ...[
                         DecoratedBox(
                           decoration: BoxDecoration(color: colors.destructive, borderRadius: BorderRadius.circular(3)),
                           child: Padding(
@@ -786,15 +786,19 @@ Future<void> showPlayerDefaults(BuildContext context) async {
             value: settings.resume,
             onChanged: (on) => unawaited(settings.update(resume: on)),
           ),
-          SwitchListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            secondary: const Icon(LucideIcons.cpu, size: 18),
-            title: const Text('Hardware decoding'),
-            subtitle: const Text('Off if the picture looks wrong; uses more battery'),
-            value: settings.hardwareDecoding,
-            onChanged: (on) => unawaited(settings.update(hardwareDecoding: on)),
-          ),
+          const SizedBox(height: 8),
+          Text('Decoder', style: Theme.of(sheet).textTheme.titleSmall),
+          for (final decoder in VideoDecoder.available)
+            ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              leading: const Icon(LucideIcons.cpu, size: 18),
+              title: Text('${decoder.short} · ${decoder.label}'),
+              subtitle: Text(decoder.description),
+              trailing: settings.decoder == decoder ? const Icon(LucideIcons.check, size: 18) : null,
+              onTap: () => unawaited(settings.update(decoder: decoder)),
+            ),
           if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS)
             SwitchListTile(
               dense: true,

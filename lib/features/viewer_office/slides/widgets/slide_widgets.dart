@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:explorer/core/platform/system_bars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -154,7 +155,7 @@ class _PresentationModeState extends State<PresentationMode> {
     ];
     _index = math.max(0, _shown.indexOf(widget.startIndex));
     _pages = PageController(initialPage: _index);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemBars.hide();
     if (Platform.isAndroid || Platform.isIOS) {
       final landscape = widget.deck.width >= widget.deck.height;
       SystemChrome.setPreferredOrientations(
@@ -179,16 +180,11 @@ class _PresentationModeState extends State<PresentationMode> {
     super.dispose();
   }
 
-  /// Brings the status and navigation bars back. Switching straight from
-  /// immersiveSticky to edgeToEdge leaves them hidden on Android (the engine
-  /// only changes the decor-fits flag), so show every overlay first.
+  /// Brings the status and navigation bars back.
   void _restoreSystemUi() {
     if (_restored) return;
     _restored = true;
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: SystemUiOverlay.values,
-    ).then((_) => SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+    SystemBars.show();
     if (Platform.isAndroid || Platform.isIOS) {
       SystemChrome.setPreferredOrientations(const []);
     }

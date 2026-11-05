@@ -538,7 +538,8 @@ class _OnlineSubtitlesSheetState extends State<OnlineSubtitlesSheet> {
           for (final option in titles.take(12))
             ListTile(
               dense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: Icon(option.isSeries ? LucideIcons.tv : LucideIcons.film, size: 18, color: colors.mutedForeground),
               title: Text(option.label, maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(option.isSeries ? 'Series' : 'Film'),
@@ -573,6 +574,7 @@ class _OnlineSubtitlesSheetState extends State<OnlineSubtitlesSheet> {
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
+                        shape: const StadiumBorder(),
                         label: Text('${subtitleLanguageName(language)} ${counts[language]}'),
                         selected: _language == language,
                         onSelected: (_) => setState(() => _language = language),
@@ -586,7 +588,8 @@ class _OnlineSubtitlesSheetState extends State<OnlineSubtitlesSheet> {
           for (final subtitle in (subtitles ?? const <OnlineSubtitle>[]).where((row) => row.language == _language))
             ListTile(
               dense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: _saving == subtitle
                   ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
                   : Icon(LucideIcons.download, size: 18, color: colors.mutedForeground),

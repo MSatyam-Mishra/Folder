@@ -36,29 +36,30 @@ abstract final class AppGlass {
 /// [child] on a surface of [color], see-through and blurring what's behind
 /// it while the glass is on, else solid.
 class GlassSurface extends StatelessWidget {
-  const GlassSurface({super.key, required this.color, required this.child});
+  const GlassSurface({super.key, required this.color, required this.child, this.borderRadius});
 
   final Color color;
   final Widget child;
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     if (AppGlass.isLiquid(context, listen: true)) {
-      return LiquidGlass(tint: color, child: child);
+      return LiquidGlass(tint: color, borderRadius: borderRadius ?? BorderRadius.zero, child: child);
     }
     final settings = WindowEffects.supported ? context.watch<ThemeCubit>().state : null;
     // Its own Material: ink (hover, press) shows above the colour.
     final content = Material(type: MaterialType.transparency, child: child);
     if (settings == null || !settings.windowEffect) return ColoredBox(color: color, child: content);
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: ColoredBox(
-          color: color.withValues(alpha: AppGlass.opacityFor(settings.transparency)),
-          child: content,
-        ),
+    final blurred = BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+      child: ColoredBox(
+        color: color.withValues(alpha: AppGlass.opacityFor(settings.transparency)),
+        child: content,
       ),
     );
+    final radius = borderRadius;
+    return radius == null ? ClipRect(child: blurred) : ClipRRect(borderRadius: radius, child: blurred);
   }
 }
 

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' show Offset, Size;
 
 import 'package:path/path.dart' as p;
 
@@ -94,6 +95,45 @@ List<String> subtitlesBeside(String video, Iterable<String> filesInFolder) {
   ];
   found.sort((a, b) => p.basename(a).length.compareTo(p.basename(b).length));
   return found;
+}
+
+/// Whether one of mpv's errors is about a subtitle file rather than [video].
+/// mpv reports them all alike, and a subtitle that won't open stops nothing.
+bool isSubtitleError(String message, String video) {
+  if (message.contains(p.basename(video))) return false;
+  return RegExp(r'\.(srt|ass|ssa|vtt|sub|smi)\b', caseSensitive: false).hasMatch(message);
+}
+
+/// How far the picture is zoomed and moved, by a pinch.
+class VideoView {
+  const VideoView({this.zoom = 1, this.pan = Offset.zero});
+
+  static const minZoom = 0.5;
+  static const maxZoom = 5.0;
+
+  /// Close to the picture's own size, it settles there.
+  static const _snap = 0.04;
+
+  final double zoom;
+  final Offset pan;
+
+  bool get isPlain => zoom == 1 && pan == Offset.zero;
+
+  /// At [zoom] and [pan], moved no further than keeps the picture on a screen
+  /// of [screen]; smaller than the screen, it stays in the middle.
+  VideoView adjusted({double? zoom, Offset? pan, required Size screen}) {
+    final next = (zoom ?? this.zoom).clamp(minZoom, maxZoom);
+    final maxX = max(0.0, screen.width * (next - 1) / 2);
+    final maxY = max(0.0, screen.height * (next - 1) / 2);
+    final moved = pan ?? this.pan;
+    return VideoView(
+      zoom: next,
+      pan: Offset(moved.dx.clamp(-maxX, maxX), moved.dy.clamp(-maxY, maxY)),
+    );
+  }
+
+  /// At the end of a pinch.
+  VideoView settled() => (zoom - 1).abs() < _snap ? const VideoView() : this;
 }
 
 /// What's in [folder], or nothing if it can't be read.
