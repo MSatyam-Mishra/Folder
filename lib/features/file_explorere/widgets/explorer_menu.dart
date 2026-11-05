@@ -69,6 +69,21 @@ abstract final class ExplorerMenu {
     );
   }
 
+  /// Where a submenu of the menu row [row] opens in a window of [window]: on
+  /// its right if it fits, else on its left, and never over the menu. A popup
+  /// grows from the side it has less room on, so that's what the two sides say.
+  @visibleForTesting
+  static RelativeRect besideMenu(Rect row, Size window, {double width = 320}) {
+    final top = row.top - 4;
+    final bottom = window.height - row.bottom;
+    if (window.width - row.right >= width) {
+      final left = row.right - 4;
+      return RelativeRect.fromLTRB(left, top, left + 1, bottom);
+    }
+    final right = window.width - row.left - 4;
+    return RelativeRect.fromLTRB(right + 1, top, right, bottom);
+  }
+
   /// Opens [items] at [globalPosition], e.g. where a right-click happened.
   static Future<T?> showAt<T>(
     BuildContext context,
@@ -237,14 +252,11 @@ class _SubmenuState<T> extends State<_Submenu<T>> {
     final box = context.findRenderObject()! as RenderBox;
     final overlay =
         Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
-    final rect = Rect.fromPoints(
-      box.localToGlobal(Offset(box.size.width - 4, -4), ancestor: overlay),
-      box.localToGlobal(Offset(box.size.width, box.size.height), ancestor: overlay),
-    );
+    final row = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
     setState(() => _open = true);
     final value = await ExplorerMenu._open<T>(
       context,
-      RelativeRect.fromRect(rect, Offset.zero & overlay.size),
+      ExplorerMenu.besideMenu(row, overlay.size),
       widget.items,
       200,
     );
@@ -257,7 +269,12 @@ class _SubmenuState<T> extends State<_Submenu<T>> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return MouseRegion(
-      onEnter: (_) => _hover = Timer(const Duration(milliseconds: 250), _show),
+      // When the mouse moves onto it, not when the menu opens under a mouse
+      // that's still: then it would open by itself, without being asked.
+      onHover: (_) {
+        if (_open || (_hover?.isActive ?? false)) return;
+        _hover = Timer(const Duration(milliseconds: 250), _show);
+      },
       onExit: (_) => _hover?.cancel(),
       child: InkWell(
         onTap: _show,

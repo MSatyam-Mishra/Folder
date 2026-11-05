@@ -108,6 +108,10 @@ void main() {
   testWidgets('copied in Finder: Paste in the folder menu is on and pastes', (tester) async {
     await open(tester);
     await tester.tapAt(const Offset(900, 760), kind: PointerDeviceKind.mouse, buttons: kSecondaryButton);
+    // Until it's open: the menu comes after real file work, then animates.
+    for (var i = 0; i < 40 && find.text('Paste').evaluate().isEmpty; i++) {
+      await settle(tester);
+    }
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
     final paste = find.ancestor(of: find.text('Paste'), matching: find.byType(PopupMenuItem<Object>));

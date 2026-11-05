@@ -1,7 +1,10 @@
 package com.example.explorer
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
@@ -19,7 +22,8 @@ import java.util.concurrent.Executors
  * - `queryFiles`: files with given extensions from the MediaStore index
  *   (documents, archives…), newest first. Much faster than walking storage;
  * - `keepAwake`: keeps the screen on and Wi-Fi at full power while a folder
- *   is shared over Wi-Fi, so transfers don't stall when the phone idles.
+ *   is shared over Wi-Fi, so transfers don't stall when the phone idles;
+ * - `memoryInfo`, `canFreeMemory`, `freeMemory`: the RAM cleaner.
  */
 class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
     private val channel = MethodChannel(messenger, "explorer/device")
@@ -45,9 +49,40 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                     keepAwake(call.argument<Boolean>("on") ?: false)
                     result.success(null)
                 }
+                "memoryInfo" -> {
+                    val info = ActivityManager.MemoryInfo()
+                    activityManager().getMemoryInfo(info)
+                    result.success(mapOf("total" to info.totalMem, "available" to info.availMem))
+                }
+                "canFreeMemory" -> result.success(Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                "freeMemory" -> worker.execute {
+                    val closed = closeBackgroundApps()
+                    main.post { result.success(closed) }
+                }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun activityManager() = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+
+    /**
+     * Closes other apps' background processes. Since Android 14 the system
+     * ignores this for any app but the caller, so it isn't even tried there.
+     */
+    private fun closeBackgroundApps(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return 0
+        val manager = activityManager()
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        var closed = 0
+        for (app in activity.packageManager.queryIntentActivities(launcher, 0)) {
+            val info = app.activityInfo.applicationInfo
+            if (info.packageName == activity.packageName) continue
+            if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
+            manager.killBackgroundProcesses(info.packageName)
+            closed++
+        }
+        return closed
     }
 
     private fun queryFiles(extensions: List<String>): List<Map<String, Any>> {

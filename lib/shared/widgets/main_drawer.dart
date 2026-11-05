@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:explorer/core/services/social_files.dart';
+import 'package:explorer/features/toolbox/toolbox_screen.dart';
 import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/build_features.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -121,6 +122,15 @@ class MainDrawerContent extends StatelessWidget {
                   },
                 ),
               const AppSidebarSection('Tools'),
+              AppSidebarItem(
+                icon: LucideIcons.wrench,
+                label: 'Toolbox',
+                detail: 'Cleaners, duplicates and players',
+                onTap: () {
+                  final explorer = context.read<FileExplorerBloc>();
+                  _push(context, ToolboxScreen(showFolder: (folder) => explorer.add(LoadDirectory(folder))));
+                },
+              ),
               AppSidebarItem(
                 icon: LucideIcons.radio,
                 label: 'Nearby share',

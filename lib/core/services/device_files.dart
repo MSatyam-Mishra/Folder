@@ -79,6 +79,9 @@ abstract final class DeviceFiles {
           })
           .whenComplete(() => _pending.remove(group));
 
+  /// All the music on an Android device, from the MediaStore index.
+  static Future<List<DeviceFile>> findAndroidAudio() => _find(FileTypes.audio);
+
   static Future<List<DeviceFile>> _find(Set<String> extensions) async {
     if (Platform.isAndroid) {
       final rows = await _channel.invokeListMethod<Map<Object?, Object?>>(

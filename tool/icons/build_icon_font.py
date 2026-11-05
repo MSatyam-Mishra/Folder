@@ -95,6 +95,7 @@ HI_ICONS = {
     'pause': 'Pause',
     'skipBack': 'Previous',
     'skipForward': 'Next',
+    'shuffle': 'Shuffle 1',
     'moon': 'Moon',
     'sun': 'Sun 1',
     'star': 'Star 1',
