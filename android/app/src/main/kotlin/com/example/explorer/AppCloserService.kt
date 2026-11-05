@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -160,7 +159,6 @@ class AppCloserService : AccessibilityService() {
                 // Its name on the page: the last app's stays up until this one's comes.
                 val page = pageWindow()?.takeIf { find(it, listOf(app.label)) != null }
                 val button = page?.let { find(it, stopWords) }
-                Log.d("AppCloser", "${app.label} +$waited page=${page != null} button=${button != null} usable=${button?.let { isUsable(it) }}")
                 when {
                     button != null && !isUsable(button) -> if (waited > GREYED_WAIT_MS) {
                         // Still greyed out: it's stopped already, or can't be.
@@ -179,7 +177,6 @@ class AppCloserService : AccessibilityService() {
             }
             Step.CONFIRMING -> {
                 val confirm = findInDialog()
-                Log.d("AppCloser", "confirm +$waited ${confirm?.text} active=${rootInActiveWindow?.packageName}")
                 when {
                     confirm != null && press(confirm) -> {
                         current.closed++

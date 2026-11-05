@@ -22,6 +22,12 @@ String describeClosing({required int asked, required int stopped, required bool 
   return '$what$left$memory';
 }
 
+/// Memory to two places, as a whole number of gigabytes says little here.
+String _memory(int bytes) {
+  const gigabyte = 1024 * 1024 * 1024;
+  return bytes < gigabyte ? EntityFormat.size(bytes) : '${(bytes / gigabyte).toStringAsFixed(2)} GB';
+}
+
 /// The RAM cleaner's Extreme mode on Android: a gauge, what Play would close,
 /// and the lists that decide it. The progress screen during a run is drawn by
 /// the Accessibility service, over the pages it works through.
@@ -176,7 +182,7 @@ class _ExtremeRamViewState extends State<ExtremeRamView> {
                 Expanded(
                   child: _Figure(
                     label: 'Free memory',
-                    value: widget.stats == null ? '–' : EntityFormat.size(widget.stats!.available),
+                    value: widget.stats == null ? '–' : _memory(widget.stats!.available),
                   ),
                 ),
               ],
@@ -311,7 +317,7 @@ class _Gauge extends StatelessWidget {
               Text('RAM', style: text.titleSmall),
               const SizedBox(height: 2),
               if (stats != null)
-                Text('${EntityFormat.size(stats.used)} / ${EntityFormat.size(stats.total)}', style: text.bodySmall),
+                Text('${_memory(stats.used)} / ${_memory(stats.total)}', style: text.bodySmall),
             ],
           ),
         ),

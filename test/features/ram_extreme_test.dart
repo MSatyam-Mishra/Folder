@@ -59,7 +59,7 @@ void main() {
     const mb = 1024 * 1024;
     expect(
       describeClosing(asked: 3, stopped: 3, cancelled: false, freed: 300 * mb),
-      'Closed 3 apps. Free memory went up by 300.0 MB.',
+      'Closed 3 apps. Free memory went up by 300 MB.',
     );
     expect(
       describeClosing(asked: 3, stopped: 2, cancelled: false, freed: 0),
