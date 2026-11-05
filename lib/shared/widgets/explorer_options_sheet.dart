@@ -1,4 +1,5 @@
 import 'package:explorer/features/file_explorere/explorer_zoom.dart';
+import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/window_effects.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
 import 'package:explorer/core/theme/app_color_theme.dart';
@@ -266,6 +267,15 @@ class ExplorerOptionsSheet extends StatelessWidget {
           title: const Text('Thumbnails'),
           subtitle: const Text('Pictures of images, videos, PDFs and documents instead of their icons'),
         ),
+        if (!Desktop.isDesktop)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(LucideIcons.droplets, size: 17),
+            value: settings.liquidGlass,
+            onChanged: cubit.setLiquidGlass,
+            title: const Text('Liquid glass'),
+            subtitle: const Text('See-through, blurred bars, menus and sheets'),
+          ),
         const _Heading('File icons'),
         SegmentedButton<FileIconStyle>(
           showSelectedIcon: false,

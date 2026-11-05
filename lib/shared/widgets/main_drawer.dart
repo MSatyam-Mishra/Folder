@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:explorer/core/services/social_files.dart';
 import 'package:explorer/core/app_licenses.dart';
 import 'package:explorer/core/build_features.dart';
 import 'package:explorer/core/platform/explorer_paths.dart';
@@ -109,6 +110,16 @@ class MainDrawerContent extends StatelessWidget {
                   );
                 },
               ),
+              const AppSidebarSection('Social'),
+              for (final app in SocialApp.values)
+                AppSidebarItem(
+                  icon: app.icon,
+                  label: app.label,
+                  onTap: () {
+                    dismissDrawer(context);
+                    context.read<FileExplorerBloc>().add(LoadDirectory(ExplorerPaths.socialPath(app.id)));
+                  },
+                ),
               const AppSidebarSection('Tools'),
               AppSidebarItem(
                 icon: LucideIcons.radio,

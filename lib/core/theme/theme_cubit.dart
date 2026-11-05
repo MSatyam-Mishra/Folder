@@ -53,6 +53,12 @@ class ThemeCubit extends Cubit<AppThemeSettings> {
     await ThemePreferences.save(next);
   }
 
+  Future<void> setLiquidGlass(bool on) async {
+    final next = state.copyWith(liquidGlass: on);
+    emit(next);
+    await ThemePreferences.save(next);
+  }
+
   Future<void> setStyle(AppStyle style) async {
     final next = state.copyWith(style: style);
     emit(next);

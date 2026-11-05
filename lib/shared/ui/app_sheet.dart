@@ -54,15 +54,44 @@ class AppSheet extends StatelessWidget {
         ),
       );
     }
+    final liquid = AppGlass.isLiquid(context);
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       constraints: const BoxConstraints(maxWidth: 640),
-      builder: (_) => AppSheet(
-        maxHeightFraction: maxHeightFraction,
-        child: child,
-      ),
+      backgroundColor: liquid ? Colors.transparent : null,
+      elevation: liquid ? 0 : null,
+      showDragHandle: liquid ? false : null,
+      barrierColor: liquid ? Colors.black.withValues(alpha: 0.2) : null,
+      builder: (sheet) {
+        final content = AppSheet(maxHeightFraction: maxHeightFraction, child: child);
+        if (!liquid) return content;
+        // The handle goes on the glass, which the sheet's own would be beside.
+        final colors = Theme.of(sheet).colorScheme;
+        return LiquidGlass(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          opacity: 0.72,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Flexible(child: content),
+            ],
+          ),
+        );
+      },
     );
   }
 

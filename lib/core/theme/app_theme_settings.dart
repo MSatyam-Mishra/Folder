@@ -15,6 +15,7 @@ class AppThemeSettings {
     this.transparency = 0.5,
     this.style = AppStyle.standard,
     this.showThumbnails = true,
+    this.liquidGlass = true,
   });
 
   final ThemeMode themeMode;
@@ -35,6 +36,9 @@ class AppThemeSettings {
   /// icons in the file list.
   final bool showThumbnails;
 
+  /// See-through, blurred bars, sheets, menus and buttons on phones (Options).
+  final bool liquidGlass;
+
   /// The overall look: the app's own, or macOS, Windows, Sweet, Dracula.
   final AppStyle style;
 
@@ -51,6 +55,7 @@ class AppThemeSettings {
     double? transparency,
     AppStyle? style,
     bool? showThumbnails,
+    bool? liquidGlass,
   }) {
     return AppThemeSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -60,6 +65,7 @@ class AppThemeSettings {
       transparency: transparency ?? this.transparency,
       style: style ?? this.style,
       showThumbnails: showThumbnails ?? this.showThumbnails,
+      liquidGlass: liquidGlass ?? this.liquidGlass,
     );
   }
 

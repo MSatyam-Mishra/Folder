@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:explorer/core/services/social_files.dart';
 import 'package:path/path.dart' as p;
 
 /// Cross-platform paths for the file explorer home and navigation.
@@ -16,9 +17,28 @@ abstract final class ExplorerPaths {
 
   static bool isCategory(String path) => path.startsWith(_categoryPrefix);
 
+  static const String _socialPrefix = 'explorer://social/';
+
+  /// What an app has saved (WhatsApp...): all of it, or one [tab] of it.
+  static String socialPath(String app, [String? tab]) =>
+      '$_socialPrefix$app${tab == null ? '' : '/${Uri.encodeComponent(tab)}'}';
+
+  static bool isSocial(String path) => path.startsWith(_socialPrefix);
+
+  /// The app of a [socialPath].
+  static String? socialAppOf(String path) =>
+      isSocial(path) ? path.substring(_socialPrefix.length).split('/').first : null;
+
+  /// The tab of a [socialPath]; null for all its files.
+  static String? socialTabOf(String path) {
+    if (!isSocial(path)) return null;
+    final parts = path.substring(_socialPrefix.length).split('/');
+    return parts.length > 1 ? Uri.decodeComponent(parts[1]) : null;
+  }
+
   /// Listed by the app, not a folder on disk: nothing can be created or
   /// pasted there, and it has no folder to watch.
-  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path);
+  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path) || isSocial(path);
 
   /// Whether the category [name] opens as such a folder: on computers,
   /// where its files are plain files. macOS's photos and videos are in the
@@ -63,6 +83,9 @@ abstract final class ExplorerPaths {
   /// Parent path for back navigation; returns null when already at app root.
   static String? parentOf(String path) {
     if (isCategory(path)) return homePath;
+    if (isSocial(path)) {
+      return socialTabOf(path) == null ? homePath : socialPath(socialAppOf(path)!);
+    }
     if (isAppRoot(path)) return null;
     if (Platform.isWindows && isDriveRoot(path)) return windowsRoots;
 
@@ -77,6 +100,7 @@ abstract final class ExplorerPaths {
   static String titleForPath(String path) {
     if (isWindowsRoots(path)) return 'This PC';
     if (isCategory(path)) return path.substring(_categoryPrefix.length);
+    if (isSocial(path)) return socialTabOf(path) ?? SocialApp.byId(socialAppOf(path)!)?.label ?? 'Files';
     if (Platform.isAndroid && path == androidInternalStorage) return 'Files';
     if (isDriveRoot(path)) {
       return 'Local Disk (${path[0].toUpperCase()}:)';

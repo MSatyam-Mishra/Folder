@@ -24,6 +24,7 @@ import 'package:explorer/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:explorer/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
 import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
+import 'package:explorer/features/file_explorere/widgets/social_tabs.dart';
 import 'package:explorer/features/file_explorere/widgets/image_actions.dart';
 import 'package:explorer/features/file_explorere/widgets/inline_rename.dart';
 import 'package:explorer/features/file_explorere/widgets/new_file_button.dart';
@@ -390,14 +391,14 @@ class _FileExplorerUI extends StatelessWidget {
         child: body,
       ),
       floatingActionButton: showFab
-          ? FloatingActionButton(
+          ? AppFab(
               tooltip: 'New',
+              icon: LucideIcons.plus,
               onPressed: () => showNewItemSheet(
                 context,
                 onNewFolder: () => fileActionsService.createFolder(context, loaded.path),
                 onNewFile: (kind) => fileActionsService.startNewFile(context, loaded.path, kind),
               ),
-              child: const Icon(LucideIcons.plus),
             )
           : null,
     );
@@ -703,7 +704,38 @@ class _FileExplorerUI extends StatelessWidget {
     required double bottomInset,
     required bool canCreate,
   }) {
-    final topInset = DockedGlossyTopBar.contentTopInset(context);
+    final path = switch (state) {
+      FileExplorerLoaded(:final path) => path,
+      FileExplorerLoading(:final path) => path,
+      FileExplorerError(:final path) => path,
+      _ => null,
+    };
+    if (path == null || !ExplorerPaths.isSocial(path)) {
+      return _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate);
+    }
+    // An app's files (WhatsApp...): its tabs stay above them.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate, extraTop: SocialTabs.height),
+        Positioned(
+          top: DockedGlossyTopBar.contentTopInset(context),
+          left: 0,
+          right: 0,
+          child: SocialTabs(path: path),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFolder(
+    BuildContext context,
+    FileExplorerState state, {
+    required double bottomInset,
+    required bool canCreate,
+    double extraTop = 0,
+  }) {
+    final topInset = DockedGlossyTopBar.contentTopInset(context) + extraTop;
     final bottom = MediaQuery.paddingOf(context).bottom + 16 + bottomInset;
     final statePadding = EdgeInsets.fromLTRB(24, topInset + 24, 24, bottom);
 
@@ -754,6 +786,14 @@ class _FileExplorerUI extends StatelessWidget {
               );
       }
       if (state.entities.isEmpty) {
+        if (ExplorerPaths.isSocial(state.path)) {
+          return ExplorerEmptyState(
+            padding: statePadding,
+            icon: LucideIcons.folderOpen,
+            title: 'No files here yet',
+            description: 'Photos, videos and documents this app saves on this device show up here.',
+          );
+        }
         return ExplorerEmptyState(
           padding: statePadding,
           icon: LucideIcons.folderOpen,
@@ -818,7 +858,7 @@ class _FileExplorerUI extends StatelessWidget {
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
       final dir = p.dirname(e.path);
-      if (ExplorerPaths.isCategory(state.path)) return p.basename(dir);
+      if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path)) return p.basename(dir);
       if (!searching) return null;
       return p.equals(dir, state.path) ? null : p.relative(dir, from: state.path);
     }

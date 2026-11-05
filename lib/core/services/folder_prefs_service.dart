@@ -64,7 +64,7 @@ class FolderPrefsService {
     final key = _getPathKey(path);
     final jsonString = _prefs.getString(key);
     if (jsonString == null) {
-      return ExplorerPaths.isCategory(path) ? SortOption.date : SortOption.name; // Default
+      return ExplorerPaths.isCategory(path) || ExplorerPaths.isSocial(path) ? SortOption.date : SortOption.name; // Default
     }
 
     final map = jsonDecode(jsonString);
@@ -75,7 +75,7 @@ class FolderPrefsService {
     final key = _getPathKey(path);
     final jsonString = _prefs.getString(key);
     if (jsonString == null) {
-      return ExplorerPaths.isCategory(path) ? SortOrder.descending : SortOrder.ascending; // Default
+      return ExplorerPaths.isCategory(path) || ExplorerPaths.isSocial(path) ? SortOrder.descending : SortOrder.ascending; // Default
     }
 
     final map = jsonDecode(jsonString);

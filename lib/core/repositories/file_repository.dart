@@ -8,6 +8,7 @@ import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/platform/macos_files.dart';
 import 'package:explorer/core/platform/windows_locations.dart';
 import 'package:explorer/core/services/folder_prefs_service.dart';
+import 'package:explorer/core/services/social_files.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
 import 'package:win32/win32.dart'
@@ -48,6 +49,7 @@ class LocalFileRepository implements FileRepository {
     if (ExplorerPaths.isCategory(path)) {
       return categoryFiles(ExplorerPaths.titleForPath(path));
     }
+    if (ExplorerPaths.isSocial(path)) return SocialFiles.list(path);
     if (ExplorerPaths.isWindowsRoots(path)) {
       final locations = await WindowsLocations.listAll();
       final entities = <FileSystemEntity>[];

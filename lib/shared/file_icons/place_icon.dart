@@ -117,7 +117,7 @@ class PlaceIcon extends StatelessWidget {
     final symbol = Icon(mac ? place?.finderGlyph ?? icon : icon, size: size, color: color);
     // A category has its place's icon: it's no folder on disk.
     final path = this.path;
-    final folder = path != null && !ExplorerPaths.isCategory(path) ? path : place?.folder;
+    final folder = path != null && !ExplorerPaths.isVirtual(path) ? path : place?.folder;
     if (look.systemIcons && !mac && folder != null) {
       return SystemIcon(path: folder, size: size, fallback: symbol);
     }

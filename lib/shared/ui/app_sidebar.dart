@@ -1,4 +1,5 @@
 import 'package:explorer/shared/file_icons/place_icon.dart';
+import 'package:explorer/shared/ui/app_glass.dart';
 import 'package:explorer/core/theme/app_style.dart';
 import 'package:explorer/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -12,9 +13,20 @@ class AppSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final content = SafeArea(child: child);
+    if (!AppGlass.isLiquid(context, listen: true)) return Drawer(width: width, child: content);
+    final theme = Theme.of(context);
     return Drawer(
       width: width,
-      child: SafeArea(child: child),
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      child: LiquidGlass(
+        tint: theme.drawerTheme.backgroundColor ?? theme.colorScheme.surface,
+        opacity: 0.78,
+        child: content,
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:explorer/core/theme/app_style.dart';
+import 'package:explorer/shared/ui/app_glass.dart';
 import 'package:explorer/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,6 +53,8 @@ class AppTopBarScaffold extends StatelessWidget {
     final colors = context.colors;
     final dark = context.isDarkMode;
     final topInset = MediaQuery.paddingOf(context).top;
+    final liquid = AppGlass.isLiquid(context, listen: true);
+    final page = backgroundColor ?? colors.background;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: (dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
@@ -69,6 +72,52 @@ class AppTopBarScaffold extends StatelessWidget {
         body: Stack(
           children: [
             Positioned.fill(child: body),
+            // A floating bar leaves the status bar over the content: it fades
+            // out towards the top.
+            if (liquid)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topInset + barHeight * 0.7,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [page, page.withValues(alpha: 0.85), page.withValues(alpha: 0)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (liquid)
+              Positioned(
+                top: topInset + 2,
+                left: 8,
+                right: 8,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(barHeight / 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: dark ? 0.35 : 0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: LiquidGlass(
+                    borderRadius: BorderRadius.circular(barHeight / 2),
+                    child: SizedBox(
+                      height: barHeight - 4,
+                      child: Builder(builder: topBarBuilder),
+                    ),
+                  ),
+                ),
+              )
+            else
             Positioned(
               top: 0,
               left: 0,
