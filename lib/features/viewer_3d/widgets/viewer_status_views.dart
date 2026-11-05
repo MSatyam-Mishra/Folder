@@ -1,4 +1,4 @@
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 
 /// Loading card shown over the 3D canvas while a model is read and parsed.

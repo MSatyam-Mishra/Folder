@@ -1,11 +1,11 @@
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/shared/file_icons/place_icon.dart';
-import 'package:explorer/shared/widgets/main_drawer.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/shared/file_icons/place_icon.dart';
+import 'package:folder/shared/widgets/main_drawer.dart';
 import 'package:disk_space_plus/disk_space_plus.dart';
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:filesize/filesize.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

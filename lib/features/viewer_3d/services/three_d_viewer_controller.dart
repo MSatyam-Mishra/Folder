@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:explorer/features/viewer_3d/models/viewer_3d_models.dart';
+import 'package:folder/features/viewer_3d/models/viewer_3d_models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 

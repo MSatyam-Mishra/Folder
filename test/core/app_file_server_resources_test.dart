@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/file_server/app_file_server_resources.dart';
-import 'package:explorer/core/theme/app_color_theme.dart';
-import 'package:explorer/shared/file_icons/file_icons.dart';
+import 'package:folder/core/services/file_server/app_file_server_resources.dart';
+import 'package:folder/core/theme/app_color_theme.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;

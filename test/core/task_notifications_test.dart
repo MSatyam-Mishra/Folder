@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/incoming_files.dart';
-import 'package:explorer/core/services/task_notifications.dart';
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/features/network/screens/file_server_screen.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/incoming_files.dart';
+import 'package:folder/core/services/task_notifications.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/features/network/screens/file_server_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

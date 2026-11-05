@@ -7,7 +7,7 @@ abstract class ClipboardState {}
 
 class ClipboardEmpty extends ClipboardState {}
 
-/// Nothing copied in Explorer, but another app (Finder) copied files. On
+/// Nothing copied in Folder, but another app (Finder) copied files. On
 /// macOS reading them may make the system ask the user first, so they're
 /// read when the user pastes.
 class ClipboardOtherAppFiles extends ClipboardEmpty {}

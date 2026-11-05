@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -24,8 +24,8 @@ import android.util.Log
 class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
     companion object {
         private const val TAG = "VideoDownloadService"
-        private const val ACTION_START = "com.example.explorer.video_downloader.START"
-        private const val ACTION_CANCEL = "com.example.explorer.video_downloader.CANCEL"
+        private const val ACTION_START = "com.example.folder.video_downloader.START"
+        private const val ACTION_CANCEL = "com.example.folder.video_downloader.CANCEL"
         private const val EXTRA_ID = "id"
         private const val CHANNEL_PROGRESS = "video_downloads"
         private const val CHANNEL_DONE = "video_downloads_done"

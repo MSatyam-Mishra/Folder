@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "MSatyam-Mishra" "\0"
-            VALUE "FileDescription", "Explorer" "\0"
+            VALUE "FileDescription", "Folder" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "explory" "\0"
+            VALUE "InternalName", "folder" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 MSatyam-Mishra. Licensed under the GPL-3.0." "\0"
-            VALUE "OriginalFilename", "explory.exe" "\0"
-            VALUE "ProductName", "Explorer" "\0"
+            VALUE "OriginalFilename", "folder.exe" "\0"
+            VALUE "ProductName", "Folder" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

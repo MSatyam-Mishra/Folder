@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Activity
 import android.app.PendingIntent
@@ -31,7 +31,7 @@ import io.flutter.plugin.common.MethodChannel
  */
 class VideoPlayerNative(private val activity: Activity, messenger: BinaryMessenger) {
     companion object {
-        private const val ACTION_PIP_PLAY_PAUSE = "com.example.explorer.video_player.PIP_PLAY_PAUSE"
+        private const val ACTION_PIP_PLAY_PAUSE = "com.example.folder.video_player.PIP_PLAY_PAUSE"
         private const val MIN_ASPECT = 0.42
         private const val MAX_ASPECT = 2.38
         private const val ARTWORK_SIZE = 320

@@ -1,10 +1,10 @@
 @TestOn('mac-os')
 library;
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/core/theme/app_theme_settings.dart';
-import 'package:explorer/shared/widgets/tasks_view.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/core/theme/app_theme_settings.dart';
+import 'package:folder/shared/widgets/tasks_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

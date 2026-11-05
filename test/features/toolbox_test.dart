@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/toolbox/duplicate_finder.dart';
-import 'package:explorer/core/services/toolbox/junk_scanner.dart';
-import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
-import 'package:explorer/features/toolbox/duplicate_finder_screen.dart';
-import 'package:explorer/features/toolbox/memory_cleaner_screen.dart';
-import 'package:explorer/features/toolbox/toolbox_menu.dart';
+import 'package:folder/core/services/toolbox/duplicate_finder.dart';
+import 'package:folder/core/services/toolbox/junk_scanner.dart';
+import 'package:folder/core/services/toolbox/ram_cleaner.dart';
+import 'package:folder/features/toolbox/duplicate_finder_screen.dart';
+import 'package:folder/features/toolbox/memory_cleaner_screen.dart';
+import 'package:folder/features/toolbox/toolbox_menu.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

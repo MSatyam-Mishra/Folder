@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/zstd_decoder.dart';
+import 'package:folder/core/formats/zstd_decoder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pointycastle/digests/sha256.dart';
 

@@ -129,12 +129,12 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
           ? (tools.ffmpegDownloaded
               ? 'FFmpeg is part of the video engine.'
               : 'Using FFmpeg at ${tools.ffmpeg}.')
-          : 'FFmpeg was not found. Without it Explorer can only download '
+          : 'FFmpeg was not found. Without it Folder can only download '
               'formats that already contain both video and audio (often '
               'lower quality), and cannot convert to MP3 or embed '
               'thumbnails. Install FFmpeg (on a Mac: brew install ffmpeg), '
               'then reopen the downloader.',
-      setupNote: 'A one-time download. Keep Explorer open until it\'s done.',
+      setupNote: 'A one-time download. Keep Folder open until it\'s done.',
       engine: EngineInfo(
         installed: missing.isEmpty,
         downloadBytes: missing.fold(0, (sum, part) => sum + part.downloadBytes),
@@ -218,7 +218,7 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
     downloads ??= await getApplicationDocumentsDirectory();
     final temp = _tempOverride ?? await getTemporaryDirectory();
     return BackendPaths(
-      defaultOutputDir: p.join(downloads.path, 'Explorer Videos'),
+      defaultOutputDir: p.join(downloads.path, 'Folder Videos'),
       workRoot: p.join(temp.path, 'explorer_video_work'),
     );
   }

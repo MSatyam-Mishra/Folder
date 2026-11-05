@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/localsend/localsend.dart';
-import 'package:explorer/features/localsend/localsend_controller.dart';
-import 'package:explorer/features/localsend/widgets/localsend_dialogs.dart';
-import 'package:explorer/features/localsend/widgets/localsend_receive_panel.dart';
-import 'package:explorer/features/localsend/widgets/localsend_send_panel.dart';
-import 'package:explorer/features/localsend/widgets/localsend_settings_sheet.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/services/localsend/localsend.dart';
+import 'package:folder/features/localsend/localsend_controller.dart';
+import 'package:folder/features/localsend/widgets/localsend_dialogs.dart';
+import 'package:folder/features/localsend/widgets/localsend_receive_panel.dart';
+import 'package:folder/features/localsend/widgets/localsend_send_panel.dart';
+import 'package:folder/features/localsend/widgets/localsend_settings_sheet.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 
 /// Nearby sharing over the LocalSend protocol: send [initialItems] (files and

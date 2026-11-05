@@ -1,4 +1,4 @@
-import 'package:explorer/shared/ui/app_sidebar.dart';
+import 'package:folder/shared/ui/app_sidebar.dart';
 import 'package:flutter/material.dart';
 
 /// Side drawer in the app's sidebar style.

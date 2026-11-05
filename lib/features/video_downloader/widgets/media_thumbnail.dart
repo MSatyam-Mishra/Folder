@@ -1,4 +1,4 @@
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 
 /// A video thumbnail from the web, with a placeholder while it loads or

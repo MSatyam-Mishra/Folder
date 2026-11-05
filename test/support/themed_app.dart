@@ -1,7 +1,7 @@
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/core/theme/app_theme_settings.dart';
-import 'package:explorer/core/theme/theme_cubit.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/core/theme/app_theme_settings.dart';
+import 'package:folder/core/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

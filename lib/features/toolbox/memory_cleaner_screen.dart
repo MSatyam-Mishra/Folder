@@ -1,10 +1,10 @@
-import 'package:explorer/core/services/toolbox/junk_scanner.dart';
-import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
-import 'package:explorer/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:explorer/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
-import 'package:explorer/features/toolbox/toolbox_menu.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/services/toolbox/junk_scanner.dart';
+import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folder/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
+import 'package:folder/features/toolbox/toolbox_menu.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;

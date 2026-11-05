@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/exif_bytes.dart';
+import 'package:folder/core/formats/exif_bytes.dart';
 
 /// What the header of a JPEG stream says, without decoding it.
 class JpegInfo {

@@ -1,5 +1,5 @@
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

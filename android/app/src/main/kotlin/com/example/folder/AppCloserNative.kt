@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Activity
 import android.content.Intent

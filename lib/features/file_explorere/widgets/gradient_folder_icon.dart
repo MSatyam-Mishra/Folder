@@ -1,4 +1,4 @@
-import 'package:explorer/shared/file_icons/file_icons.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Folder icon in the explorer: the glass folder from assets/iocns/glass,

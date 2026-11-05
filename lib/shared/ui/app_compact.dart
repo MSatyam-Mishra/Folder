@@ -1,4 +1,4 @@
-import 'package:explorer/core/platform/desktop.dart';
+import 'package:folder/core/platform/desktop.dart';
 import 'package:flutter/material.dart';
 
 /// Text in [child] about [by] px smaller (with 1, 14 px becomes 13) on

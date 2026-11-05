@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/shared/widgets/web_view_unavailable.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/shared/widgets/web_view_unavailable.dart';
 import 'dart:io';
 
-import 'package:explorer/core/services/local_content_server.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
-import 'package:explorer/features/viewer_text/screens/text_editor_screen.dart';
-import 'package:explorer/features/viewer_text/text_document.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/services/local_content_server.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/features/viewer_text/screens/text_editor_screen.dart';
+import 'package:folder/features/viewer_text/text_document.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';

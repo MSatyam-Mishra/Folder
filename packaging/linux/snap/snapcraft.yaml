@@ -1,13 +1,13 @@
 # Snap of the prebuilt Linux app. .github/workflows/desktop-release.yml copies
 # this folder to snap/ next to bundle/ (the flutter build linux output),
 # replaces @VERSION@ and builds it with snapcore/action-build.
-name: explorer
-title: Explorer
+name: folder
+title: Folder
 base: core24
 version: '@VERSION@'
 summary: Open, edit and share almost any file
 description: |
-  Explorer is a file manager that opens over 300 file types inside the app:
+  Folder is a file manager that opens over 300 file types inside the app:
   documents, e-books, comics, archives, photos, video, music, 3D models and
   code. It can annotate PDFs and edit Word, Excel and PowerPoint files, send
   files to nearby devices with LocalSend, share a folder over Wi-Fi and
@@ -21,8 +21,8 @@ platforms:
   amd64:
 
 apps:
-  explorer:
-    command: explorer
+  folder:
+    command: folder
     extensions: [gnome]
     environment:
       # Tesseract's English data, for text in images.
@@ -34,7 +34,7 @@ apps:
       - network-bind
 
 parts:
-  explorer:
+  folder:
     plugin: dump
     source: bundle
     stage-packages:

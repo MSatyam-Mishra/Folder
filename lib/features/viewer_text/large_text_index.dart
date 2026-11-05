@@ -8,7 +8,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:explorer/features/viewer_text/text_document.dart';
+import 'package:folder/features/viewer_text/text_document.dart';
 
 /// Rows longer than this many bytes continue on extra rows, so no single row
 /// ever needs a huge paragraph layout (minified JSON, one-line logs...).

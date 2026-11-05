@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
-import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

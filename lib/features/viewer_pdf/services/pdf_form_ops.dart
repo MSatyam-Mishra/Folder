@@ -2,7 +2,7 @@ import 'dart:ffi' hide Size;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:explorer/features/viewer_pdf/services/pdfium_native.dart';
+import 'package:folder/features/viewer_pdf/services/pdfium_native.dart';
 import 'package:ffi/ffi.dart';
 import 'package:pdfium_dart/pdfium_dart.dart' as pdfium_bindings;
 import 'package:pdfrx/pdfrx.dart' show PdfRect;

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:explorer/features/viewer_hex/screens/hex_viewer_screen.dart';
-import 'package:explorer/features/viewer_text/screens/tabbed_text_editor.dart';
+import 'package:folder/features/viewer_hex/screens/hex_viewer_screen.dart';
+import 'package:folder/features/viewer_text/screens/tabbed_text_editor.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

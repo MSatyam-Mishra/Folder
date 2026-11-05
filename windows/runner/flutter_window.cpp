@@ -163,7 +163,7 @@ void FlutterWindow::NotifyTray(const std::wstring& title,
 void FlutterWindow::ShowTrayMenu() {
   HMENU menu = CreatePopupMenu();
   AppendMenuW(menu, MF_STRING, kMenuTasks, L"Show tasks");
-  AppendMenuW(menu, MF_STRING, kMenuOpen, L"Open Explorer");
+  AppendMenuW(menu, MF_STRING, kMenuOpen, L"Open Folder");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, kMenuQuit, L"Quit");
   POINT cursor;

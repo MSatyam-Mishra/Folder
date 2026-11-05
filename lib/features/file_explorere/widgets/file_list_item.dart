@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:explorer/shared/file_icons/file_thumbnail.dart';
-import 'package:explorer/core/services/folder_prefs_service.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/shared/file_icons/file_thumbnail.dart';
+import 'package:folder/core/services/folder_prefs_service.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;

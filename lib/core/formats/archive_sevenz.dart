@@ -156,7 +156,7 @@ class SevenZBackend extends ArcBackend {
       throw ArcException(
         ArcErrorKind.tooLarge,
         'This 7z archive packs "${entry.name}" in a solid block too large for '
-        'Explorer to unpack in memory.',
+        'Folder to unpack in memory.',
         entryPath: entry.path,
         detail: e.message,
       );

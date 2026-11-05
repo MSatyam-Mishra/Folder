@@ -276,7 +276,7 @@ $link.Save()
         (onDesktop ? await _linuxDesktop() : Directory(p.join(home, '.local', 'share', 'applications')));
     await target.create(recursive: true);
     final icon = await _saveIcon(shortcut, 'png', png, folder);
-    final file = File(p.join(target.path, 'com.synqixlabs.explory.${shortcut.id}.desktop'));
+    final file = File(p.join(target.path, 'com.synqixlabs.folder.${shortcut.id}.desktop'));
     await file.writeAsString(desktopEntry(shortcut, _linuxCommand, icon.path), flush: true);
     await Process.run('chmod', ['+x', file.path]);
     if (onDesktop) {
@@ -316,7 +316,7 @@ $link.Save()
 <dict>
   <key>CFBundleExecutable</key><string>run</string>
   <key>CFBundleIconFile</key><string>icon</string>
-  <key>CFBundleIdentifier</key><string>com.synqixlabs.explory.shortcut.${_xml(shortcut.id)}</string>
+  <key>CFBundleIdentifier</key><string>com.synqixlabs.folder.shortcut.${_xml(shortcut.id)}</string>
   <key>CFBundleName</key><string>${_xml(shortcut.title)}</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSUIElement</key><true/>

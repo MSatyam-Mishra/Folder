@@ -1,4 +1,4 @@
-import 'package:explorer/core/formats/cfb_reader.dart' show decodeCp1252;
+import 'package:folder/core/formats/cfb_reader.dart' show decodeCp1252;
 
 /// Windows ANSI code pages used by legacy Office formats (RTF `\ansicpg` /
 /// `\fcharset`, Word 6/95 text).

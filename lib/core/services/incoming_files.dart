@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Something another app sent to Explorer.
+/// Something another app sent to Folder.
 sealed class IncomingItem {
   const IncomingItem();
 
@@ -27,7 +27,7 @@ class IncomingRoute extends IncomingItem {
   final String route;
 }
 
-/// Text shared to Explorer ("Share → Explorer"), e.g. a video page link.
+/// Text shared to Folder ("Share → Folder"), e.g. a video page link.
 class IncomingLink extends IncomingItem {
   const IncomingLink(this.text);
 
@@ -38,7 +38,7 @@ class IncomingLink extends IncomingItem {
       RegExp(r'https?://[^\s<>"]+', caseSensitive: false).firstMatch(text)?.group(0);
 }
 
-/// A file another app asked Explorer to open ("Open with").
+/// A file another app asked Folder to open ("Open with").
 class IncomingFile extends IncomingItem {
   const IncomingFile({required this.uri, this.mime, this.writable = false});
 

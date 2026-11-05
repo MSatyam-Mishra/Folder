@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:explorer/core/services/app_shortcuts.dart';
-import 'package:explorer/features/toolbox/toolbox_menu.dart';
+import 'package:folder/core/services/app_shortcuts.dart';
+import 'package:folder/features/toolbox/toolbox_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -57,9 +57,9 @@ void main() {
   });
 
   test('macOS: a small app that opens this one, with the quotes right', () {
-    final script = AppShortcuts.macScript("/Apps/Satyam's/Explorer.app", ['--route=tool/ram_cleaner']);
+    final script = AppShortcuts.macScript("/Apps/Satyam's/Folder.app", ['--route=tool/ram_cleaner']);
     expect(script, startsWith('#!/bin/sh\n'));
-    expect(script, contains(r"/usr/bin/open -n '/Apps/Satyam'\''s/Explorer.app' --args '--route=tool/ram_cleaner'"));
+    expect(script, contains(r"/usr/bin/open -n '/Apps/Satyam'\''s/Folder.app' --args '--route=tool/ram_cleaner'"));
     final plist = AppShortcuts.macInfoPlist(const AppShortcut(
       id: 'x',
       title: 'A & B',

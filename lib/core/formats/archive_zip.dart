@@ -133,14 +133,14 @@ class ZipBackend extends ArcBackend {
     if (disk != 0 || cdDisk != 0) {
       throw ArcException(
         ArcErrorKind.unsupported,
-        'This is one part of a split ZIP (.z01/.z02…). Explorer can\'t join '
+        'This is one part of a split ZIP (.z01/.z02…). Folder can\'t join '
         'that kind of split archive.',
       );
     }
     if (count > limits.maxEntries) {
       throw ArcException(
         ArcErrorKind.tooLarge,
-        'The archive lists $count entries, more than Explorer will open.',
+        'The archive lists $count entries, more than Folder will open.',
       );
     }
     final bias = cdEnd - (cdOffset + cdSize);
@@ -317,7 +317,7 @@ class ZipBackend extends ArcBackend {
       if (entries.length > limits.maxEntries) {
         throw ArcException(
           ArcErrorKind.tooLarge,
-          'The archive has more entries than Explorer will open.',
+          'The archive has more entries than Folder will open.',
         );
       }
       pos = next;

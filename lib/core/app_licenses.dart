@@ -1,4 +1,4 @@
-import 'package:explorer/core/services/video_downloader/license_texts.dart';
+import 'package:folder/core/services/video_downloader/license_texts.dart';
 import 'package:flutter/foundation.dart';
 
 /// Where the source code of this app is published (GPL-3.0 §6).
@@ -6,7 +6,7 @@ const appSourceUrl = 'https://github.com/MSatyam-Mishra/explorer';
 
 /// The notice shown on the licences page.
 const appLegalese =
-    'Explorer is free software: you can redistribute it and/or modify it '
+    'Folder is free software: you can redistribute it and/or modify it '
     'under the terms of the GNU General Public License, version 3 or (at '
     'your option) any later version. It comes with ABSOLUTELY NO WARRANTY.\n\n'
     'Source code: $appSourceUrl';
@@ -22,8 +22,8 @@ void registerAppLicenses() {
 }
 
 Stream<LicenseEntry> _entries() async* {
-  yield const LicenseEntryWithLineBreaks(['Explorer'], appLegalese);
-  yield const LicenseEntryWithLineBreaks(['Explorer'], gpl3Text);
+  yield const LicenseEntryWithLineBreaks(['Folder'], appLegalese);
+  yield const LicenseEntryWithLineBreaks(['Folder'], gpl3Text);
   yield const LicenseEntryWithLineBreaks(['PDFium'], _pdfium);
   yield const LicenseEntryWithLineBreaks(['python-pptx (blank presentation)'], _pythonPptx);
   yield const LicenseEntryWithLineBreaks(['Sweet folders (Sweet style)'], _sweetFolders);

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/cfb_reader.dart';
+import 'package:folder/core/formats/cfb_reader.dart';
 
 import '../common/office_package.dart';
 import 'slide_model.dart';

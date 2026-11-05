@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/cfb_reader.dart';
+import 'package:folder/core/formats/cfb_reader.dart';
 
 enum TextEncoding { utf8, utf8Bom, utf16le, utf16be, windows1252 }
 

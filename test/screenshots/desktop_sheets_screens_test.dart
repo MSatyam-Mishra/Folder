@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

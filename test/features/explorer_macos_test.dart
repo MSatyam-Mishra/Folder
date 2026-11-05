@@ -3,11 +3,11 @@ library;
 
 import 'dart:io';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/services/file_action_service.dart';
-import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
-import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/services/file_action_service.dart';
+import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folder/features/file_explorere/widgets/file_list_item.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/repositories/file_repository.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/repositories/file_repository.dart';
 import 'package:path/path.dart' as p;
 
 /// Whether a name matches what was typed in the search box: anywhere in

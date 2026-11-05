@@ -1,8 +1,8 @@
 import 'dart:io' as io;
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
-import 'package:explorer/features/viewer_vector/widgets/vector_canvas.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/features/viewer_vector/widgets/vector_canvas.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:rive/rive.dart';

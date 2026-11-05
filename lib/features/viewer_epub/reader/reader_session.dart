@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:explorer/core/services/local_content_server.dart';
+import 'package:folder/core/services/local_content_server.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../book/book_source.dart';

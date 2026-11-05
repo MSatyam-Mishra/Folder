@@ -4,12 +4,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/services/localsend/localsend_client.dart';
-import 'package:explorer/core/services/localsend/localsend_discovery.dart';
-import 'package:explorer/core/services/localsend/localsend_identity.dart';
-import 'package:explorer/core/services/localsend/localsend_models.dart';
-import 'package:explorer/core/services/localsend/localsend_sender.dart';
-import 'package:explorer/core/services/localsend/localsend_server.dart';
+import 'package:folder/core/services/localsend/localsend_client.dart';
+import 'package:folder/core/services/localsend/localsend_discovery.dart';
+import 'package:folder/core/services/localsend/localsend_identity.dart';
+import 'package:folder/core/services/localsend/localsend_models.dart';
+import 'package:folder/core/services/localsend/localsend_sender.dart';
+import 'package:folder/core/services/localsend/localsend_server.dart';
 
 class LsSettings {
   const LsSettings({

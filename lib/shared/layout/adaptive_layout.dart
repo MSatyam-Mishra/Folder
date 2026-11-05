@@ -1,7 +1,7 @@
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/shared/ui/app_tokens.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/shared/ui/app_tokens.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 

@@ -1,7 +1,7 @@
-import 'package:explorer/core/services/video_downloader/downloader_settings.dart';
-import 'package:explorer/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:explorer/core/services/video_downloader/ytdlp_args.dart';
-import 'package:explorer/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folder/core/services/video_downloader/downloader_settings.dart';
+import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folder/core/services/video_downloader/ytdlp_args.dart';
+import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The value following [option] (its last occurrence).

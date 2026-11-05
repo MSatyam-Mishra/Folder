@@ -1,9 +1,9 @@
 import 'dart:ui' show ImageFilter;
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/services/social_files.dart';
-import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/services/social_files.dart';
+import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

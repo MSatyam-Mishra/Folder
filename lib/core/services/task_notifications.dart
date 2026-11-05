@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/theme/app_theme.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

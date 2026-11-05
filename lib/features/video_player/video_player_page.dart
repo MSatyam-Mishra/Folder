@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/platform/system_bars.dart';
-import 'package:explorer/core/services/file_action_service.dart';
-import 'package:explorer/core/services/media_controls.dart';
-import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
-import 'package:explorer/features/video_player/online_subtitles.dart';
-import 'package:explorer/features/video_player/play_queue.dart';
-import 'package:explorer/features/video_player/video_library.dart';
-import 'package:explorer/features/video_player/video_player_settings.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/platform/system_bars.dart';
+import 'package:folder/core/services/file_action_service.dart';
+import 'package:folder/core/services/media_controls.dart';
+import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folder/features/video_player/online_subtitles.dart';
+import 'package:folder/features/video_player/play_queue.dart';
+import 'package:folder/features/video_player/video_library.dart';
+import 'package:folder/features/video_player/video_player_settings.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -112,7 +112,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
   final _history = VideoHistory.instance;
   final _player = Player(
     configuration: const PlayerConfiguration(
-      title: 'Explorer',
+      title: 'Folder',
       bufferSize: 64 * 1024 * 1024,
       logLevel: MPVLogLevel.warn,
     ),
@@ -1479,10 +1479,10 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
       return;
     }
     final name = '${p.basenameWithoutExtension(videoTitle(_queue.current))}_${_position.value.inSeconds}s.jpg';
-    final folder = Directory(p.join(ExplorerPaths.homePath, 'Pictures', 'Explorer'));
+    final folder = Directory(p.join(ExplorerPaths.homePath, 'Pictures', 'Folder'));
     await folder.create(recursive: true);
     await File(p.join(folder.path, name)).writeAsBytes(bytes);
-    _say('Saved in Pictures/Explorer');
+    _say('Saved in Pictures/Folder');
   }
 
   Future<void> _showSettings() => _sheet((sheet, setSheet) {

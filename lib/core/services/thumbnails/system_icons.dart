@@ -3,8 +3,8 @@ import 'dart:collection' show Queue;
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/services/thumbnails/windows_shell_thumbnail.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/services/thumbnails/windows_shell_thumbnail.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 

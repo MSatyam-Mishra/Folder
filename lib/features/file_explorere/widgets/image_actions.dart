@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/image_convert/image_converter.dart';
-import 'package:explorer/core/services/image_convert/image_formats.dart';
-import 'package:explorer/core/services/video_downloader/desktop_tools.dart';
-import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/image_convert/image_converter.dart';
+import 'package:folder/core/services/image_convert/image_formats.dart';
+import 'package:folder/core/services/video_downloader/desktop_tools.dart';
+import 'package:folder/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -144,7 +144,7 @@ abstract final class ImageActions {
       builder: (dialog) => AlertDialog(
         title: Text('Download FFmpeg for ${format.label}?'),
         content: Text(
-          'Explorer makes ${format.label} pictures with FFmpeg, which the video '
+          'Folder makes ${format.label} pictures with FFmpeg, which the video '
           'downloader uses too. It\'s about ${filesize(DesktopTools.ffmpegDownloadBytes, 0)} '
           'to download (${filesize(DesktopTools.ffmpegDiskBytes, 0)} installed), once. '
           'The download is checked before it\'s used.',

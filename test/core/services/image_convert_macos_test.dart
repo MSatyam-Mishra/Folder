@@ -3,8 +3,8 @@ library;
 
 import 'dart:io';
 
-import 'package:explorer/core/services/image_convert/image_converter.dart';
-import 'package:explorer/core/services/image_convert/image_formats.dart';
+import 'package:folder/core/services/image_convert/image_converter.dart';
+import 'package:folder/core/services/image_convert/image_formats.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;

@@ -1,7 +1,7 @@
 import 'dart:ui' show ColorFilter, ImageFilter;
 
-import 'package:explorer/core/platform/window_effects.dart';
-import 'package:explorer/core/theme/theme_cubit.dart';
+import 'package:folder/core/platform/window_effects.dart';
+import 'package:folder/core/theme/theme_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

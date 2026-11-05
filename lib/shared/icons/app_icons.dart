@@ -1,4 +1,4 @@
-import 'package:explorer/core/theme/app_theme.dart';
+import 'package:folder/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 

@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/image_convert/heif_writer.dart';
-import 'package:explorer/core/services/image_convert/image_formats.dart';
-import 'package:explorer/core/services/video_downloader/desktop_tools.dart';
-import 'package:explorer/features/clipboard/paste_task.dart' show freeName;
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/image_convert/heif_writer.dart';
+import 'package:folder/core/services/image_convert/image_formats.dart';
+import 'package:folder/core/services/video_downloader/desktop_tools.dart';
+import 'package:folder/features/clipboard/paste_task.dart' show freeName;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;

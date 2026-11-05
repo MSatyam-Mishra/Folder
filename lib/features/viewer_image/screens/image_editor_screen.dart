@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/files/safe_write.dart';
-import 'package:explorer/features/viewer_image/image_codec.dart';
-import 'package:explorer/features/viewer_image/raw_image.dart';
-import 'package:explorer/features/viewer_image/widgets/crop_frame.dart';
-import 'package:explorer/shared/layout/adaptive_layout.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/files/safe_write.dart';
+import 'package:folder/features/viewer_image/image_codec.dart';
+import 'package:folder/features/viewer_image/raw_image.dart';
+import 'package:folder/features/viewer_image/widgets/crop_frame.dart';
+import 'package:folder/shared/layout/adaptive_layout.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;

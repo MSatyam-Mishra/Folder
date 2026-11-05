@@ -1,6 +1,6 @@
 {
-    "name": "explorer",
-    "short_name": "explorer",
+    "name": "folder",
+    "short_name": "folder",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2563EB",

@@ -1,4 +1,4 @@
-import 'package:explorer/shared/file_icons/file_icons.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Icons for macOS packages (apps, installers, document packages), which

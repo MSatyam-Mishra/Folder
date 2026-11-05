@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/social_files.dart';
+import 'package:folder/core/services/social_files.dart';
 import 'package:path/path.dart' as p;
 
 /// Cross-platform paths for the file explorer home and navigation.

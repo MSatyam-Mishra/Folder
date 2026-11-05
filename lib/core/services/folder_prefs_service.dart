@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:explorer/core/platform/explorer_paths.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 

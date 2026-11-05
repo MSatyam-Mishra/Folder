@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/window_effects.dart';
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/core/theme/app_theme_settings.dart';
-import 'package:explorer/core/theme/theme_preferences.dart';
+import 'package:folder/core/platform/window_effects.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/core/theme/app_theme_settings.dart';
+import 'package:folder/core/theme/theme_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The styles in Options > Style: Explorer, macOS, Windows, Sweet, Dracula.
+/// The styles in Options > Style: Folder, macOS, Windows, Sweet, Dracula.
 void main() {
   test('the style is saved and read back; unknown names are the default', () async {
     SharedPreferences.setMockInitialValues({});

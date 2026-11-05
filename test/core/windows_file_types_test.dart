@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:explorer/core/files/file_types.dart';
+import 'package:folder/core/files/file_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// packaging/windows/file-types.txt lists the types the Windows installer
-/// and the MSIX register Explorer for (Open with, Default apps): all the
+/// and the MSIX register Folder for (Open with, Default apps): all the
 /// ones a viewer opens, less what Windows runs or keeps for itself.
 void main() {
-  test('the Windows file types are the ones Explorer opens', () {
+  test('the Windows file types are the ones Folder opens', () {
     // Programs, scripts Windows runs, shortcuts and certificates: Windows
-    // keeps these (an MSIX can't take them), and Explorer still turns up
+    // keeps these (an MSIX can't take them), and Folder still turns up
     // for them through "Choose another app".
     const reserved = {
       'exe', 'msi', 'appx', 'bat', 'cmd', 'reg', 'vbs', 'ps1', 'js', 'url',
@@ -27,9 +27,9 @@ void main() {
         FileTypes.openDocumentPresentation, FileTypes.model3d,
         FileTypes.archive, FileTypes.diskImage, FileTypes.cameraRaw,
         FileTypes.design, FileTypes.markdown, FileTypes.html, FileTypes.json,
-        // Not FileTypes.package (.apk, .dmg...): Explorer has no viewer
+        // Not FileTypes.package (.apk, .dmg...): Folder has no viewer
         // for them and hands them to the default app, which with nothing
-        // else for them would be Explorer again, without end.
+        // else for them would be Folder again, without end.
         FileTypes.lottie, FileTypes.rive, FileTypes.font,
         FileTypes.code, FileTypes.text,
       ])

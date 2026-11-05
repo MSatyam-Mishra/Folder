@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:explorer/features/video_player/online_subtitles.dart';
-import 'package:explorer/features/video_player/video_player_settings.dart';
+import 'package:folder/features/video_player/online_subtitles.dart';
+import 'package:folder/features/video_player/video_player_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

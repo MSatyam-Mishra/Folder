@@ -26,7 +26,7 @@ class ClipboardFiles {
   int get hashCode => Object.hash(cut, Object.hashAll(paths));
 }
 
-/// The clipboard every Explorer window shares, so files copied or cut in
+/// The clipboard every Folder window shares, so files copied or cut in
 /// one window paste in another. On Windows and macOS it's the system
 /// clipboard: files also copy and paste to and from File Explorer or Finder
 /// and other apps. Linux uses a small file in the app's data folder; phones
@@ -101,7 +101,7 @@ abstract class _PolledClipboard extends FileClipboard {
 class WindowsFileClipboard extends _PolledClipboard {
   WindowsFileClipboard() : super(const Duration(milliseconds: 600));
 
-  static const _copy = 5; // DROPEFFECT_COPY | DROPEFFECT_LINK, as Explorer sets.
+  static const _copy = 5; // DROPEFFECT_COPY | DROPEFFECT_LINK, as Folder sets.
   static const _move = 2; // DROPEFFECT_MOVE
 
   static final int _dropEffect = using(
@@ -292,12 +292,12 @@ class SharedFileClipboard extends _PolledClipboard {
 /// The macOS pasteboard, in the format Finder uses (file URLs), so files
 /// copy and paste to and from Finder and other apps. Finder has no cut (it
 /// moves with Option-Command-V), so whether files were cut is kept in the
-/// shared file for the other Explorer windows, with the pasteboard change
+/// shared file for the other Folder windows, with the pasteboard change
 /// it belongs to: anything copied since makes it a plain copy again.
 ///
 /// macOS 26 asks the user when an app reads what another app copied, so
 /// watching the pasteboard only looks at its change count and the kinds of
-/// data on it. Files an Explorer window put there come from the shared
+/// data on it. Files an Folder window put there come from the shared
 /// file; files from Finder are read when the system won't ask, or when the
 /// user pastes ([readToPaste]).
 class MacFileClipboard extends SharedFileClipboard {
@@ -362,7 +362,7 @@ class MacFileClipboard extends SharedFileClipboard {
     if (board == null || board['files'] != true) return null;
     final saved = await _load();
     if (board['explorer'] == true && saved != null && saved['change'] == board['change']) {
-      // An Explorer window put them there: the shared file names them (as
+      // An Folder window put them there: the shared file names them (as
       // they were given, not as the pasteboard spells them) and says
       // whether they were cut.
       return SharedFileClipboard._files(saved);

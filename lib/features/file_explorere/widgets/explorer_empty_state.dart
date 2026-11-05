@@ -1,4 +1,4 @@
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Centered empty / error / permission state in the shadcn style: a muted

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/branding/icon.png" width="96" alt="Explorer app icon">
+  <img src="assets/branding/icon.png" width="96" alt="Folder app icon">
 </p>
 
-<h1 align="center">Explorer</h1>
+<h1 align="center">Folder</h1>
 
 <p align="center">
   <b>The universal file manager for Android, Windows and Linux.</b><br>
@@ -26,10 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/hero.png" width="100%" alt="Explorer on four phones: the file browser, PDF annotation, the video downloader and nearby sharing">
+  <img src="docs/screenshots/hero.png" width="100%" alt="Folder on four phones: the file browser, PDF annotation, the video downloader and nearby sharing">
 </p>
 
-## Why Explorer?
+## Why Folder?
 
 <table>
   <tr>
@@ -76,7 +76,7 @@
 - **Copy, cut, paste, rename, delete and compress to ZIP**, with progress for long jobs. Select many files at once.
 - **Properties and permissions** for any file, plus **Open with…** and **Share**.
 - **Categories** gather photos, videos, music, documents, archives, downloads and installed apps in one place.
-- Explorer shows up in Android's **Open with** and **Share** menus, so other apps can hand files to it.
+- Folder shows up in Android's **Open with** and **Share** menus, so other apps can hand files to it.
 - Light and dark themes, three file-icon styles, and layouts for phones, tablets and foldables.
 
 ### 🖥️ On Windows and Linux
@@ -106,7 +106,7 @@
 
 ### 📡 Nearby share (LocalSend)
 
-Explorer speaks the [LocalSend protocol](https://github.com/localsend/protocol), so it exchanges files with the official [LocalSend](https://github.com/localsend/localsend) app on Android, iOS, Windows, macOS and Linux, and with other copies of Explorer. No internet or account is needed; both devices only have to be on the same Wi-Fi or LAN.
+Folder speaks the [LocalSend protocol](https://github.com/localsend/protocol), so it exchanges files with the official [LocalSend](https://github.com/localsend/localsend) app on Android, iOS, Windows, macOS and Linux, and with other copies of Folder. No internet or account is needed; both devices only have to be on the same Wi-Fi or LAN.
 
 - **Send**: select files or folders and tap **Send nearby**, then pick a device.
 - **Receive**: open **Menu → Nearby share**. While it's open, other devices can find you, and you accept or decline each transfer. Received files go to `Download/LocalSend`.
@@ -129,7 +129,7 @@ Download videos or audio from the [over 1,000 sites yt-dlp supports](https://git
 
 - In a browser or video app, tap **Share → Download video**, or open **Menu → Video downloader** and paste a link.
 - Pick a quality up to 4K, audio only (M4A or MP3), or an exact format. Playlists work too.
-- Downloads continue in the background with a notification and are saved to `Download/Explorer Videos`.
+- Downloads continue in the background with a notification and are saved to `Download/Folder Videos`.
 - yt-dlp keeps itself up to date.
 - **On Android**, the first use asks to download the video engine (Python for yt-dlp, and FFmpeg): about 50 MB, or 120 MB once installed. It isn't in the APK, to keep the app small, and you can remove it in the downloader's settings.
 - **On Windows and Linux**, the first use asks to download what's missing: the official yt-dlp, [FFmpeg](https://ffmpeg.org/) (yt-dlp's builds) and [Deno](https://deno.com/) (the JavaScript runtime YouTube needs), about 150 MB. An FFmpeg or JavaScript runtime already on your computer is used instead. Downloads resume if the connection drops, are checked against their published checksums, and can be removed in the downloader's settings. On a Mac, install FFmpeg with Homebrew.
@@ -236,6 +236,6 @@ The full list, with every Dart package's license, is under **Menu → About and 
 
 ## License
 
-Explorer is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE), version 3 or (at your option) any later version. It is distributed in the hope that it will be useful, but without any warranty; see the license for details.
+Folder is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE), version 3 or (at your option) any later version. It is distributed in the hope that it will be useful, but without any warranty; see the license for details.
 
 Third-party components keep their own licenses (listed above, and under **Menu → About and licences** in the app).

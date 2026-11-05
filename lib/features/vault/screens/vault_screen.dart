@@ -1,22 +1,22 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/router/file_opener.dart';
-import 'package:explorer/core/services/auth_service.dart';
-import 'package:explorer/core/services/directory_services.dart';
-import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
-import 'package:explorer/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:explorer/features/vault/vault_store.dart';
-import 'package:explorer/shared/file_icons/file_icons.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/router/file_opener.dart';
+import 'package:folder/core/services/auth_service.dart';
+import 'package:folder/core/services/directory_services.dart';
+import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folder/features/vault/vault_store.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// Private files, unlocked with the device's fingerprint, face or screen
-/// lock. Locks again whenever Explorer goes to the background.
+/// lock. Locks again whenever Folder goes to the background.
 class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key, this.store, this.auth});
 
@@ -226,7 +226,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
                       // On a computer other programs can still reach the
                       // app's folder, and the files aren't encrypted.
                       : 'Files in the vault are moved out of your folders, and '
-                          'Explorer asks for your sign-in before showing them. '
+                          'Folder asks for your sign-in before showing them. '
                           "They aren't encrypted. Use Move to vault in a file's "
                           'menu, or add files here.',
                   actions: [

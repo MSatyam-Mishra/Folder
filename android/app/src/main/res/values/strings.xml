@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_closer_label">Explorer: close apps</string>
-    <string name="app_closer_description">For the RAM cleaner\'s Extreme mode. When you start a clean in Explorer, this opens the info page of each app you chose and presses Force stop, as you could by hand. Android 14 and newer give apps no other way to close others. It does nothing at any other time, and reads nothing but those pages.</string>
+    <string name="app_closer_label">Folder: close apps</string>
+    <string name="app_closer_description">For the RAM cleaner\'s Extreme mode. When you start a clean in Folder, this opens the info page of each app you chose and presses Force stop, as you could by hand. Android 14 and newer give apps no other way to close others. It does nothing at any other time, and reads nothing but those pages.</string>
 </resources>

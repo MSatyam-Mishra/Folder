@@ -3,19 +3,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/services/file_server/file_server_assets.dart';
-import 'package:explorer/core/services/file_server/file_server_page.dart';
-import 'package:explorer/core/services/file_server/lan_address.dart';
-import 'package:explorer/core/services/file_server/zip_stream.dart';
-import 'package:explorer/core/services/http_range.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/services/file_server/file_server_assets.dart';
+import 'package:folder/core/services/file_server/file_server_page.dart';
+import 'package:folder/core/services/file_server/lan_address.dart';
+import 'package:folder/core/services/file_server/zip_stream.dart';
+import 'package:folder/core/services/http_range.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart' show lookupMimeType;
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-export 'package:explorer/core/services/file_server/file_server_page.dart'
+export 'package:folder/core/services/file_server/file_server_page.dart'
     show WebTheme;
 
 /// What the web pages need from the app: file icons, the font, the logo and

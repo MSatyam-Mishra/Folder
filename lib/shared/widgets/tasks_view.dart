@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:explorer/core/build_features.dart';
-import 'package:explorer/core/platform/background_mode.dart';
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:explorer/features/viewer_office/common/viewer_ui.dart' show showViewerConfirm;
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/build_features.dart';
+import 'package:folder/core/platform/background_mode.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folder/features/viewer_office/common/viewer_ui.dart' show showViewerConfirm;
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
@@ -78,7 +78,7 @@ class _TasksPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Explorer tasks', style: text.titleMedium),
+                            Text('Folder tasks', style: text.titleMedium),
                             Text(
                               running == 0
                                   ? 'All done'
@@ -150,7 +150,7 @@ class _TasksPage extends StatelessWidget {
                       Expanded(
                         child: FilledButton(
                           onPressed: BackgroundMode.instance.openExplorer,
-                          child: const Text('Open Explorer'),
+                          child: const Text('Open Folder'),
                         ),
                       ),
                     ],

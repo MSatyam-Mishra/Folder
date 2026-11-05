@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
-import 'package:explorer/core/formats/archive_backend.dart';
-import 'package:explorer/core/formats/archive_extract.dart';
-import 'package:explorer/core/formats/archive_open.dart';
-import 'package:explorer/core/formats/archive_session.dart';
+import 'package:folder/core/formats/archive_backend.dart';
+import 'package:folder/core/formats/archive_extract.dart';
+import 'package:folder/core/formats/archive_open.dart';
+import 'package:folder/core/formats/archive_session.dart';
 import 'package:path/path.dart' as p;
 
 /// A listed archive member (kept for callers of [ArchiveService.listContents]).

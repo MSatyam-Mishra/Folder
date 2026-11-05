@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Notification
 import android.content.Context

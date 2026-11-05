@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/macos_open_files.dart';
+import 'package:folder/core/platform/macos_open_files.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

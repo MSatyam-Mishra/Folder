@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/video_downloader/downloader_backend.dart';
-import 'package:explorer/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:explorer/core/services/video_downloader/ytdlp_models.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/core/services/video_downloader/downloader_backend.dart';
+import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

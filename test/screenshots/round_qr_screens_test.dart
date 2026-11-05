@@ -1,4 +1,4 @@
-import 'package:explorer/shared/widgets/round_qr_code.dart';
+import 'package:folder/shared/widgets/round_qr_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
-import 'package:explorer/shared/file_icons/file_thumbnail.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folder/shared/file_icons/file_thumbnail.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;

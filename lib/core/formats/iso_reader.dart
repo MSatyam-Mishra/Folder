@@ -207,7 +207,7 @@ class _Builder {
     if (entries.length > limits.maxEntries) {
       throw ArcException(
         ArcErrorKind.tooLarge,
-        'The image has more files than Explorer will list.',
+        'The image has more files than Folder will list.',
       );
     }
   }
@@ -671,7 +671,7 @@ class _Udf {
           throw ArcException(
             ArcErrorKind.unsupported,
             'This UDF image uses a virtual allocation table (CD-R session), '
-            'which Explorer can\'t read.',
+            'which Folder can\'t read.',
           );
         }
         if (ident.startsWith('*UDF Metadata')) {

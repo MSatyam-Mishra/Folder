@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:explorer/shared/widgets/scrollbar_scroll_view.dart';
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/router/file_opener.dart';
-import 'package:explorer/features/category_view/bloc/bloc/category_bloc.dart';
-import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
-import 'package:explorer/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/shared/widgets/scrollbar_scroll_view.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/router/file_opener.dart';
+import 'package:folder/features/category_view/bloc/bloc/category_bloc.dart';
+import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folder/features/file_explorere/widgets/file_list_item.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -58,7 +58,7 @@ class CategoryViewerScreen extends StatelessWidget {
                 title: "Couldn't load ${title.toLowerCase()}",
                 description: categoryType == RequestType.common
                     ? state.message
-                    : "Explorer couldn't read the device's media library. "
+                    : "Folder couldn't read the device's media library. "
                         'Check that it may access photos and media, then try '
                         'again.',
                 actions: [

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:explorer/features/viewer_archive/screens/archive_viewer_screen.dart';
-import 'package:explorer/features/viewer_comic/screens/comic_viewer.dart';
+import 'package:folder/features/viewer_archive/screens/archive_viewer_screen.dart';
+import 'package:folder/features/viewer_comic/screens/comic_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;

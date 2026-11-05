@@ -59,19 +59,19 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Explorer shows your photos and videos in the sidebar.</string>
+	<string>Folder shows your photos and videos in the sidebar.</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Explorer shows and manages the files on your Desktop.</string>
+	<string>Folder shows and manages the files on your Desktop.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Explorer shows and manages the files in your Documents folder.</string>
+	<string>Folder shows and manages the files in your Documents folder.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>Explorer shows and manages the files in your Downloads folder.</string>
+	<string>Folder shows and manages the files in your Downloads folder.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>Explorer shows and manages the files on USB drives and memory cards.</string>
+	<string>Folder shows and manages the files on USB drives and memory cards.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>Explorer shows and manages the files on network drives.</string>
+	<string>Folder shows and manages the files on network drives.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Explorer finds nearby devices to send and receive files, and shares folders over Wi-Fi.</string>
+	<string>Folder finds nearby devices to send and receive files, and shares folders over Wi-Fi.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

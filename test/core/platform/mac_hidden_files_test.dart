@@ -3,8 +3,8 @@ library;
 
 import 'dart:io';
 
-import 'package:explorer/core/repositories/file_repository.dart';
-import 'package:explorer/features/file_explorere/bloc/folder_search.dart';
+import 'package:folder/core/repositories/file_repository.dart';
+import 'package:folder/features/file_explorere/bloc/folder_search.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/services/device_files.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/services/device_files.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_manager/photo_manager.dart';

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/windows_drop_files.dart';
+import 'package:folder/core/platform/windows_drop_files.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -2,17 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:explorer/shared/file_icons/file_icons.dart';
-import 'package:explorer/shared/layout/adaptive_layout.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folder/shared/layout/adaptive_layout.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:filesize/filesize.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
-import 'package:explorer/core/services/root_service.dart';
-import 'package:explorer/core/services/usb_host_service.dart';
-import 'package:explorer/core/services/usb_boot_service.dart';
+import 'package:folder/core/services/root_service.dart';
+import 'package:folder/core/services/usb_host_service.dart';
+import 'package:folder/core/services/usb_boot_service.dart';
 
 class UsbBootScreen extends StatefulWidget {
   const UsbBootScreen({super.key});

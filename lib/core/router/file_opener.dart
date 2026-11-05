@@ -1,31 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/core/platform/windows_default_app.dart';
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/features/viewer_3d/screens/blend_viewer_screen.dart';
-import 'package:explorer/features/viewer_3d/screens/three_d_viewer_screen.dart';
-import 'package:explorer/features/viewer_archive/screens/archive_viewer_screen.dart';
-import 'package:explorer/features/viewer_comic/screens/comic_viewer.dart';
-import 'package:explorer/features/viewer_design/screens/design_preview_screen.dart';
-import 'package:explorer/features/viewer_epub/screens/epub_viewer_screen.dart';
-import 'package:explorer/features/viewer_font/screens/font_viewer_screen.dart';
-import 'package:explorer/features/viewer_hex/screens/hex_viewer_screen.dart';
-import 'package:explorer/features/viewer_html/screens/html_viewer_screen.dart';
-import 'package:explorer/features/viewer_image/screens/viewer_image_screen.dart';
-import 'package:explorer/features/viewer_media/screens/audio_player_screen.dart';
-import 'package:explorer/features/video_player/video_player_page.dart';
-import 'package:explorer/features/viewer_office/screens/ppt_viewer_screen.dart';
-import 'package:explorer/features/viewer_office/screens/word_viewer_screen.dart';
-import 'package:explorer/features/viewer_pdf/screens/viewer_pdf_screen.dart';
-import 'package:explorer/features/viewer_sheets/screens/spreadsheet_screen.dart';
-import 'package:explorer/features/viewer_text/screens/tabbed_text_editor.dart';
-import 'package:explorer/features/viewer_text/text_document.dart';
-import 'package:explorer/features/viewer_vector/screens/lottie_viewer_screen.dart';
-import 'package:explorer/features/viewer_vector/screens/rive_viewer_screen.dart';
-import 'package:explorer/features/viewer_vector/screens/svg_viewer_screen.dart';
-import 'package:explorer/shared/ui/app_sheet.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/core/platform/windows_default_app.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/features/viewer_3d/screens/blend_viewer_screen.dart';
+import 'package:folder/features/viewer_3d/screens/three_d_viewer_screen.dart';
+import 'package:folder/features/viewer_archive/screens/archive_viewer_screen.dart';
+import 'package:folder/features/viewer_comic/screens/comic_viewer.dart';
+import 'package:folder/features/viewer_design/screens/design_preview_screen.dart';
+import 'package:folder/features/viewer_epub/screens/epub_viewer_screen.dart';
+import 'package:folder/features/viewer_font/screens/font_viewer_screen.dart';
+import 'package:folder/features/viewer_hex/screens/hex_viewer_screen.dart';
+import 'package:folder/features/viewer_html/screens/html_viewer_screen.dart';
+import 'package:folder/features/viewer_image/screens/viewer_image_screen.dart';
+import 'package:folder/features/viewer_media/screens/audio_player_screen.dart';
+import 'package:folder/features/video_player/video_player_page.dart';
+import 'package:folder/features/viewer_office/screens/ppt_viewer_screen.dart';
+import 'package:folder/features/viewer_office/screens/word_viewer_screen.dart';
+import 'package:folder/features/viewer_pdf/screens/viewer_pdf_screen.dart';
+import 'package:folder/features/viewer_sheets/screens/spreadsheet_screen.dart';
+import 'package:folder/features/viewer_text/screens/tabbed_text_editor.dart';
+import 'package:folder/features/viewer_text/text_document.dart';
+import 'package:folder/features/viewer_vector/screens/lottie_viewer_screen.dart';
+import 'package:folder/features/viewer_vector/screens/rive_viewer_screen.dart';
+import 'package:folder/features/viewer_vector/screens/svg_viewer_screen.dart';
+import 'package:folder/shared/ui/app_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
@@ -67,7 +67,7 @@ class FileOpener {
         await openExternally(context, file);
       } else if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Explorer can't open ${p.basename(file.path)}"),
+          content: Text("Folder can't open ${p.basename(file.path)}"),
         ));
       }
       return null;
@@ -157,8 +157,8 @@ class FileOpener {
   }
 
   static Future<void> openExternally(BuildContext context, File file) async {
-    // Windows: when Explorer is the type's default app, handing the file
-    // over would start Explorer again; Windows asks for an app instead.
+    // Windows: when Folder is the type's default app, handing the file
+    // over would start Folder again; Windows asks for an app instead.
     if (Platform.isWindows && WindowsDefaultApp.isThisApp(file.path)) {
       await WindowsDefaultApp.chooseApp(file.path);
       return;

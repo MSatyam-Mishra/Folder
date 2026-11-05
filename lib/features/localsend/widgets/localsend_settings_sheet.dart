@@ -1,7 +1,7 @@
-import 'package:explorer/core/services/localsend/localsend.dart';
-import 'package:explorer/core/services/localsend/localsend_platform.dart';
-import 'package:explorer/features/localsend/localsend_controller.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/core/services/localsend/localsend.dart';
+import 'package:folder/core/services/localsend/localsend_platform.dart';
+import 'package:folder/features/localsend/localsend_controller.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -318,8 +318,8 @@ class VideoDownloaderController extends ChangeNotifier {
     await _askNotificationPermission();
     if (!await backend.canWrite(outputDir)) {
       throw DownloaderException(
-        "Explorer can't save files in $outputDir. Choose another folder in "
-        'the downloader settings${Platform.isAndroid ? ', or allow Explorer to manage all files' : ''}.',
+        "Folder can't save files in $outputDir. Choose another folder in "
+        'the downloader settings${Platform.isAndroid ? ', or allow Folder to manage all files' : ''}.',
       );
     }
   }

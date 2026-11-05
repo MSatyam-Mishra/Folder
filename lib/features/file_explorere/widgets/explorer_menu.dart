@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 

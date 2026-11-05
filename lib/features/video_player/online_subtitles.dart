@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:explorer/features/video_player/play_queue.dart';
-import 'package:explorer/features/video_player/video_library.dart';
-import 'package:explorer/features/video_player/video_player_settings.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/features/video_player/play_queue.dart';
+import 'package:folder/features/video_player/video_library.dart';
+import 'package:folder/features/video_player/video_player_settings.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -131,7 +131,7 @@ abstract final class SubtitleSearch {
     if (override != null) return override(uri);
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15)
-      ..userAgent = 'Explorer';
+      ..userAgent = 'Folder';
     try {
       final request = await client.getUrl(uri).timeout(const Duration(seconds: 20));
       final response = await request.close().timeout(const Duration(seconds: 30));

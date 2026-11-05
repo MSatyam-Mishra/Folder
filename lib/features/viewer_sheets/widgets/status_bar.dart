@@ -1,4 +1,4 @@
-import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
+import 'package:folder/features/viewer_office/common/viewer_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../controller/spreadsheet_controller.dart';

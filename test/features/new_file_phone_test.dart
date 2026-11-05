@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
-import 'package:explorer/features/file_explorere/widgets/inline_rename.dart';
-import 'package:explorer/features/viewer_text/screens/tabbed_text_editor.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folder/features/file_explorere/widgets/inline_rename.dart';
+import 'package:folder/features/viewer_text/screens/tabbed_text_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/features/video_player/video_player_page.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/features/video_player/video_player_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

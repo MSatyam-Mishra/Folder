@@ -1,4 +1,4 @@
-import 'package:explorer/core/files/file_types.dart';
+import 'package:folder/core/files/file_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// macOS packages (folders Finder opens as one item) and installers.

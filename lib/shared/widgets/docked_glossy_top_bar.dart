@@ -1,8 +1,8 @@
-import 'package:explorer/shared/icons/app_icons.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/shared/icons/app_icons.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 
-export 'package:explorer/shared/liquid_glass/explorer_liquid_glass.dart';
+export 'package:folder/shared/liquid_glass/explorer_liquid_glass.dart';
 
 typedef DockedTopBarScaffold = AppTopBarScaffold;
 

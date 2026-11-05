@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:explorer/core/services/video_downloader/desktop_tools.dart';
-import 'package:explorer/core/services/video_downloader/downloader_backend.dart';
+import 'package:folder/core/services/video_downloader/desktop_tools.dart';
+import 'package:folder/core/services/video_downloader/downloader_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:pointycastle/digests/sha256.dart';

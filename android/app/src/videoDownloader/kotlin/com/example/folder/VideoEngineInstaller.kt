@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.content.Context
 import android.os.StatFs
@@ -201,7 +201,7 @@ object VideoEngineInstaller {
                 connectTimeout = 20_000
                 readTimeout = 30_000
                 instanceFollowRedirects = true
-                setRequestProperty("User-Agent", "Explorer-VideoDownloader")
+                setRequestProperty("User-Agent", "Folder-VideoDownloader")
                 if (have > 0) setRequestProperty("Range", "bytes=$have-")
             }
             try {

@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -24,7 +24,7 @@ class BackgroundWorkService : Service() {
         private const val TAG = "BackgroundWork"
         const val CHANNEL_RUNNING = "background_work"
         const val CHANNEL_FINISHED = "background_work_finished"
-        private const val ACTION_PRESS = "com.example.explorer.background_work.PRESS"
+        private const val ACTION_PRESS = "com.example.folder.background_work.PRESS"
         private const val EXTRA_ID = "id"
         private const val NOTHING_LEFT_ID = 0x7E0000
         private const val WAKE_LOCK_MS = 6 * 60 * 60 * 1000L

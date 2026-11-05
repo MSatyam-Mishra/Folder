@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:explorer/core/services/toolbox/app_closer.dart';
-import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/core/services/toolbox/app_closer.dart';
+import 'package:folder/core/services/toolbox/ram_cleaner.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;

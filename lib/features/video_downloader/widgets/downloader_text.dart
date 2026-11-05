@@ -1,5 +1,5 @@
-import 'package:explorer/core/services/video_downloader/ytdlp_models.dart';
-import 'package:explorer/core/services/video_downloader/ytdlp_output.dart';
+import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folder/core/services/video_downloader/ytdlp_output.dart';
 
 /// Text helpers for the video downloader screens.
 abstract final class DownloaderText {

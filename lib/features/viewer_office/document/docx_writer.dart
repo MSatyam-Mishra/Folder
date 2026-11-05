@@ -394,7 +394,7 @@ class _DocxWriter {
       'docProps/app.xml',
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
           '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
-          '<Application>Explorer</Application></Properties>',
+          '<Application>Folder</Application></Properties>',
     );
     // Content types first, as Word itself writes it.
     pkg.order

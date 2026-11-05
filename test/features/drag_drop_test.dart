@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/features/file_explorere/widgets/file_drag_drop.dart';
+import 'package:folder/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

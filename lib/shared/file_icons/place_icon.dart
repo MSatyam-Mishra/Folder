@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/services/thumbnails/system_icons.dart';
-import 'package:explorer/core/theme/app_style.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/services/thumbnails/system_icons.dart';
+import 'package:folder/core/theme/app_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;

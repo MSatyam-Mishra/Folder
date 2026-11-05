@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'dart:isolate';
 
-import 'package:explorer/core/files/file_types.dart';
+import 'package:folder/core/files/file_types.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;

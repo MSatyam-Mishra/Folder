@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:bloc/bloc.dart';
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/file_clipboard.dart';
-import 'package:explorer/features/clipboard/paste_task.dart';
-import 'package:explorer/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/file_clipboard.dart';
+import 'package:folder/features/clipboard/paste_task.dart';
+import 'package:folder/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -15,7 +15,7 @@ part 'clipboard_event.dart';
 part 'clipboard_state.dart';
 
 /// Copy, cut and paste of files. The clipboard is shared with the other
-/// Explorer windows, and on Windows and macOS with other apps (File
+/// Folder windows, and on Windows and macOS with other apps (File
 /// Explorer, Finder), see [FileClipboard].
 class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
   ClipboardBloc({required this.taskProgressBloc, FileClipboard? store})
@@ -154,7 +154,7 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
       return _stamped(
         ClipboardReadyToPaste(
           entities: entities,
-          // A copy, unless an Explorer window cut them.
+          // A copy, unless an Folder window cut them.
           operation: files!.cut ? ClipboardOperation.cut : ClipboardOperation.copy,
           // Pasted straight away: no paste bar for them.
           pasted: true,

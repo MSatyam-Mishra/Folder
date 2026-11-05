@@ -1,15 +1,15 @@
-import 'package:explorer/shared/file_icons/place_icon.dart';
-import 'package:explorer/core/files/file_types.dart';
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/core/theme/theme_cubit.dart';
-import 'package:explorer/shared/file_icons/file_icon_catalog.g.dart';
-import 'package:explorer/shared/file_icons/file_icon_style.dart';
+import 'package:folder/shared/file_icons/place_icon.dart';
+import 'package:folder/core/files/file_types.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/core/theme/theme_cubit.dart';
+import 'package:folder/shared/file_icons/file_icon_catalog.g.dart';
+import 'package:folder/shared/file_icons/file_icon_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 
-export 'package:explorer/shared/file_icons/file_icon_style.dart';
+export 'package:folder/shared/file_icons/file_icon_style.dart';
 
 /// What to draw for a file.
 sealed class FileIconSpec {

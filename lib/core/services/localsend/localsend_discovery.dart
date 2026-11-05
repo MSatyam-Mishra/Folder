@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:explorer/core/services/localsend/localsend_client.dart';
-import 'package:explorer/core/services/localsend/localsend_identity.dart';
-import 'package:explorer/core/services/localsend/localsend_models.dart';
+import 'package:folder/core/services/localsend/localsend_client.dart';
+import 'package:folder/core/services/localsend/localsend_identity.dart';
+import 'package:folder/core/services/localsend/localsend_models.dart';
 
 class LsDiscovery {
   LsDiscovery({

@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/blend/blend_to_gltf.dart';
-import 'package:explorer/core/router/file_opener.dart';
-import 'package:explorer/features/viewer_3d/screens/three_d_viewer_screen.dart';
-import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/core/formats/blend/blend_to_gltf.dart';
+import 'package:folder/core/router/file_opener.dart';
+import 'package:folder/features/viewer_3d/screens/three_d_viewer_screen.dart';
+import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
@@ -221,7 +221,7 @@ class _Unavailable extends StatelessWidget {
     final error = summary.error;
     final thumb = summary.thumbnailPng;
     final details = error != null
-        ? "Explorer couldn't read this file: $error"
+        ? "Folder couldn't read this file: $error"
         : [
             if (summary.version.isNotEmpty)
               'Saved with Blender ${summary.version}.',

@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/image_convert/image_converter.dart';
-import 'package:explorer/core/services/image_convert/image_formats.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/image_convert/image_converter.dart';
+import 'package:folder/core/services/image_convert/image_formats.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
@@ -14,7 +14,7 @@ String? _ffmpeg() {
   if (env != null && File(env).existsSync()) return env;
   final appData = Platform.environment['APPDATA'];
   if (appData != null) {
-    final own = p.join(appData, 'MSatyam-Mishra', 'Explorer', 'video_downloader', 'ffmpeg', 'bin', 'ffmpeg.exe');
+    final own = p.join(appData, 'MSatyam-Mishra', 'Folder', 'video_downloader', 'ffmpeg', 'bin', 'ffmpeg.exe');
     if (File(own).existsSync()) return own;
   }
   return null;

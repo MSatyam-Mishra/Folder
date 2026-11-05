@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:explorer/core/formats/blend/blend_file.dart';
+import 'package:folder/core/formats/blend/blend_file.dart';
 
 /// What [BlendToGltf.convert] found in a .blend file.
 class BlendExport {
@@ -772,7 +772,7 @@ class _GltfBuilder {
     final bin = _bin.takeBytes();
     final json = utf8.encode(
       jsonEncode({
-        'asset': {'version': '2.0', 'generator': 'Explorer .blend reader'},
+        'asset': {'version': '2.0', 'generator': 'Folder .blend reader'},
         'scene': 0,
         'scenes': [
           {

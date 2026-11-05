@@ -1,4 +1,4 @@
-package com.example.explorer
+package com.example.folder
 
 import android.app.Activity
 import android.content.ContentUris
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 /**
- * Files other apps open with Explorer ("Open with" / ACTION_VIEW / ACTION_EDIT).
+ * Files other apps open with Folder ("Open with" / ACTION_VIEW / ACTION_EDIT).
  *
  * A content URI is resolved to a real path when the app can read that file
  * directly, so viewers can save in place and find sibling files (textures,

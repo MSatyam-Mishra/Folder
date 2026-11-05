@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:bootstrap_icons/bootstrap_icons.dart';
-import 'package:explorer/core/platform/explorer_paths.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show IconData;
 import 'package:path/path.dart' as p;

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/features/vault/vault_store.dart';
+import 'package:folder/features/vault/vault_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

@@ -8,7 +8,7 @@
 
 namespace {
 
-// A window opened from another Explorer window (New window, Ctrl+N, Open in
+// A window opened from another Folder window (New window, Ctrl+N, Open in
 // new window) appears a little below and right of it, at its size, instead
 // of exactly on top of it. Create takes logical pixels.
 void CascadeFromOpener(Win32Window::Point* origin, Win32Window::Size* size) {
@@ -91,7 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
   CascadeFromOpener(&origin, &size);
-  if (!window.Create(L"Explorer", origin, size)) {
+  if (!window.Create(L"Folder", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

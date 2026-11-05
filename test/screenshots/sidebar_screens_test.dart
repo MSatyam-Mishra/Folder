@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:explorer/core/services/auth_service.dart';
-import 'package:explorer/core/services/device_files.dart';
-import 'package:explorer/features/category_view/file_category_screen.dart';
-import 'package:explorer/features/network/screens/file_server_screen.dart';
-import 'package:explorer/features/vault/screens/vault_screen.dart';
-import 'package:explorer/features/vault/vault_store.dart';
+import 'package:folder/core/services/auth_service.dart';
+import 'package:folder/core/services/device_files.dart';
+import 'package:folder/features/category_view/file_category_screen.dart';
+import 'package:folder/features/network/screens/file_server_screen.dart';
+import 'package:folder/features/vault/screens/vault_screen.dart';
+import 'package:folder/features/vault/vault_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

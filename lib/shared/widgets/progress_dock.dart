@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:explorer/core/build_features.dart';
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:explorer/features/video_downloader/screens/video_downloader_screen.dart';
-import 'package:explorer/features/video_downloader/widgets/downloader_text.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
-import 'package:explorer/shared/widgets/progress_card.dart';
+import 'package:folder/core/build_features.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folder/features/video_downloader/screens/video_downloader_screen.dart';
+import 'package:folder/features/video_downloader/widgets/downloader_text.dart';
+import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folder/shared/widgets/progress_card.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 

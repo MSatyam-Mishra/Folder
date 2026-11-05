@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:explorer/features/viewer_image/screens/image_editor_screen.dart';
-import 'package:explorer/features/viewer_image/screens/viewer_image_screen.dart';
-import 'package:explorer/features/viewer_media/screens/audio_player_screen.dart';
+import 'package:folder/features/viewer_image/screens/image_editor_screen.dart';
+import 'package:folder/features/viewer_image/screens/viewer_image_screen.dart';
+import 'package:folder/features/viewer_media/screens/audio_player_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;

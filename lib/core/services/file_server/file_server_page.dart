@@ -165,7 +165,7 @@ $_sprite
   <div class="topbar-inner container">
     <a class="brand" href="/">
       <img src="$assets/logo.svg?v=$version" alt="" width="28" height="28">
-      <span class="brand-text"><strong>Explorer</strong>${deviceName.isEmpty ? '' : '<small>${_e(deviceName)}</small>'}</span>
+      <span class="brand-text"><strong>Folder</strong>${deviceName.isEmpty ? '' : '<small>${_e(deviceName)}</small>'}</span>
     </a>
     <span class="live" title="This page works while sharing is on in the app"><span class="dot"></span>Sharing</span>
     <span class="spacer"></span>
@@ -177,7 +177,7 @@ $_sprite
 $body
 <footer>
   <div class="container">
-    <span>Shared from Explorer${deviceName.isEmpty ? '' : ' on ${_e(deviceName)}'}</span>
+    <span>Shared from Folder${deviceName.isEmpty ? '' : ' on ${_e(deviceName)}'}</span>
     <span>Anyone on this network can open this page while sharing is on.</span>
   </div>
 </footer>
@@ -331,7 +331,7 @@ String renderDirectoryPage({
   b.write(_viewer);
 
   return _document(
-    title: '$title · Explorer',
+    title: '$title · Folder',
     body: b.toString(),
     theme: theme,
     assets: assets,
@@ -432,7 +432,7 @@ String renderMessagePage({
       '${_emptyState(status == 404 ? 'file-question' : 'circle-alert', title, message, action: '<a class="btn btn-outline" href="/">${_icon('house')}Back to the shared folder</a>')}'
       '</main>';
   return _document(
-    title: '$title · Explorer',
+    title: '$title · Folder',
     body: body,
     theme: theme,
     assets: assets,

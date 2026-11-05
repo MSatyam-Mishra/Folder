@@ -24,7 +24,7 @@ if (keystorePropertiesFile.exists()) {
 val withVideoDownloader = project.findProperty("explorer.videoDownloader")?.toString() != "false"
 
 android {
-    namespace = "com.example.explorer"
+    namespace = "com.example.folder"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.synqixlabs.explory"
+        applicationId = "com.synqixlabs.folder"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

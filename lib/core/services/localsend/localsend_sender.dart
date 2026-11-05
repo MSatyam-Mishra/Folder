@@ -3,10 +3,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/services/localsend/localsend_client.dart';
-import 'package:explorer/core/services/localsend/localsend_hash.dart';
-import 'package:explorer/core/services/localsend/localsend_models.dart';
-import 'package:explorer/core/services/localsend/localsend_names.dart';
+import 'package:folder/core/services/localsend/localsend_client.dart';
+import 'package:folder/core/services/localsend/localsend_hash.dart';
+import 'package:folder/core/services/localsend/localsend_models.dart';
+import 'package:folder/core/services/localsend/localsend_names.dart';
 import 'package:path/path.dart' as p;
 
 /// One file to send. [fileName] may contain `/`-separated folders.

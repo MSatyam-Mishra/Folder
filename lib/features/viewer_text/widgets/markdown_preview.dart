@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:explorer/core/platform/desktop.dart';
-import 'package:explorer/shared/widgets/web_view_unavailable.dart';
+import 'package:folder/core/platform/desktop.dart';
+import 'package:folder/shared/widgets/web_view_unavailable.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:explorer/core/services/local_content_server.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/core/services/local_content_server.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:markdown/markdown.dart' as md;

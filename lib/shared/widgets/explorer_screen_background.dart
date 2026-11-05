@@ -1,4 +1,4 @@
-import 'package:explorer/shared/ui/app_tokens.dart';
+import 'package:folder/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Page background in the current theme.

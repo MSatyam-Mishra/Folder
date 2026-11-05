@@ -1,8 +1,8 @@
-import 'package:explorer/core/formats/archive_backend.dart';
-import 'package:explorer/core/formats/archive_index.dart';
-import 'package:explorer/features/viewer_archive/archive_ui_utils.dart';
-import 'package:explorer/features/viewer_kit/viewer_kit.dart';
-import 'package:explorer/shared/file_icons/file_icons.dart';
+import 'package:folder/core/formats/archive_backend.dart';
+import 'package:folder/core/formats/archive_index.dart';
+import 'package:folder/features/viewer_archive/archive_ui_utils.dart';
+import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folder/shared/file_icons/file_icons.dart';
 import 'package:flutter/material.dart';
 
 const double kArchiveRowHeight = 64;

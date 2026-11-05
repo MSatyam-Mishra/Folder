@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:explorer/core/platform/system_bars.dart';
+import 'package:folder/core/platform/system_bars.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

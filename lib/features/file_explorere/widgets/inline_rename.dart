@@ -1,4 +1,4 @@
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;

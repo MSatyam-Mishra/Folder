@@ -1,28 +1,28 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/services/social_files.dart';
-import 'package:explorer/features/toolbox/toolbox_menu.dart';
-import 'package:explorer/core/app_licenses.dart';
-import 'package:explorer/core/build_features.dart';
-import 'package:explorer/core/platform/explorer_paths.dart';
-import 'package:explorer/core/platform/windows_locations.dart';
-import 'package:explorer/core/services/device_files.dart';
-import 'package:explorer/core/services/directory_services.dart';
-import 'package:explorer/core/theme/theme_cubit.dart';
-import 'package:explorer/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
-import 'package:explorer/features/category_view/file_category_screen.dart';
-import 'package:explorer/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:explorer/features/localsend/screens/localsend_screen.dart';
-import 'package:explorer/features/network/screens/file_server_screen.dart';
-import 'package:explorer/features/sidebar/bloc/bloc/sidebar_bloc.dart';
-import 'package:explorer/features/tools/screens/app_manager_screen.dart';
-import 'package:explorer/features/tools/screens/usb_boot_screen.dart';
-import 'package:explorer/features/vault/screens/vault_screen.dart';
-import 'package:explorer/features/vault/vault_store.dart';
-import 'package:explorer/features/video_downloader/screens/video_downloader_screen.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
-import 'package:explorer/shared/widgets/storage_drawer.dart';
+import 'package:folder/core/services/social_files.dart';
+import 'package:folder/features/toolbox/toolbox_menu.dart';
+import 'package:folder/core/app_licenses.dart';
+import 'package:folder/core/build_features.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folder/core/platform/windows_locations.dart';
+import 'package:folder/core/services/device_files.dart';
+import 'package:folder/core/services/directory_services.dart';
+import 'package:folder/core/theme/theme_cubit.dart';
+import 'package:folder/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
+import 'package:folder/features/category_view/file_category_screen.dart';
+import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folder/features/localsend/screens/localsend_screen.dart';
+import 'package:folder/features/network/screens/file_server_screen.dart';
+import 'package:folder/features/sidebar/bloc/bloc/sidebar_bloc.dart';
+import 'package:folder/features/tools/screens/app_manager_screen.dart';
+import 'package:folder/features/tools/screens/usb_boot_screen.dart';
+import 'package:folder/features/vault/screens/vault_screen.dart';
+import 'package:folder/features/vault/vault_store.dart';
+import 'package:folder/features/video_downloader/screens/video_downloader_screen.dart';
+import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folder/shared/widgets/storage_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
@@ -163,7 +163,7 @@ class MainDrawerContent extends StatelessWidget {
                   dismissDrawer(context);
                   showLicensePage(
                     context: context,
-                    applicationName: 'Explorer',
+                    applicationName: 'Folder',
                     applicationLegalese: appLegalese,
                   );
                 },
@@ -315,7 +315,7 @@ class _SidebarHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Explorer', maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleSmall),
+                Text('Folder', maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleSmall),
                 // One line, however narrow the sidebar is made.
                 Text(
                   'Files, viewers and tools',

@@ -1,5 +1,5 @@
-# File types Explorer registers for on Windows ("Open with", Default apps),
-# one per line: read by explorer.iss (installer) and make-packages.ps1
+# File types Folder registers for on Windows ("Open with", Default apps),
+# one per line: read by folder.iss (installer) and make-packages.ps1
 # (MSIX). test/core/windows_file_types_test.dart keeps it in step with the
 # types the viewers open (lib/core/files/file_types.dart).
 1st

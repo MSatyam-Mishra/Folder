@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:explorer/core/services/background_tasks.dart';
-import 'package:explorer/core/services/localsend/localsend.dart';
-import 'package:explorer/core/services/localsend/localsend_platform.dart';
+import 'package:folder/core/services/background_tasks.dart';
+import 'package:folder/core/services/localsend/localsend.dart';
+import 'package:folder/core/services/localsend/localsend_platform.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;

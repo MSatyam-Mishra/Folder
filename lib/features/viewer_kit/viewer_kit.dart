@@ -1,22 +1,22 @@
 /// Building blocks shared by the media, code and tool viewers (text/code
 /// editor, image, media, hex, font, HTML, 3D, archive, comic, design,
 /// vector, LocalSend and the video downloader), in the shadcn/ui style of
-/// `package:explorer/shared/ui/app_ui.dart`.
+/// `package:folder/shared/ui/app_ui.dart`.
 ///
 /// Everything here takes its colours from `context.colors`, so it works in
 /// light and dark mode with every colour scheme.
 library;
 
-import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/core/theme/app_theme_settings.dart';
-import 'package:explorer/core/theme/theme_cubit.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
+import 'package:folder/core/theme/app_theme.dart';
+import 'package:folder/core/theme/app_theme_settings.dart';
+import 'package:folder/core/theme/theme_cubit.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart'
     show LucideIcons, ShadTheme, ShadThemeData, kDefaultFontFamilyMono;
 
-export 'package:explorer/shared/ui/app_ui.dart';
+export 'package:folder/shared/ui/app_ui.dart';
 export 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 // ---------------------------------------------------------------------------

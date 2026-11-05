@@ -21,7 +21,7 @@
     <uses-feature android:name="android.hardware.usb.host" />
 
     <application
-        android:label="Explorer"
+        android:label="Folder"
         android:usesCleartextTraffic="true"
          android:enableOnBackInvokedCallback="true"  
         android:name="${applicationName}"
@@ -71,7 +71,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <!-- "Open with" from other apps: every type an in-app viewer handles.
-                 Explicit types (not */*) keep Explorer out of choosers for files it
+                 Explicit types (not */*) keep Folder out of choosers for files it
                  would only hand to another app, e.g. APKs. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

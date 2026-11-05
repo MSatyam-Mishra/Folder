@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Explorer
+Name=Folder
 GenericName=File Manager
 Comment=Open, edit and share almost any file
-Exec=explorer %F
-Icon=${SNAP}/meta/gui/explorer.png
+Exec=folder %F
+Icon=${SNAP}/meta/gui/folder.png
 Terminal=false
 Categories=System;FileTools;FileManager;
-StartupWMClass=com.synqixlabs.explory
+StartupWMClass=com.synqixlabs.folder

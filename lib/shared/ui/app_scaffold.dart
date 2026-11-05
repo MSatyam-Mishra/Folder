@@ -1,8 +1,8 @@
 import 'dart:ui';
 
-import 'package:explorer/core/theme/app_style.dart';
-import 'package:explorer/shared/ui/app_glass.dart';
-import 'package:explorer/shared/ui/app_tokens.dart';
+import 'package:folder/core/theme/app_style.dart';
+import 'package:folder/shared/ui/app_glass.dart';
+import 'package:folder/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

@@ -3,13 +3,13 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:explorer/features/viewer_pdf/models/pdf_edit_models.dart';
-import 'package:explorer/features/viewer_pdf/services/pdf_document_ops.dart';
-import 'package:explorer/features/viewer_pdf/services/pdf_page_rasterizer.dart';
-import 'package:explorer/features/viewer_pdf/widgets/pdf_dialogs.dart';
-import 'package:explorer/features/viewer_office/common/viewer_ui.dart';
-import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:explorer/shared/widgets/explorer_scaffold.dart';
+import 'package:folder/features/viewer_pdf/models/pdf_edit_models.dart';
+import 'package:folder/features/viewer_pdf/services/pdf_document_ops.dart';
+import 'package:folder/features/viewer_pdf/services/pdf_page_rasterizer.dart';
+import 'package:folder/features/viewer_pdf/widgets/pdf_dialogs.dart';
+import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folder/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 

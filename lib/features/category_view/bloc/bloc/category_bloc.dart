@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:explorer/features/category_view/home_media.dart';
+import 'package:folder/features/category_view/home_media.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';

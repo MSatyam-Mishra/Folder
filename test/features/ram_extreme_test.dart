@@ -1,6 +1,6 @@
-import 'package:explorer/core/services/toolbox/app_closer.dart';
-import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
-import 'package:explorer/features/toolbox/ram_extreme_view.dart';
+import 'package:folder/core/services/toolbox/app_closer.dart';
+import 'package:folder/core/services/toolbox/ram_cleaner.dart';
+import 'package:folder/features/toolbox/ram_extreme_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
