@@ -7,6 +7,7 @@ import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/file_action_service.dart';
 import 'package:explorer/core/services/media_controls.dart';
 import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
+import 'package:explorer/features/video_player/online_subtitles.dart';
 import 'package:explorer/features/video_player/play_queue.dart';
 import 'package:explorer/features/video_player/video_library.dart';
 import 'package:explorer/features/video_player/video_player_settings.dart';
@@ -1051,11 +1052,25 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
     if (mounted) setSheet(() {});
   }
 
+  Future<void> _searchSubtitles(StateSetter setSheet) async {
+    final path = await AppSheet.show<String>(
+      context,
+      style: SheetStyle.side,
+      child: OnlineSubtitlesSheet(video: _queue.current),
+    );
+    if (path == null || !mounted) return;
+    _subtitleFiles.add(path);
+    await _player.setSubtitleTrack(SubtitleTrack.uri(path, title: p.basename(path)));
+    if (mounted) setSheet(() {});
+  }
+
   Future<void> _showSubtitles() => _sheet((sheet, setSheet) {
         final current = _track.subtitle;
+        // mpv lists a file it was given as one more track: it has its own row.
+        final fileNames = {for (final file in _subtitleFiles) p.basename(file)};
         final embedded = [
           for (final track in _tracks.subtitle)
-            if (track.id != 'auto' && track.id != 'no' && !track.uri) track,
+            if (track.id != 'auto' && track.id != 'no' && !track.uri && !fileNames.contains(track.title)) track,
         ];
         final picked = current.id == 'auto' && _subtitleFiles.isEmpty ? embedded.firstOrNull?.id : current.id;
         return ListenableBuilder(
@@ -1091,12 +1106,19 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                   sheet,
                   icon: LucideIcons.fileText,
                   label: p.basename(file),
-                  selected: current.uri && current.id == file,
+                  selected: current.id == file || current.title == p.basename(file),
                   onTap: () async {
                     await _player.setSubtitleTrack(SubtitleTrack.uri(file, title: p.basename(file)));
                     setSheet(() {});
                   },
                 ),
+              _choice(
+                sheet,
+                icon: LucideIcons.globe,
+                label: 'Search online…',
+                detail: 'In many languages, from OpenSubtitles',
+                onTap: () => unawaited(_searchSubtitles(setSheet)),
+              ),
               _choice(
                 sheet,
                 icon: LucideIcons.folderOpen,

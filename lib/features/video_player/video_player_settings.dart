@@ -51,6 +51,7 @@ class VideoPlayerSettings extends ChangeNotifier {
   static const _subtitleColorKey = 'video_subtitle_color';
   static const _subtitleBoxKey = 'video_subtitle_box';
   static const _directOutputKey = 'video_direct_output';
+  static const _subtitleLanguageKey = 'video_subtitle_language';
 
   LeavingVideo leaving = LeavingVideo.pip;
   bool hardwareDecoding = true;
@@ -63,6 +64,9 @@ class VideoPlayerSettings extends ChangeNotifier {
   /// This phone's graphics refused libmpv's own output, so the picture goes
   /// straight from Android's decoder to the screen. Found out by trying.
   bool directOutput = false;
+
+  /// The language of the subtitles last fetched online.
+  String? subtitleLanguage;
   Future<void>? _loading;
 
   Future<void> load() => _loading ??= _load();
@@ -78,6 +82,7 @@ class VideoPlayerSettings extends ChangeNotifier {
     if (subtitleColors.containsKey(color)) subtitleColor = color!;
     subtitleBox = prefs.getBool(_subtitleBoxKey) ?? subtitleBox;
     directOutput = prefs.getBool(_directOutputKey) ?? directOutput;
+    subtitleLanguage = prefs.getString(_subtitleLanguageKey);
     notifyListeners();
   }
 
@@ -90,6 +95,7 @@ class VideoPlayerSettings extends ChangeNotifier {
     String? subtitleColor,
     bool? subtitleBox,
     bool? directOutput,
+    String? subtitleLanguage,
   }) async {
     this.leaving = leaving ?? this.leaving;
     this.hardwareDecoding = hardwareDecoding ?? this.hardwareDecoding;
@@ -99,6 +105,7 @@ class VideoPlayerSettings extends ChangeNotifier {
     this.subtitleColor = subtitleColor ?? this.subtitleColor;
     this.subtitleBox = subtitleBox ?? this.subtitleBox;
     this.directOutput = directOutput ?? this.directOutput;
+    this.subtitleLanguage = subtitleLanguage ?? this.subtitleLanguage;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_leavingKey, this.leaving.name);
@@ -109,5 +116,7 @@ class VideoPlayerSettings extends ChangeNotifier {
     await prefs.setString(_subtitleColorKey, this.subtitleColor);
     await prefs.setBool(_subtitleBoxKey, this.subtitleBox);
     await prefs.setBool(_directOutputKey, this.directOutput);
+    final language = this.subtitleLanguage;
+    if (language != null) await prefs.setString(_subtitleLanguageKey, language);
   }
 }
