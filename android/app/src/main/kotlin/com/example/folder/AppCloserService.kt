@@ -269,7 +269,7 @@ class AppCloserService : AccessibilityService() {
         overlay?.update(1f, "")
         hideOverlay()
         // Back to the app, where it says what became of it.
-        packageManager.getLaunchIntentForPackage(packageName)?.let {
+        appLaunchIntent(this).let {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             try {
                 startActivity(it)

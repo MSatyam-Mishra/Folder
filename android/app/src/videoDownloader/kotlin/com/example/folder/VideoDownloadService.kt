@@ -95,8 +95,7 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
             }
 
         private fun openAppIntent(context: Context): PendingIntent? {
-            val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                ?: return null
+            val launch = appLaunchIntent(context)
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             launch.putExtra(EXTRA_ROUTE, ROUTE)
             return PendingIntent.getActivity(

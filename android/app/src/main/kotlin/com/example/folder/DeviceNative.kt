@@ -90,10 +90,11 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                     },
                 )
                 "setInAppDrawer" -> {
+                    val on = call.argument<Boolean>("on") == true
                     val changed = try {
                         activity.packageManager.setComponentEnabledSetting(
                             toolEntry(call.argument<String>("id")!!),
-                            if (call.argument<Boolean>("on") == true) {
+                            if (on) {
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                             } else {
                                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED
@@ -103,6 +104,19 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                         true
                     } catch (e: IllegalArgumentException) {
                         false
+                    }
+                    // Android closes a task that was started from an entry turned
+                    // off, which would look like a crash: back by the app's own.
+                    // If the task is still there, this only brings it to the front.
+                    if (changed && !on) {
+                        val context = activity.applicationContext
+                        main.postDelayed({
+                            try {
+                                context.startActivity(appLaunchIntent(context).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                            } catch (e: Exception) {
+                                // It can be opened by hand; nothing is lost.
+                            }
+                        }, 600)
                     }
                     result.success(changed)
                 }
@@ -171,7 +185,7 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         val manager = activity.getSystemService(ShortcutManager::class.java) ?: return false
         if (pin && !manager.isRequestPinShortcutSupported) return false
-        val launch = activity.packageManager.getLaunchIntentForPackage(activity.packageName) ?: return false
+        val launch = appLaunchIntent(activity)
         launch.action = Intent.ACTION_MAIN
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         launch.putExtra(IncomingFiles.EXTRA_ROUTE, route)

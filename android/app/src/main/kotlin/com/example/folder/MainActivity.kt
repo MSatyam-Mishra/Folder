@@ -15,6 +15,15 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.HashMap
 
+/**
+ * The app's own way in. Asking Android for "the" launch intent could give a
+ * tool's entry in the app drawer while one is on, and open that tool.
+ */
+fun appLaunchIntent(context: Context): Intent = Intent(Intent.ACTION_MAIN)
+    .addCategory(Intent.CATEGORY_LAUNCHER)
+    .setClass(context, MainActivity::class.java)
+    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
 class MainActivity : FlutterFragmentActivity() {
     private val CHANNEL = "explorer/usb"
     private var usbManager: UsbManager? = null

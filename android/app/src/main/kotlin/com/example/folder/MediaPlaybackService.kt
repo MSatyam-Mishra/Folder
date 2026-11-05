@@ -218,7 +218,7 @@ class MediaPlaybackService : Service() {
         } else {
             Notification.Builder(this)
         }
-        val open = packageManager.getLaunchIntentForPackage(packageName)?.let {
+        val open = appLaunchIntent(this).let {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }

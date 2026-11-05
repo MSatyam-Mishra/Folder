@@ -117,7 +117,7 @@ class NotificationsNative(private val activity: Activity, messenger: BinaryMesse
 
     /** Back to the app as it was, or at [route] if there is one (see IncomingFiles). */
     private fun openApp(context: Context, id: Int, route: String?): PendingIntent? {
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+        val launch = appLaunchIntent(context)
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         if (route != null) launch.putExtra(IncomingFiles.EXTRA_ROUTE, route)
         return PendingIntent.getActivity(
