@@ -13,7 +13,6 @@ import 'package:explorer/features/video_player/video_library.dart';
 import 'package:explorer/features/video_player/video_player_page.dart';
 import 'package:explorer/features/video_player/video_player_settings.dart';
 import 'package:explorer/shared/file_icons/file_thumbnail.dart';
-import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:explorer/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
