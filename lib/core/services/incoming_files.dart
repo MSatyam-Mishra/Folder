@@ -17,7 +17,7 @@ sealed class IncomingItem {
   }
 }
 
-/// A screen to show, e.g. from a tap on a download notification.
+/// A screen to show, e.g. from a tap on a download notification or a shortcut.
 class IncomingRoute extends IncomingItem {
   const IncomingRoute(this.route);
 

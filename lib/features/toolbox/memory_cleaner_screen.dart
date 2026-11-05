@@ -2,7 +2,7 @@ import 'package:explorer/core/services/toolbox/junk_scanner.dart';
 import 'package:explorer/features/file_explorere/widgets/entity_meta.dart';
 import 'package:explorer/features/file_explorere/widgets/explorer_empty_state.dart';
 import 'package:explorer/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
-import 'package:explorer/features/toolbox/toolbox_screen.dart';
+import 'package:explorer/features/toolbox/toolbox_menu.dart';
 import 'package:explorer/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:explorer/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';

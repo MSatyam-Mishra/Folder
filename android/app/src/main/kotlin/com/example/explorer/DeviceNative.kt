@@ -5,6 +5,10 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Icon
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
@@ -23,7 +27,8 @@ import java.util.concurrent.Executors
  *   (documents, archives…), newest first. Much faster than walking storage;
  * - `keepAwake`: keeps the screen on and Wi-Fi at full power while a folder
  *   is shared over Wi-Fi, so transfers don't stall when the phone idles;
- * - `memoryInfo`, `canFreeMemory`, `freeMemory`: the RAM cleaner.
+ * - `memoryInfo`, `canFreeMemory`, `freeMemory`: the RAM cleaner;
+ * - `addShortcut`: a tool on the home screen, or in the app icon's menu.
  */
 class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
     private val channel = MethodChannel(messenger, "explorer/device")
@@ -59,9 +64,54 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                     val closed = closeBackgroundApps()
                     main.post { result.success(closed) }
                 }
+                "addShortcut" -> {
+                    val added = try {
+                        addShortcut(
+                            id = call.argument<String>("id")!!,
+                            title = call.argument<String>("title")!!,
+                            description = call.argument<String>("description")!!,
+                            route = call.argument<String>("route")!!,
+                            icon = call.argument<ByteArray>("icon")!!,
+                            pin = call.argument<Boolean>("pin") ?: true,
+                        )
+                    } catch (e: Exception) {
+                        // E.g. the launcher's limit on an icon's menu.
+                        false
+                    }
+                    result.success(added)
+                }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /**
+     * Pinning asks the launcher, which shows its own confirmation and may not
+     * offer it at all; the app icon's menu (Android 7.1+) is the app's to fill.
+     */
+    private fun addShortcut(
+        id: String,
+        title: String,
+        description: String,
+        route: String,
+        icon: ByteArray,
+        pin: Boolean,
+    ): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        val manager = activity.getSystemService(ShortcutManager::class.java) ?: return false
+        if (pin && !manager.isRequestPinShortcutSupported) return false
+        val launch = activity.packageManager.getLaunchIntentForPackage(activity.packageName) ?: return false
+        launch.action = Intent.ACTION_MAIN
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        launch.putExtra(IncomingFiles.EXTRA_ROUTE, route)
+        val bitmap = BitmapFactory.decodeByteArray(icon, 0, icon.size) ?: return false
+        val shortcut = ShortcutInfo.Builder(activity, id)
+            .setShortLabel(title)
+            .setLongLabel(description)
+            .setIcon(Icon.createWithAdaptiveBitmap(bitmap))
+            .setIntent(launch)
+            .build()
+        return if (pin) manager.requestPinShortcut(shortcut, null) else manager.addDynamicShortcuts(listOf(shortcut))
     }
 
     private fun activityManager() = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

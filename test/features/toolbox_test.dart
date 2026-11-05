@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/toolbox/duplicate_finder.dart';
 import 'package:explorer/core/services/toolbox/junk_scanner.dart';
 import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
 import 'package:explorer/features/toolbox/duplicate_finder_screen.dart';
 import 'package:explorer/features/toolbox/memory_cleaner_screen.dart';
-import 'package:explorer/features/toolbox/toolbox_screen.dart';
+import 'package:explorer/features/toolbox/toolbox_menu.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -198,11 +200,81 @@ void main() {
       tester.view.physicalSize = const Size(420, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(themedApp(ToolboxScreen(showFolder: (_) {})));
+      await tester.pumpWidget(themedApp(Scaffold(body: ToolboxMenu(onOpen: (_) {}))));
       await settle(tester);
       for (final tool in ['RAM cleaner', 'Memory cleaner', 'Duplicate finder', 'Video player', 'Music player']) {
         expect(find.text(tool), findsOneWidget);
       }
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    Future<void> openMenu(WidgetTester tester, {ValueChanged<String>? showFolder}) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themedApp(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showToolboxMenu(context, showFolder: showFolder ?? (_) {}),
+            child: const Text('Toolbox'),
+          ),
+        ),
+      )));
+      await tester.tap(find.text('Toolbox'));
+      await settle(tester);
+    }
+
+    testWidgets('the menu shows the tools in a grid, over the page, and a tap outside closes it', (tester) async {
+      await openMenu(tester);
+      final first = tester.getTopLeft(find.text('RAM cleaner'));
+      final second = tester.getTopLeft(find.text('Memory cleaner'));
+      final fourth = tester.getTopLeft(find.text('Video player'));
+      expect(first.dy, second.dy, reason: 'side by side');
+      expect(fourth.dy, greaterThan(first.dy), reason: 'then the next row');
+      expect(find.text('Toolbox'), findsNWidgets(2), reason: 'the page stays behind it');
+
+      await tester.tapAt(const Offset(10, 790));
+      await settle(tester);
+      expect(find.byType(ToolboxMenu), findsNothing);
+      expect(find.text('Toolbox'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a tool opens as its own screen, from where the menu was asked for', (tester) async {
+      JunkScanner.scanOverride = () async => [];
+      await openMenu(tester);
+      await tester.tap(find.text('Memory cleaner'));
+      await settle(tester);
+      expect(find.byType(ToolboxMenu), findsNothing);
+      expect(find.byType(MemoryCleanerScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('where the browser shows the videos as a folder, Video player goes there', (tester) async {
+      String? shown;
+      await openMenu(tester, showFolder: (folder) => shown = folder);
+      await tester.tap(find.text('Video player'));
+      await settle(tester);
+      expect(find.byType(ToolboxMenu), findsNothing);
+      expect(shown, ExplorerPaths.categoryPath('Video'));
+      await tester.pumpWidget(const SizedBox());
+    }, skip: !ExplorerPaths.categoryIsFolder('Video'));
+
+    testWidgets('the pin and a right-click offer the places this system has, and the menu stays', (tester) async {
+      await openMenu(tester);
+      await tester.tap(find.byTooltip('Add shortcut').first);
+      await settle(tester);
+      expect(find.text('Add to desktop'), findsOneWidget);
+      if (Platform.isWindows) expect(find.text('Add to Start menu'), findsOneWidget);
+
+      await tester.tapAt(const Offset(10, 790));
+      await settle(tester);
+      expect(find.text('Add to desktop'), findsNothing);
+      expect(find.byType(ToolboxMenu), findsOneWidget, reason: 'only the shortcut menu closed');
+
+      await tester.tap(find.text('Music player'), buttons: kSecondaryButton);
+      await settle(tester);
+      expect(find.text('Add to desktop'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 

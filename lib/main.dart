@@ -17,6 +17,7 @@ import 'package:explorer/core/platform/macos_open_files.dart';
 import 'package:explorer/shared/widgets/tasks_view.dart';
 import 'package:explorer/core/router/file_opener.dart';
 import 'package:explorer/core/build_features.dart';
+import 'package:explorer/core/services/app_shortcuts.dart';
 import 'package:explorer/core/services/incoming_files.dart';
 import 'package:explorer/core/services/video_downloader/video_downloader_licenses.dart';
 import 'package:explorer/core/services/webview_warmup.dart';
@@ -27,8 +28,10 @@ import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
 import 'package:explorer/features/incoming/incoming_file_screen.dart';
+import 'package:explorer/features/toolbox/toolbox_menu.dart';
 import 'package:explorer/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -74,6 +77,17 @@ void main(List<String> args) async {
     });
   }
 
+  // A shortcut on a computer: the tool it's for, in the first tab.
+  final shortcutRoute = Desktop.isDesktop ? AppShortcuts.routeIn(args) : null;
+  if (shortcutRoute != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = ExplorerTabs.instance.active?.navigatorKey.currentState ?? _navigatorKey.currentState;
+      navigator?.push(
+        MaterialPageRoute(builder: (_) => _screenFor(IncomingRoute(shortcutRoute), launchedForIt: false)),
+      );
+    });
+  }
+
   // Launched from another app ("Open with" a file, or "Share" a link): go
   // straight to the viewer or the video downloader.
   final launchItem = await IncomingFiles.takeInitial();
@@ -103,12 +117,22 @@ void main(List<String> args) async {
     });
   }
   if (launchItem != null && startItem == null) {
+    // In the second frame. The first one's callbacks end with the Navigator
+    // telling Android it has nothing to pop, which would come after a push
+    // made there: Back would then leave the app, not go to the explorer
+    // underneath.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          builder: (_) => _screenFor(launchItem, launchedForIt: false),
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (_) => _screenFor(launchItem, launchedForIt: false),
+          ),
+        );
+        // WidgetsApp drops the push's own word before it knows the app's
+        // lifecycle state.
+        SystemNavigator.setFrameworkHandlesBack(true);
+      });
+      WidgetsBinding.instance.scheduleFrame();
     });
   }
 
@@ -218,9 +242,10 @@ Widget _screenFor(IncomingItem item, {required bool launchedForIt}) =>
         kVideoDownloaderEnabled
             ? VideoDownloaderScreen(initialUrl: url ?? text.trim())
             : const FileExplorerScreen(),
-      // Only one route so far: download notifications.
-      IncomingRoute() =>
-        kVideoDownloaderEnabled
-            ? const VideoDownloaderScreen()
-            : const FileExplorerScreen(),
+      // A tool's shortcut, or else a download notification.
+      IncomingRoute(:final route) =>
+        Tool.fromRoute(route)?.screen ??
+            (kVideoDownloaderEnabled
+                ? const VideoDownloaderScreen()
+                : const FileExplorerScreen()),
     };
