@@ -23,6 +23,7 @@ import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:explorer/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:explorer/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
+import 'package:explorer/features/file_explorere/widgets/file_peek.dart';
 import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/features/file_explorere/widgets/social_tabs.dart';
 import 'package:explorer/features/file_explorere/widgets/image_actions.dart';
@@ -490,6 +491,8 @@ class _FileExplorerUI extends StatelessWidget {
     } else if (key == LogicalKeyboardKey.f5 ||
         (command && key == LogicalKeyboardKey.keyR)) {
       bloc.add(LoadDirectory(state.path));
+    } else if (key == LogicalKeyboardKey.space && single is File) {
+      _peek(context, state, single);
     } else if (key == LogicalKeyboardKey.enter && single != null) {
       if (keys.isAltPressed) {
         fileActionsService.showInfoSheet(single, context);
@@ -877,6 +880,11 @@ class _FileExplorerUI extends StatelessWidget {
       if (e.path != state.renamingPath) _handleLongPress(context, state, e);
     }
 
+    /// Phones: a double tap on a file's picture is a quick look at it.
+    VoidCallback? onPeek(FileSystemEntity e) => !Desktop.isDesktop && e is File && !state.isSelectionMode
+        ? () => _peek(context, state, e)
+        : null;
+
     /// The name's editor, on the item being renamed.
     Widget? nameEditor(FileSystemEntity e, {bool centered = false}) => e.path == state.renamingPath
         ? InlineRename(
@@ -1013,6 +1021,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onLongPress: () => onLongPress(entity),
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity, centered: true),
+                onPeek: onPeek(entity),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1063,6 +1072,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onLongPress: () => onLongPress(entity),
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity),
+                onPeek: onPeek(entity),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1160,6 +1170,15 @@ class _FileExplorerUI extends StatelessWidget {
     if (result == true && !bloc.isClosed) {
       bloc.add(LoadDirectory(state.path));
     }
+  }
+
+  void _peek(BuildContext context, FileExplorerLoaded state, File file) {
+    showFilePeek(
+      context,
+      file,
+      onOpen: () => _open(context, state, file),
+      onShare: () => fileActionsService.shareMany(context, [file]),
+    );
   }
 
   /// A mouse click, as desktop file managers handle it: click selects,

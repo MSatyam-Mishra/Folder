@@ -25,6 +25,7 @@ class FileGridItem extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.nameEditor,
+    this.onPeek,
     this.onSecondaryTapUp,
     this.gallery = false,
     this.zoom = 1,
@@ -42,6 +43,9 @@ class FileGridItem extends StatelessWidget {
 
   /// In place of the name, while it's being edited.
   final Widget? nameEditor;
+
+  /// A double tap on the tile: a quick look at the file.
+  final VoidCallback? onPeek;
   /// Right-click, with where it happened (for a context menu).
   final GestureTapUpCallback? onSecondaryTapUp;
   final bool gallery;
@@ -51,6 +55,19 @@ class FileGridItem extends StatelessWidget {
     final colors = context.colors;
     final radius = BorderRadius.circular(12);
     final title = displayName.isEmpty ? entity.path : displayName;
+    final content = Stack(
+      children: [
+        Positioned.fill(
+          child: gallery ? _gallery(context, title) : _grid(context, title),
+        ),
+        if (isSelectionMode)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: SelectionCheck(selected: isSelected),
+          ),
+      ],
+    );
 
     return MetaData(
       // A tile is grabbed anywhere; the gaps between them start a band.
@@ -66,22 +83,17 @@ class FileGridItem extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap,
+          onTap: onPeek == null ? onTap : null,
           onLongPress: onLongPress,
           onSecondaryTapUp: onSecondaryTapUp,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: gallery ? _gallery(context, title) : _grid(context, title),
-              ),
-              if (isSelectionMode)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: SelectionCheck(selected: isSelected),
+          child: onPeek == null
+              ? content
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  onDoubleTap: onPeek,
+                  child: content,
                 ),
-            ],
-          ),
         ),
       ),
     );

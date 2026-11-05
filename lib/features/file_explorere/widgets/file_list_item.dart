@@ -33,6 +33,9 @@ class FileListItem extends StatelessWidget {
 
   /// In place of the name, while it's being edited.
   final Widget? nameEditor;
+
+  /// A double tap on the picture: a quick look at the file.
+  final VoidCallback? onPeek;
   final String? displayName;
   final FileRowStyle style;
 
@@ -51,6 +54,7 @@ class FileListItem extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.nameEditor,
+    this.onPeek,
     this.displayName,
     this.style = FileRowStyle.comfortable,
     this.location,
@@ -85,19 +89,27 @@ class FileListItem extends StatelessWidget {
 
     final iconSize = _iconFor(style) * zoom;
 
+    final picture = MetaData(
+      metaData: itemDragPart,
+      behavior: HitTestBehavior.opaque,
+      child: entity is File
+          ? FileThumbnail(
+              path: entity.path,
+              size: iconSize,
+              fallback: EntityIcon(entity: entity, size: iconSize),
+            )
+          : EntityIcon(entity: entity, size: iconSize),
+    );
     final row = Row(
       children: [
-        MetaData(
-          metaData: itemDragPart,
-          behavior: HitTestBehavior.opaque,
-          child: entity is File
-              ? FileThumbnail(
-                  path: entity.path,
-                  size: iconSize,
-                  fallback: EntityIcon(entity: entity, size: iconSize),
-                )
-              : EntityIcon(entity: entity, size: iconSize),
-        ),
+        onPeek == null
+            ? picture
+            : GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                onDoubleTap: onPeek,
+                child: picture,
+              ),
         SizedBox(width: style == FileRowStyle.compact ? 10 : 12),
         Expanded(child: _details(context, title)),
         if (isSelectionMode) ...[
