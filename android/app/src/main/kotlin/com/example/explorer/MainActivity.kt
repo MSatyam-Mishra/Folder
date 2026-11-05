@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.hardware.usb.*
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -31,6 +32,23 @@ class MainActivity : FlutterFragmentActivity() {
     private var device: DeviceNative? = null
     private var imageText: ImageTextNative? = null
     private var imageConvert: ImageConvertNative? = null
+    private var notifications: NotificationsNative? = null
+
+    // Back at the top of the app while work goes on: the app stays, as closing
+    // it would end the work. Only reached when Flutter has nothing left to pop.
+    private val keepWorking = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            moveTaskToBack(true)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Without a lifecycle, and before super: the last added goes first, and
+        // Flutter's must, or Back would never reach the app's screens.
+        onBackPressedDispatcher.addCallback(keepWorking)
+        BackgroundWorkService.onWorkingChanged = { keepWorking.isEnabled = it }
+        super.onCreate(savedInstanceState)
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -51,6 +69,9 @@ class MainActivity : FlutterFragmentActivity() {
         imageText = null
         imageConvert?.dispose()
         imageConvert = null
+        notifications?.dispose()
+        notifications = null
+        BackgroundWorkService.onWorkingChanged = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -62,6 +83,7 @@ class MainActivity : FlutterFragmentActivity() {
         device = DeviceNative(this, flutterEngine.dartExecutor.binaryMessenger)
         imageText = ImageTextNative(flutterEngine.dartExecutor.binaryMessenger)
         imageConvert = ImageConvertNative(flutterEngine.dartExecutor.binaryMessenger)
+        notifications = NotificationsNative(this, flutterEngine.dartExecutor.binaryMessenger)
         
         usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
 

@@ -2,14 +2,24 @@ import 'package:flutter/foundation.dart';
 
 enum TaskStatus { running, done, failed, cancelled }
 
+/// What a task does, for the icon of its notification.
+enum TaskKind { work, copy, download, upload }
+
 /// Work that goes on while the app is used (or hidden): conversions,
 /// resizes, copies. Listen to it for progress.
 class BackgroundTask extends ChangeNotifier {
-  BackgroundTask._(this.id, this.title, this.message, this._onCancel);
+  BackgroundTask._(this.id, this.title, this.message, this._onCancel, this.headline, this.kind);
 
   final int id;
   String title;
   String message;
+
+  /// Over a notification's bar, like "Copy in progress"; [title] without one.
+  final String? headline;
+  final TaskKind kind;
+
+  /// How far along in its own terms, like "231.6 MB/252.5 MB".
+  String detail = '';
 
   /// 0–1, or null when it can't be measured.
   double? progress;
@@ -26,10 +36,11 @@ class BackgroundTask extends ChangeNotifier {
   bool get canCancel => _onCancel != null && isRunning;
   bool get cancelRequested => _cancelRequested;
 
-  void update({String? message, double? progress, String? title}) {
+  void update({String? message, double? progress, String? title, String? detail}) {
     if (!isRunning) return;
     if (message != null) this.message = message;
     if (title != null) this.title = title;
+    if (detail != null) this.detail = detail;
     this.progress = progress ?? this.progress;
     notifyListeners();
   }
@@ -66,8 +77,14 @@ class BackgroundTasks extends ChangeNotifier {
   List<BackgroundTask> get running => [for (final t in _tasks) if (t.isRunning) t];
   bool get hasRunning => _tasks.any((t) => t.isRunning);
 
-  BackgroundTask start(String title, {String message = '', VoidCallback? onCancel}) {
-    final task = BackgroundTask._(_nextId++, title, message, onCancel)..addListener(notifyListeners);
+  BackgroundTask start(
+    String title, {
+    String message = '',
+    VoidCallback? onCancel,
+    String? headline,
+    TaskKind kind = TaskKind.work,
+  }) {
+    final task = BackgroundTask._(_nextId++, title, message, onCancel, headline, kind)..addListener(notifyListeners);
     _tasks.insert(0, task);
     // Finished tasks are kept for the Tasks view, a few dozen at most.
     while (_tasks.length > 50) {

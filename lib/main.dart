@@ -19,6 +19,7 @@ import 'package:explorer/core/router/file_opener.dart';
 import 'package:explorer/core/build_features.dart';
 import 'package:explorer/core/services/app_shortcuts.dart';
 import 'package:explorer/core/services/incoming_files.dart';
+import 'package:explorer/core/services/task_notifications.dart';
 import 'package:explorer/core/services/video_downloader/video_downloader_licenses.dart';
 import 'package:explorer/core/services/webview_warmup.dart';
 import 'package:explorer/core/theme/app_theme.dart';
@@ -28,6 +29,7 @@ import 'package:explorer/features/explorer_tabs/explorer_tabs.dart';
 import 'package:explorer/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:explorer/features/file_explorere/screens/file_explorer_screen.dart';
 import 'package:explorer/features/incoming/incoming_file_screen.dart';
+import 'package:explorer/features/network/screens/file_server_screen.dart';
 import 'package:explorer/features/toolbox/toolbox_menu.dart';
 import 'package:explorer/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +49,8 @@ void main(List<String> args) async {
   Desktop.initMedia();
   // Closing the window while work goes on leaves a Tasks view (desktop).
   await BackgroundMode.instance.init();
+  // On phones work going on shows in the notification shade.
+  TaskNotifications.instance.init();
   // The translucent window (Acrylic, vibrancy), as last chosen.
   await WindowEffects.init();
   await IconStrokes.useLight();
@@ -92,6 +96,12 @@ void main(List<String> args) async {
   // straight to the viewer or the video downloader.
   final launchItem = await IncomingFiles.takeInitial();
   IncomingFiles.onIncoming.listen((incoming) {
+    // Its notification: back to the screen that's sharing, not a second one.
+    if (incoming is IncomingRoute &&
+        incoming.route == IncomingRoute.fileServer &&
+        FileServerScreen.showRunning()) {
+      return;
+    }
     _navigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => _screenFor(incoming, launchedForIt: false),
@@ -118,9 +128,7 @@ void main(List<String> args) async {
   }
   if (launchItem != null && startItem == null) {
     // In the second frame. The first one's callbacks end with the Navigator
-    // telling Android it has nothing to pop, which would come after a push
-    // made there: Back would then leave the app, not go to the explorer
-    // underneath.
+    // saying it has nothing to pop, which would come after a push made there.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigatorKey.currentState?.push(
@@ -128,9 +136,6 @@ void main(List<String> args) async {
             builder: (_) => _screenFor(launchItem, launchedForIt: false),
           ),
         );
-        // WidgetsApp drops the push's own word before it knows the app's
-        // lifecycle state.
-        SystemNavigator.setFrameworkHandlesBack(true);
       });
       WidgetsBinding.instance.scheduleFrame();
     });
@@ -161,9 +166,12 @@ class App extends StatelessWidget {
           final dark = settings.effectiveThemeMode == ThemeMode.dark ||
               (settings.effectiveThemeMode == ThemeMode.system &&
                   MediaQuery.platformBrightnessOf(context) == Brightness.dark);
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => WindowEffects.apply(backdrop: settings.backdrop, dark: dark),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            WindowEffects.apply(backdrop: settings.backdrop, dark: dark);
+            TaskNotifications.instance.setTheme(
+              AppTheme.shad(settings, dark ? Brightness.dark : Brightness.light).colorScheme.primary,
+            );
+          });
           // shadcn/ui theme; ShadApp derives the Material theme from it,
           // which AppTheme.material completes.
           return ShadApp.custom(
@@ -173,6 +181,14 @@ class App extends StatelessWidget {
             appBuilder: (context) => MaterialApp(
               navigatorKey: _navigatorKey,
               title: 'Explorer',
+              // Who handles Back. WidgetsApp's own handler ignores this until
+              // it hears of a lifecycle change, which never comes if the app
+              // was already resumed when it started: opened by a shortcut, Back
+              // would leave the app rather than close the tool.
+              onNavigationNotification: (notification) {
+                SystemNavigator.setFrameworkHandlesBack(notification.canHandlePop);
+                return true;
+              },
               theme: AppTheme.material(
                 Theme.of(context),
                 ShadTheme.of(context),
@@ -242,10 +258,12 @@ Widget _screenFor(IncomingItem item, {required bool launchedForIt}) =>
         kVideoDownloaderEnabled
             ? VideoDownloaderScreen(initialUrl: url ?? text.trim())
             : const FileExplorerScreen(),
-      // A tool's shortcut, or else a download notification.
+      // A notification, or a tool's shortcut.
       IncomingRoute(:final route) =>
-        Tool.fromRoute(route)?.screen ??
-            (kVideoDownloaderEnabled
-                ? const VideoDownloaderScreen()
-                : const FileExplorerScreen()),
+        route == IncomingRoute.fileServer
+            ? FileServerScreen(initialFolder: ExplorerPaths.initialPath)
+            : Tool.fromRoute(route)?.screen ??
+                (kVideoDownloaderEnabled
+                    ? const VideoDownloaderScreen()
+                    : const FileExplorerScreen()),
     };

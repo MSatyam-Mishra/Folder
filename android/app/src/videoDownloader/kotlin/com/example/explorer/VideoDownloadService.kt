@@ -224,26 +224,28 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
         }
         if (active.size <= 1) {
             val job = active.firstOrNull()
-            builder.setContentTitle(job?.let { it.title ?: it.url } ?: "Video downloads")
-            builder.setContentText(job?.let { describe(it) } ?: "Starting…")
             val percent = job?.percent ?: -1.0
             val indeterminate = percent < 0 || (job?.stage?.startsWith("pp:") == true)
-            builder.setProgress(100, percent.coerceAtLeast(0.0).toInt(), indeterminate)
-        } else {
-            builder.setContentTitle("Downloading ${active.size} videos")
-            val queued = active.size - running.size
-            builder.setContentText(
-                "${running.size} running" + if (queued > 0) ", $queued waiting" else ""
+            ProgressNotification.apply(
+                builder,
+                this,
+                title = "Download in progress",
+                name = job?.let { it.title ?: it.url } ?: "Video downloads",
+                detail = job?.let { sizes(it) ?: describe(it) } ?: "Starting…",
+                progress = if (indeterminate) null else percent / 100,
             )
+        } else {
+            val queued = active.size - running.size
             val known = running.filter { it.percent >= 0 }
-            if (known.isEmpty()) {
-                builder.setProgress(100, 0, true)
-            } else {
-                builder.setProgress(100, known.map { it.percent }.average().toInt(), false)
-            }
-            val lines = Notification.InboxStyle()
-            active.take(5).forEach { lines.addLine("${it.title ?: it.url} — ${describe(it)}") }
-            builder.setStyle(lines)
+            val average = if (known.isEmpty()) null else known.map { it.percent }.average()
+            ProgressNotification.apply(
+                builder,
+                this,
+                title = "Downloading ${active.size} videos",
+                name = "${running.size} running" + if (queued > 0) ", $queued waiting" else "",
+                detail = average?.let { "${it.toInt()}%" } ?: "",
+                progress = average?.let { it / 100 },
+            )
         }
         val cancelId = active.singleOrNull()?.id
         val cancel = Intent(this, VideoDownloadService::class.java).setAction(ACTION_CANCEL)
@@ -259,6 +261,14 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
             pending,
         )
         return builder.build()
+    }
+
+    /** "231.6 MB/252.5 MB", when that's known and it's that far. */
+    private fun sizes(job: VideoDownloadJobs.Job): String? {
+        val done = job.downloaded ?: return null
+        val total = job.total ?: return null
+        if (job.stage?.startsWith("pp:") == true || total <= 0) return null
+        return "${formatBytes(done.toDouble())}/${formatBytes(total.toDouble())}"
     }
 
     private fun describe(job: VideoDownloadJobs.Job): String {

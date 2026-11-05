@@ -22,6 +22,7 @@ class IncomingRoute extends IncomingItem {
   const IncomingRoute(this.route);
 
   static const videoDownloader = 'video_downloader';
+  static const fileServer = 'file_server';
 
   final String route;
 }

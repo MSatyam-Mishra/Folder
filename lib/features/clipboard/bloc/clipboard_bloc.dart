@@ -7,6 +7,7 @@ import 'package:explorer/core/services/background_tasks.dart';
 import 'package:explorer/core/services/file_clipboard.dart';
 import 'package:explorer/features/clipboard/paste_task.dart';
 import 'package:explorer/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:filesize/filesize.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -250,7 +251,12 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
         ? '$verb "${p.basename(sources.single)}"'
         : '$verb ${sources.length} items';
     taskProgressBloc.add(TaskStarted(title: title, initialMessage: 'Getting ready…'));
-    _task = BackgroundTasks.instance.start(title, message: 'Getting ready…');
+    _task = BackgroundTasks.instance.start(
+      title,
+      message: 'Getting ready…',
+      headline: move ? 'Move in progress' : 'Copy in progress',
+      kind: TaskKind.copy,
+    );
     try {
       final targets = await _pasteInIsolate(sources, destination, move);
       _task!.outputs.addAll(targets);
@@ -282,7 +288,11 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
             progress: total > 0 ? done / total : 1,
             message: name.isEmpty ? 'Finishing…' : name,
           ));
-          _task?.update(progress: total > 0 ? done / total : 1, message: name.isEmpty ? 'Finishing…' : name);
+          _task?.update(
+            progress: total > 0 ? done / total : 1,
+            message: name.isEmpty ? 'Finishing…' : name,
+            detail: total > 0 ? '${filesize(done, 1)}/${filesize(total, 1)}' : null,
+          );
         case List<String> targets:
           result.complete(targets);
         case (String message, String? path):

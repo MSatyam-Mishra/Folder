@@ -10,6 +10,18 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 abstract final class AppTheme {
   static const double iconSize = 20;
 
+  /// A gradient from the theme's colour, for what's drawn outside the app
+  /// (notifications, shortcuts): on along the colour wheel, so blue goes to
+  /// green and pink to purple. A grey has no such thing, so it lightens or darkens.
+  static List<Color> gradientOf(Color primary) {
+    final hsl = HSLColor.fromColor(primary);
+    if (hsl.saturation < 0.15) {
+      final other = hsl.lightness > 0.5 ? hsl.lightness - 0.35 : hsl.lightness + 0.35;
+      return [primary, hsl.withLightness(other).toColor()];
+    }
+    return [primary, hsl.withHue((hsl.hue - 80) % 360).toColor()];
+  }
+
   /// Corner radius of controls (buttons, inputs, menus): shadcn `rounded-md`.
   static const double controlRadius = 8;
 

@@ -1,5 +1,6 @@
 import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/app_shortcuts.dart';
+import 'package:explorer/core/theme/app_theme.dart';
 import 'package:explorer/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
 import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:explorer/features/toolbox/duplicate_finder_screen.dart';
@@ -177,13 +178,11 @@ class _ToolTile extends StatelessWidget {
       ],
     );
     if (place == null || !context.mounted) return;
-    final primary = context.colors.primary;
-    final hsl = HSLColor.fromColor(primary);
-    final other = hsl.withHue((hsl.hue - 40) % 360).toColor();
+    final colors = AppTheme.gradientOf(context.colors.primary);
     final messenger = ScaffoldMessenger.maybeOf(context);
     var added = false;
     try {
-      added = await AppShortcuts.add(tool.shortcut, place, colors: [primary, other]);
+      added = await AppShortcuts.add(tool.shortcut, place, colors: colors);
     } on Exception {
       // Said below.
     }

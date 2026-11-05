@@ -7,7 +7,9 @@ import 'package:explorer/core/services/device_files.dart';
 import 'package:explorer/core/services/file_server/app_file_server_resources.dart';
 import 'package:explorer/core/services/file_server/ftp_file_server.dart';
 import 'package:explorer/core/services/file_server/http_file_server.dart';
+import 'package:explorer/core/services/incoming_files.dart';
 import 'package:explorer/core/services/localsend/localsend_platform.dart';
+import 'package:explorer/core/services/task_notifications.dart';
 import 'package:explorer/core/theme/theme_cubit.dart';
 import 'package:explorer/shared/file_icons/file_icons.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
@@ -24,8 +26,10 @@ enum ShareProtocol { http, ftp }
 
 /// Shares a folder over Wi-Fi: as a web page (HTTP) or over FTP.
 ///
-/// Sharing runs while this screen is open. Pops with `true` when files were
-/// added from another device, so the caller can refresh its folder.
+/// Sharing runs while this screen is open, also with the app in the background:
+/// a notification says so, leads back here and can stop it. Pops with `true`
+/// when files were added from another device, so the caller can refresh its
+/// folder.
 class FileServerScreen extends StatefulWidget {
   const FileServerScreen({
     super.key,
@@ -44,11 +48,22 @@ class FileServerScreen extends StatefulWidget {
   /// Start sharing right away (chosen from a Share menu).
   final bool startNow;
 
+  /// Goes back to the screen that's sharing; false when none is.
+  static bool showRunning() {
+    final state = _FileServerScreenState._sharing;
+    if (state == null || !state.mounted) return false;
+    final route = ModalRoute.of(state.context);
+    if (route != null) Navigator.of(state.context).popUntil((other) => other == route);
+    return true;
+  }
+
   @override
   State<FileServerScreen> createState() => _FileServerScreenState();
 }
 
 class _FileServerScreenState extends State<FileServerScreen> {
+  static _FileServerScreenState? _sharing;
+
   late ShareProtocol _protocol = widget.protocol;
   late String _folder = widget.initialFolder;
   bool _allowChanges = false;
@@ -120,6 +135,8 @@ class _FileServerScreenState extends State<FileServerScreen> {
         _ftp = server;
       }
       await DeviceFiles.keepAwake(true);
+      _sharing = this;
+      _showNotification();
     } catch (e) {
       _error = "Couldn't start sharing: $e";
     }
@@ -129,6 +146,23 @@ class _FileServerScreenState extends State<FileServerScreen> {
   void _onReceived(String path) {
     DeviceFiles.invalidate();
     if (mounted) setState(() => _received.add(p.basename(path)));
+    _showNotification();
+  }
+
+  void _showNotification() {
+    TaskNotifications.instance.show(
+      TaskNotifications.sharingId,
+      title: _protocol == ShareProtocol.ftp ? 'Sharing over FTP' : 'Sharing in the browser',
+      name: _urls.firstOrNull ?? '',
+      detail: _received.isEmpty ? _folderLabel : '${_received.length} received',
+      bar: false,
+      icon: 'share',
+      route: IncomingRoute.fileServer,
+      action: 'Stop',
+      onAction: () {
+        if (mounted) setState(_stop);
+      },
+    );
   }
 
   void _stop() {
@@ -139,6 +173,10 @@ class _FileServerScreenState extends State<FileServerScreen> {
     _http = null;
     _ftp = null;
     DeviceFiles.keepAwake(false);
+    if (_sharing == this) {
+      _sharing = null;
+      TaskNotifications.instance.cancel(TaskNotifications.sharingId);
+    }
   }
 
   Future<void> _pickFolder() async {

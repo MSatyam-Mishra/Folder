@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:explorer/core/services/background_tasks.dart';
 import 'package:explorer/core/services/localsend/localsend.dart';
 import 'package:explorer/core/services/localsend/localsend_platform.dart';
+import 'package:filesize/filesize.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
@@ -108,7 +110,10 @@ class LocalSendController extends ChangeNotifier with WidgetsBindingObserver {
             ..onReceiveFinished = _onReceiveFinished;
       _hooks?.onNetworkChanged = () => unawaited(service.onNetworkChanged());
       _service = service;
-      _sub = service.changes.listen((_) => _scheduleNotify());
+      _sub = service.changes.listen((_) {
+        _trackTransfers();
+        _scheduleNotify();
+      });
       await service.start();
       if (_disposed) {
         await service.dispose();
@@ -127,6 +132,8 @@ class LocalSendController extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _disposed = true;
+    _endTask(_sendTask, TaskStatus.cancelled);
+    _endTask(_receiveTask, TaskStatus.cancelled);
     _notifyTimer?.cancel();
     unawaited(_sub?.cancel());
     final service = _service;
@@ -138,6 +145,71 @@ class LocalSendController extends ChangeNotifier with WidgetsBindingObserver {
 
   void _notify() {
     if (!_disposed) notifyListeners();
+  }
+
+  BackgroundTask? _sendTask;
+  BackgroundTask? _receiveTask;
+
+  /// Transfers are background tasks, for their notifications and for the app
+  /// to stay up while they run.
+  void _trackTransfers() {
+    final send = sendSession;
+    if (send != null && send.state == LsSendState.sending) {
+      final task = _sendTask ??= BackgroundTasks.instance.start(
+        'Sending files',
+        headline: 'Upload in progress',
+        kind: TaskKind.upload,
+        onCancel: () => unawaited(cancelSend()),
+      );
+      final sending = send.files.values.where((f) => f.status == LsSendFileStatus.sending);
+      task.update(
+        message: sending.firstOrNull?.file.fileName ?? task.message,
+        progress: send.totalBytes > 0 ? send.sentBytes / send.totalBytes : null,
+        detail: '${filesize(send.sentBytes, 1)}/${filesize(send.totalBytes, 1)}',
+      );
+    } else if (_sendTask != null) {
+      _endTask(_sendTask, switch (send?.state) {
+        LsSendState.finished => TaskStatus.done,
+        LsSendState.cancelled || LsSendState.cancelledByReceiver || null => TaskStatus.cancelled,
+        _ => TaskStatus.failed,
+      });
+      _sendTask = null;
+    }
+
+    final receive = receiveSession;
+    if (receive != null && receive.isActive) {
+      final task = _receiveTask ??= BackgroundTasks.instance.start(
+        'Receiving files',
+        headline: 'Download in progress',
+        kind: TaskKind.download,
+        onCancel: () => unawaited(cancelReceive()),
+      );
+      final receiving = receive.files.values.where((f) => f.status == LsReceiveFileStatus.receiving);
+      task.update(
+        message: receiving.firstOrNull?.dto.fileName ?? task.message,
+        progress: receive.totalBytes > 0 ? receive.receivedBytes / receive.totalBytes : null,
+        detail: '${filesize(receive.receivedBytes, 1)}/${filesize(receive.totalBytes, 1)}',
+      );
+    } else if (_receiveTask != null) {
+      _endTask(_receiveTask, switch (receive?.state) {
+        LsReceiveState.finished => TaskStatus.done,
+        LsReceiveState.stalled => TaskStatus.failed,
+        _ => TaskStatus.cancelled,
+      });
+      _receiveTask = null;
+    }
+  }
+
+  void _endTask(BackgroundTask? task, TaskStatus status) {
+    if (task == null) return;
+    switch (status) {
+      case TaskStatus.done:
+        BackgroundTasks.instance.finish(task, message: 'Done');
+      case TaskStatus.failed:
+        BackgroundTasks.instance.fail(task, "The transfer didn't finish");
+      case TaskStatus.running || TaskStatus.cancelled:
+        BackgroundTasks.instance.cancelled(task);
+    }
   }
 
   /// Progress events arrive many times per second: repaint at most ~8x/s.
