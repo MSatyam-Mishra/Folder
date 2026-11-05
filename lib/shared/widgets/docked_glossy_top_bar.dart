@@ -51,12 +51,16 @@ class DockedGlossyTopBar extends StatelessWidget {
           child: Row(
             children: [
               leading ??
-                  AppIconButton(
-                    icon: AppIcons.drawerMenu(color: colors.foreground),
-                    tooltip: 'Open menu',
-                    onPressed:
-                        onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
-                  ),
+                  // Only with a menu to open: on a screen with none, the icon
+                  // would do nothing.
+                  (onMenuPressed != null || (Scaffold.maybeOf(context)?.hasDrawer ?? false)
+                      ? AppIconButton(
+                          icon: AppIcons.drawerMenu(color: colors.foreground),
+                          tooltip: 'Open menu',
+                          onPressed:
+                              onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
+                        )
+                      : const SizedBox.shrink()),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

@@ -85,9 +85,10 @@ void main(List<String> args) async {
     );
   });
 
-  // A notification tap opens its screen on top of the explorer, so Back
-  // behaves as usual.
-  final startItem = launchItem is IncomingRoute ? null : launchItem;
+  // A file opens by itself, and closing it returns to the app that sent it. A
+  // shared link or a notification opens on top of the explorer: Back leads to
+  // it and its menu, and alone the screen would have neither.
+  final startItem = launchItem is IncomingFile ? launchItem : null;
   runApp(App(launchItem: startItem));
   unawaited(WindowsDropFiles.init());
   // macOS: a window opened for a folder or a file (from Finder or another
@@ -101,7 +102,7 @@ void main(List<String> args) async {
       await windowManager.focus();
     });
   }
-  if (launchItem is IncomingRoute) {
+  if (launchItem != null && startItem == null) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _navigatorKey.currentState?.push(
         MaterialPageRoute(
