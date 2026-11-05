@@ -226,33 +226,49 @@ class DockedSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return CustomPaint(
-      painter: _SidebarPainter(pane: backgroundOf(context), page: colors.background, edge: colors.border),
+      painter: _SidebarCorners(colors.background),
+      foregroundPainter: _SidebarEdge(colors.border),
       child: Material(
-        type: MaterialType.transparency,
+        color: backgroundOf(context),
+        shape: const RoundedRectangleBorder(borderRadius: AppTheme.sidebarRadius),
         child: SafeArea(right: false, child: child),
       ),
     );
   }
 }
 
-/// The sidebar's background with its corners next to the page rounded, the
-/// page's colour in those corners, and the border along that side alone.
-class _SidebarPainter extends CustomPainter {
-  const _SidebarPainter({required this.pane, required this.page, required this.edge});
+/// The page's colour in the sidebar's rounded corners, and nowhere else: see
+/// through as it may be, it mustn't lie under the sidebar too.
+class _SidebarCorners extends CustomPainter {
+  const _SidebarCorners(this.page);
 
-  final Color pane;
   final Color page;
-  final Color edge;
 
   @override
   void paint(Canvas canvas, Size size) {
     final whole = Offset.zero & size;
-    final shape = AppTheme.sidebarRadius.toRRect(whole);
-    canvas.drawRRect(shape, Paint()..color = pane);
     canvas.drawPath(
-      Path.combine(PathOperation.difference, Path()..addRect(whole), Path()..addRRect(shape)),
+      Path.combine(
+        PathOperation.difference,
+        Path()..addRect(whole),
+        Path()..addRRect(AppTheme.sidebarRadius.toRRect(whole)),
+      ),
       Paint()..color = page,
     );
+  }
+
+  @override
+  bool shouldRepaint(_SidebarCorners old) => old.page != page;
+}
+
+/// The sidebar's border, along the page alone and round its corners.
+class _SidebarEdge extends CustomPainter {
+  const _SidebarEdge(this.edge);
+
+  final Color edge;
+
+  @override
+  void paint(Canvas canvas, Size size) {
     const radius = Radius.circular(AppTheme.surfaceRadius);
     final x = size.width - 0.5;
     canvas.drawPath(
@@ -268,7 +284,7 @@ class _SidebarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SidebarPainter old) => old.pane != pane || old.page != page || old.edge != edge;
+  bool shouldRepaint(_SidebarEdge old) => old.edge != edge;
 }
 
 /// Centers [child] and caps its width so reading content doesn't stretch
