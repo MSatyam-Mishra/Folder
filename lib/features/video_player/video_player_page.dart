@@ -1479,7 +1479,7 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
       return;
     }
     final name = '${p.basenameWithoutExtension(videoTitle(_queue.current))}_${_position.value.inSeconds}s.jpg';
-    final folder = Directory(p.join(ExplorerPaths.homePath, 'Pictures', 'Folder'));
+    final folder = Directory(p.join(ExplorerPaths.userFolder, 'Pictures', 'Folder'));
     await folder.create(recursive: true);
     await File(p.join(folder.path, name)).writeAsBytes(bytes);
     _say('Saved in Pictures/Folder');

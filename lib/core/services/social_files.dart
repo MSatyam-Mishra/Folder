@@ -105,7 +105,7 @@ abstract final class SocialFiles {
     final storage = storageOverride;
     if (storage != null) return _phonePlaces(app, storage);
     if (Platform.isAndroid) return _phonePlaces(app, ExplorerPaths.androidInternalStorage);
-    return _computerPlaces(app, ExplorerPaths.homePath);
+    return _computerPlaces(app, ExplorerPaths.userFolder);
   }
 
   /// A subfolder's tab: "WhatsApp Images" is Images, ".Statuses" is Statuses;

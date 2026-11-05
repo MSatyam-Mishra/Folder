@@ -28,7 +28,7 @@ class DuplicateFinderScreen extends StatefulWidget {
 }
 
 class _DuplicateFinderScreenState extends State<DuplicateFinderScreen> {
-  late String _folder = widget.folder ?? ExplorerPaths.homePath;
+  late String _folder = widget.folder ?? ExplorerPaths.userFolder;
   DuplicateSearch? _search;
   DuplicateProgress? _progress;
   List<DuplicateGroup>? _groups;

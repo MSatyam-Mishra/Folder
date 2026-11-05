@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:folder/core/router/file_opener.dart';
+import 'package:folder/core/platform/explorer_paths.dart';
 import 'package:folder/core/services/localsend/localsend.dart';
 import 'package:folder/features/localsend/localsend_controller.dart';
 import 'package:folder/features/localsend/widgets/localsend_common.dart';
@@ -161,6 +162,7 @@ class _ThisDeviceSection extends StatelessWidget {
               icon: LucideIcons.externalLink,
               tooltip: 'Open folder',
               onPressed: () async {
+                if (!ExplorerPaths.isOnDisk(settings.destination)) return;
                 await Directory(settings.destination).create(recursive: true);
                 if (context.mounted) {
                   await lsShowInFolder(context, settings.destination);

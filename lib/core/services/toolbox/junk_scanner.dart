@@ -73,7 +73,7 @@ abstract final class JunkScanner {
       final cache = (await getTemporaryDirectory()).path;
       return Isolate.run(() => scanStorage(ExplorerPaths.androidInternalStorage, appCache: cache));
     }
-    final home = ExplorerPaths.homePath;
+    final home = ExplorerPaths.userFolder;
     final temp = Directory.systemTemp.path;
     final local = Platform.environment['LOCALAPPDATA'];
     return Isolate.run(() {

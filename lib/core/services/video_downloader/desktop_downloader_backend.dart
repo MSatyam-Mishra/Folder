@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:folder/core/platform/explorer_paths.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -225,6 +226,7 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
 
   @override
   Future<bool> canWrite(String dir) async {
+    if (!ExplorerPaths.isOnDisk(dir)) return false;
     try {
       await Directory(dir).create(recursive: true);
       final probe = File(p.join(dir, '.explorer-write-test'));
@@ -354,6 +356,9 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
     try {
       final installer = await _ytDlp();
       if (!installer.isInstalled) await prepare();
+      if (!ExplorerPaths.isOnDisk(spec.outputDir)) {
+        throw DownloaderException("That isn't a folder on this computer: ${spec.outputDir}");
+      }
       await Directory(spec.outputDir).create(recursive: true);
       await Directory(spec.workDir).create(recursive: true);
       final args = [...spec.args, ...await _commonArgs(), '--', spec.url];

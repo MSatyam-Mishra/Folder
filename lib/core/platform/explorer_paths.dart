@@ -67,6 +67,20 @@ abstract final class ExplorerPaths {
     return Platform.environment['HOME'] ?? '/';
   }
 
+  /// The user's own folder, a real one on every system, for anything that reads
+  /// or writes files: on Windows [homePath] is This PC, which isn't on disk.
+  static String get userFolder {
+    if (Platform.isWindows) return Platform.environment['USERPROFILE'] ?? Directory.systemTemp.path;
+    return homePath;
+  }
+
+  /// Whether [path] can be a folder on disk. On Windows a path with no drive,
+  /// as Git Bash writes them (/c/Users), means the root of the current drive, so
+  /// creating it would leave a stray C:\c behind.
+  static bool isOnDisk(String path) => !isVirtual(path) && (!Platform.isWindows || isFullWindowsPath(path));
+
+  static bool isFullWindowsPath(String path) => p.windows.isAbsolute(path) && !p.windows.isRootRelative(path);
+
   static bool isWindowsRoots(String path) => path == windowsRoots;
 
   static bool isAppRoot(String path) {

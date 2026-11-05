@@ -185,6 +185,7 @@ abstract final class LsSettingsStore {
   }
 
   static Future<bool> isWritable(String dir) async {
+    if (!ExplorerPaths.isOnDisk(dir)) return false;
     try {
       await Directory(dir).create(recursive: true);
       final probe = File(p.join(dir, '.localsend_write_test'));
