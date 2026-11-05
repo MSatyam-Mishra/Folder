@@ -66,6 +66,26 @@ class MainDrawerContent extends StatelessWidget {
               const EdgeInsets.only(bottom: 16),
             ),
             children: [
+              // First, so they're there without scrolling a long menu.
+              ValueListenableBuilder<List<Tool>>(
+                valueListenable: PinnedTools.instance,
+                builder: (context, pinned, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (pinned.isNotEmpty) Semantics(container: true, child: const AppSidebarSection('Pinned')),
+                    for (final tool in pinned)
+                      // Each its own for a screen reader, as a list's items are.
+                      Semantics(
+                        container: true,
+                        child: AppSidebarItem(
+                          icon: tool.icon,
+                          label: tool.title,
+                          onTap: () => _push(context, tool.screen),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               const AppSidebarSection('Storage'),
               if (Platform.isWindows)
                 const _WindowsStorageSection()

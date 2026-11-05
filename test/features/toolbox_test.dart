@@ -5,7 +5,10 @@ import 'package:folder/core/services/toolbox/junk_scanner.dart';
 import 'package:folder/core/services/toolbox/ram_cleaner.dart';
 import 'package:folder/features/toolbox/duplicate_finder_screen.dart';
 import 'package:folder/features/toolbox/memory_cleaner_screen.dart';
+import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
 import 'package:folder/features/toolbox/toolbox_menu.dart';
+import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -207,6 +210,66 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('the pin puts a tool in the side menu, kept, and takes it out again', (tester) async {
+      tester.view.physicalSize = const Size(900, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      PinnedTools.instance.value = const [];
+      addTearDown(() => PinnedTools.instance.value = const []);
+      await tester.pumpWidget(themedApp(Scaffold(body: ToolboxMenu(onOpen: (_) {}))));
+      await settle(tester);
+
+      await tester.tap(find.byTooltip('Pin or add a shortcut').first);
+      await settle(tester);
+      await tester.tap(find.text('Pin to sidebar'));
+      await settle(tester);
+      expect(PinnedTools.instance.value, [Tool.ramCleaner]);
+      expect(find.text('RAM cleaner pinned to the sidebar'), findsOneWidget);
+
+      // Still there the next time the app starts.
+      PinnedTools.instance.value = const [];
+      await tester.runAsync(PinnedTools.instance.load);
+      expect(PinnedTools.instance.value, [Tool.ramCleaner]);
+
+      await tester.tap(find.byTooltip('Pin or add a shortcut').first);
+      await settle(tester);
+      await tester.tap(find.text('Remove from sidebar'));
+      await settle(tester);
+      expect(PinnedTools.instance.value, isEmpty);
+      await tester.runAsync(PinnedTools.instance.load);
+      expect(PinnedTools.instance.value, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a pinned tool shows in the sidebar, and opens from there', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      ExplorerTabs.instance.reset();
+      PinnedTools.instance.value = const [];
+      addTearDown(() => PinnedTools.instance.value = const []);
+      await tester.pumpWidget(themedApp(TabbedExplorer(startFolder: root.path)));
+      await settle(tester);
+      expect(find.text('Duplicate finder'), findsNothing, reason: 'nothing is pinned yet');
+      expect(find.text('Pinned'), findsNothing);
+
+      PinnedTools.instance.value = const [Tool.duplicateFinder];
+      await settle(tester);
+      final pinned = find.widgetWithText(AppSidebarItem, 'Duplicate finder');
+      expect(pinned, findsOneWidget);
+      expect(find.text('Pinned'), findsOneWidget);
+      expect(
+        tester.getTopLeft(pinned).dy,
+        lessThan(tester.getTopLeft(find.text('Storage')).dy),
+        reason: 'above the rest, without scrolling',
+      );
+
+      await tester.tap(pinned);
+      await settle(tester);
+      expect(find.byType(DuplicateFinderScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
     Future<void> openMenu(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1;
@@ -251,7 +314,7 @@ void main() {
 
     testWidgets('the pin and a right-click offer the places this system has, and the menu stays', (tester) async {
       await openMenu(tester);
-      await tester.tap(find.byTooltip('Add shortcut').first);
+      await tester.tap(find.byTooltip('Pin or add a shortcut').first);
       await settle(tester);
       expect(find.text('Add to desktop'), findsOneWidget);
       if (Platform.isWindows) expect(find.text('Add to Start menu'), findsOneWidget);

@@ -59,6 +59,7 @@ void main(List<String> args) async {
   await IconStrokes.useLight();
   await ExplorerZoom.instance.load();
   await SidebarWidth.instance.load();
+  await PinnedTools.instance.load();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 
