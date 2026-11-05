@@ -6,6 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart' show BuildContext, IconData;
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,7 +77,9 @@ abstract final class UntitledFiles {
     String folder,
     Future<String?> Function(BuildContext context, UntitledFile untitled) askName,
   ) async {
-    final dir = await Directory.systemTemp.createTemp('explorer_new_');
+    // On Android, the app's own cache folder.
+    final parent = Platform.isAndroid ? await getTemporaryDirectory() : Directory.systemTemp;
+    final dir = await parent.createTemp('explorer_new_');
     final file = File('${dir.path}${Platform.pathSeparator}${kind.baseName}.${kind.extension}');
     await file.writeAsBytes(await NewFiles.contents(kind), flush: true);
     return _open[file.path] = UntitledFile._(file, kind, folder, askName);

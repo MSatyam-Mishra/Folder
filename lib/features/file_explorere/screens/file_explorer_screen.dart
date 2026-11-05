@@ -26,6 +26,7 @@ import 'package:explorer/features/file_explorere/widgets/file_list_item.dart';
 import 'package:explorer/features/file_explorere/widgets/selection_band.dart';
 import 'package:explorer/features/file_explorere/widgets/image_actions.dart';
 import 'package:explorer/features/file_explorere/widgets/inline_rename.dart';
+import 'package:explorer/features/file_explorere/widgets/new_file_button.dart';
 import 'package:explorer/features/file_explorere/widgets/paste_bar.dart';
 import 'package:explorer/features/localsend/screens/localsend_screen.dart';
 import 'package:explorer/features/network/screens/file_server_screen.dart';
@@ -319,7 +320,9 @@ class _FileExplorerUI extends StatelessWidget {
         loaded.entities.isNotEmpty &&
         !isSelectionMode &&
         pasteState == null &&
-        !busy;
+        !busy &&
+        // It would float over the name, above the keyboard.
+        loaded.renamingPath == null;
 
     final bottomInset =
         (pasteState != null ? PasteBar.reservedHeight : 0.0) +
@@ -388,12 +391,13 @@ class _FileExplorerUI extends StatelessWidget {
       ),
       floatingActionButton: showFab
           ? FloatingActionButton(
-              tooltip: 'New folder',
-              onPressed: () => fileActionsService.createFolder(
+              tooltip: 'New',
+              onPressed: () => showNewItemSheet(
                 context,
-                loaded.path,
+                onNewFolder: () => fileActionsService.createFolder(context, loaded.path),
+                onNewFile: (kind) => fileActionsService.startNewFile(context, loaded.path, kind),
               ),
-              child: const Icon(LucideIcons.folderPlus),
+              child: const Icon(LucideIcons.plus),
             )
           : null,
     );
@@ -755,7 +759,7 @@ class _FileExplorerUI extends StatelessWidget {
           icon: LucideIcons.folderOpen,
           title: 'This folder is empty',
           description: canCreate
-              ? 'Create a folder, or copy files here from another folder.'
+              ? 'Create a folder or a file, or copy files here from another folder.'
               : 'There is nothing to show here.',
           actions: [
             if (canCreate)
@@ -766,6 +770,16 @@ class _FileExplorerUI extends StatelessWidget {
                 ),
                 icon: const Icon(LucideIcons.folderPlus, size: 16),
                 label: const Text('New folder'),
+              ),
+            // A docked layout has the + in its header.
+            if (canCreate && !AdaptiveSplitView.isSplit(context))
+              OutlinedButton.icon(
+                onPressed: () => showNewItemSheet(
+                  context,
+                  onNewFile: (kind) => fileActionsService.startNewFile(context, state.path, kind),
+                ),
+                icon: const Icon(LucideIcons.filePlus, size: 16),
+                label: const Text('New file'),
               ),
           ],
         );

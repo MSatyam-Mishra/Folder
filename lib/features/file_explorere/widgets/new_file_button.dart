@@ -71,6 +71,91 @@ class NewFileButton extends StatelessWidget {
   }
 }
 
+/// Where there's no room for the buttons in the header (a phone): what to
+/// create, in a sheet. Its first row has the settings icon, as in the menu of
+/// [NewFileButton]. Without [onNewFolder], only files are offered.
+Future<void> showNewItemSheet(
+  BuildContext context, {
+  VoidCallback? onNewFolder,
+  required ValueChanged<NewFileKind> onNewFile,
+}) async {
+  final picked = await AppSheet.show<Object>(
+    context,
+    child: _NewItemList(withFolder: onNewFolder != null),
+  );
+  if (picked is NewFileKind) {
+    onNewFile(picked);
+  } else if (identical(picked, _NewItemList.folder)) {
+    onNewFolder?.call();
+  }
+}
+
+class _NewItemList extends StatefulWidget {
+  const _NewItemList({required this.withFolder});
+
+  static const folder = Object();
+
+  final bool withFolder;
+
+  @override
+  State<_NewItemList> createState() => _NewItemListState();
+}
+
+class _NewItemListState extends State<_NewItemList> {
+  Set<String>? _chosen;
+
+  Future<void> _load() async {
+    final chosen = await NewFiles.chosen();
+    if (mounted) setState(() => _chosen = chosen);
+  }
+
+  /// The list stays open and follows what's ticked.
+  Future<void> _chooseTypes() async {
+    await AppSheet.show<void>(context, child: _FileTypesPicker(initial: _chosen ?? const {}));
+    await _load();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Widget _row(Object value, IconData icon, String label) {
+    final colors = context.colors;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, size: 20, color: context.look.iconColor(icon, colors.mutedForeground)),
+      title: Text(label),
+      onTap: () => Navigator.pop(context, value),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chosen = _chosen ?? const <String>{};
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text('New', style: Theme.of(context).textTheme.titleMedium)),
+            IconButton(
+              tooltip: 'Choose file types',
+              icon: const Icon(LucideIcons.settings, size: 20),
+              onPressed: _chooseTypes,
+            ),
+          ],
+        ),
+        if (widget.withFolder) _row(_NewItemList.folder, LucideIcons.folderPlus, 'New folder'),
+        for (final kind in NewFiles.kinds)
+          if (chosen.contains(kind.extension)) _row(kind, kind.icon, kind.menuLabel),
+      ],
+    );
+  }
+}
+
 /// A checkbox for every kind of file; the ticked ones are in the + menu.
 class _FileTypesPicker extends StatefulWidget {
   const _FileTypesPicker({required this.initial});
