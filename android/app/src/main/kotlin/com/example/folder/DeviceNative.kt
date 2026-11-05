@@ -2,9 +2,11 @@ package com.example.folder
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.Bitmap
@@ -34,6 +36,7 @@ import java.util.concurrent.Executors
  *   is shared over Wi-Fi, so transfers don't stall when the phone idles;
  * - `memoryInfo`, `canFreeMemory`, `freeMemory`: the RAM cleaner;
  * - `addShortcut`: a tool on the home screen, or in the app icon's menu;
+ * - `inAppDrawer`, `setInAppDrawer`: a tool as its own entry in the app drawer;
  * - `videoFrame`: a picture from a video, for its thumbnail.
  */
 class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
@@ -78,6 +81,31 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                     }
                     main.post { result.success(frame) }
                 }
+                "inAppDrawer" -> result.success(
+                    try {
+                        activity.packageManager.getComponentEnabledSetting(toolEntry(call.argument<String>("id")!!)) ==
+                            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    } catch (e: IllegalArgumentException) {
+                        false
+                    },
+                )
+                "setInAppDrawer" -> {
+                    val changed = try {
+                        activity.packageManager.setComponentEnabledSetting(
+                            toolEntry(call.argument<String>("id")!!),
+                            if (call.argument<Boolean>("on") == true) {
+                                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                            } else {
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                            },
+                            PackageManager.DONT_KILL_APP,
+                        )
+                        true
+                    } catch (e: IllegalArgumentException) {
+                        false
+                    }
+                    result.success(changed)
+                }
                 "addShortcut" -> {
                     val added = try {
                         addShortcut(
@@ -121,6 +149,12 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
         bitmap.recycle()
         return out.toByteArray()
     }
+
+    /**
+     * A tool's activity-alias in the manifest: on, it lists in the launcher as
+     * an app of its own. Spelled out, as a release build renames this class's package.
+     */
+    private fun toolEntry(id: String) = ComponentName(activity.packageName, "com.example.folder.$id")
 
     /**
      * Pinning asks the launcher, which shows its own confirmation and may not

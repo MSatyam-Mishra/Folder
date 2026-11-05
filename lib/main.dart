@@ -59,7 +59,6 @@ void main(List<String> args) async {
   await IconStrokes.useLight();
   await ExplorerZoom.instance.load();
   await SidebarWidth.instance.load();
-  await PinnedTools.instance.load();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 
@@ -106,11 +105,7 @@ void main(List<String> args) async {
         FileServerScreen.showRunning()) {
       return;
     }
-    _navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (_) => _screenFor(incoming, launchedForIt: false),
-      ),
-    );
+    _openIncoming(incoming);
   });
 
   // A file opens by itself, and closing it returns to the app that sent it. A
@@ -135,11 +130,7 @@ void main(List<String> args) async {
     // saying it has nothing to pop, which would come after a push made there.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (_) => _screenFor(launchItem, launchedForIt: false),
-          ),
-        );
+        _openIncoming(launchItem);
       });
       WidgetsBinding.instance.scheduleFrame();
     });
@@ -250,6 +241,29 @@ class App extends StatelessWidget {
 
 /// Where to go for something another app sent. [launchedForIt]: the app was
 /// started just for this, so leaving it returns to the sending app.
+/// Opens [item] over what's showing, unless that's the screen it asks for: a
+/// tool's icon pressed again goes back to it, without stacking another.
+void _openIncoming(IncomingItem item) {
+  final navigator = _navigatorKey.currentState;
+  if (navigator == null) return;
+  final name = item is IncomingRoute ? item.route : null;
+  var showing = false;
+  if (name != null) {
+    // Only looks: the first route it's given is the top one.
+    navigator.popUntil((top) {
+      showing = top.settings.name == name;
+      return true;
+    });
+  }
+  if (showing) return;
+  navigator.push(
+    MaterialPageRoute(
+      settings: RouteSettings(name: name),
+      builder: (_) => _screenFor(item, launchedForIt: false),
+    ),
+  );
+}
+
 Widget _screenFor(IncomingItem item, {required bool launchedForIt}) =>
     switch (item) {
       IncomingFile() => IncomingFileScreen(

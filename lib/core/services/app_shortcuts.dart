@@ -10,6 +10,9 @@ import 'package:path_provider/path_provider.dart';
 
 /// Where a shortcut can go, each in its system's own way.
 enum ShortcutPlace {
+  /// Android: an entry of its own in the launcher's list of apps.
+  appDrawer,
+
   /// Android: pinned by the launcher, which asks first.
   homeScreen,
 
@@ -73,13 +76,25 @@ abstract final class AppShortcuts {
   static bool get _inMsix => Platform.resolvedExecutable.contains(r'\WindowsApps\');
 
   static List<ShortcutPlace> get places {
-    if (Platform.isAndroid) return const [ShortcutPlace.homeScreen, ShortcutPlace.appIconMenu];
+    if (Platform.isAndroid) return const [ShortcutPlace.appDrawer, ShortcutPlace.homeScreen, ShortcutPlace.appIconMenu];
     if (Platform.isWindows) {
       return _inMsix ? const [ShortcutPlace.desktop] : const [ShortcutPlace.desktop, ShortcutPlace.startMenu];
     }
     if (Platform.isLinux) return const [ShortcutPlace.desktop, ShortcutPlace.appMenu];
     if (Platform.isMacOS) return const [ShortcutPlace.desktop, ShortcutPlace.applications];
     return const [];
+  }
+
+  /// Whether [shortcut] has its own entry in the app drawer.
+  static Future<bool> isInAppDrawer(AppShortcut shortcut) async {
+    if (!Platform.isAndroid) return false;
+    return await _channel.invokeMethod<bool>('inAppDrawer', {'id': shortcut.id}) ?? false;
+  }
+
+  /// Gives [shortcut] its own entry in the app drawer, or takes it away: one
+  /// of the manifest's activity-aliases, so its id must have one.
+  static Future<bool> setInAppDrawer(AppShortcut shortcut, bool on) async {
+    return await _channel.invokeMethod<bool>('setInAppDrawer', {'id': shortcut.id, 'on': on}) ?? false;
   }
 
   /// Puts [shortcut] at [place]; false if the system refused. [colors] are
@@ -90,6 +105,7 @@ abstract final class AppShortcuts {
     required List<Color> colors,
     @visibleForTesting Directory? folder,
   }) async {
+    if (place == ShortcutPlace.appDrawer) return setInAppDrawer(shortcut, true);
     final png = await drawIcon(shortcut.icon, colors: colors, fullBleed: Platform.isAndroid);
     if (Platform.isAndroid) {
       final added = await _channel.invokeMethod<bool>('addShortcut', {

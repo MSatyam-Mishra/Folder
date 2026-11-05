@@ -1,4 +1,3 @@
-import 'package:folder/core/platform/desktop.dart';
 import 'package:folder/core/services/app_shortcuts.dart';
 import 'package:folder/core/theme/app_theme.dart';
 import 'package:folder/features/file_explorere/widgets/explorer_menu.dart';
@@ -11,7 +10,6 @@ import 'package:folder/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// What the Toolbox holds.
 enum Tool {
@@ -55,34 +53,9 @@ enum Tool {
       };
 }
 
-/// The tools pinned to the side menu, which is the sidebar on computers, in the
-/// order they were pinned.
-class PinnedTools extends ValueNotifier<List<Tool>> {
-  PinnedTools._() : super(const []);
-
-  static final instance = PinnedTools._();
-  static const _key = 'pinned_tools';
-
-  Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ids = prefs.getStringList(_key) ?? const [];
-    value = [
-      for (final id in ids) ...Tool.values.where((tool) => tool.id == id),
-    ];
-  }
-
-  bool isPinned(Tool tool) => value.contains(tool);
-
-  Future<void> toggle(Tool tool) async {
-    value = isPinned(tool) ? [...value.where((other) => other != tool)] : [...value, tool];
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_key, [for (final pinned in value) pinned.id]);
-  }
-}
-
 /// The sidebar's Toolbox: a menu over the page, closed by a tap outside it or
 /// Esc. A tool opens from it; the pin, a right-click or a long press on a tool
-/// pins it to the side menu or adds a shortcut to it.
+/// adds a shortcut to it.
 Future<void> showToolboxMenu(BuildContext context) {
   // Over the whole window, but tools open in the tab it was called from.
   final navigator = Navigator.of(context);
@@ -179,42 +152,33 @@ class _ToolTile extends StatelessWidget {
   final bool autofocus;
   final ValueChanged<Tool> onOpen;
 
-  /// What the app's own menu is called here.
-  static String get _sideMenu => Desktop.isDesktop ? 'sidebar' : 'side menu';
-
-  /// Pinning to the side menu, then the places this system has for a shortcut.
+  /// The places this system has for a shortcut, then there it goes.
   Future<void> _addShortcut(BuildContext context, Offset at) async {
-    final pinned = PinnedTools.instance.isPinned(tool);
-    final choice = await ExplorerMenu.showAt<Object>(
+    final inAppDrawer = await AppShortcuts.isInAppDrawer(tool.shortcut);
+    if (!context.mounted) return;
+    final place = await ExplorerMenu.showAt<ShortcutPlace>(
       context,
       at,
       items: [
-        ExplorerMenu.item<Object>(
-          context,
-          value: PinnedTools.instance,
-          label: pinned ? 'Remove from $_sideMenu' : 'Pin to $_sideMenu',
-          icon: pinned ? LucideIcons.pinOff : LucideIcons.panelLeft,
-        ),
         for (final place in AppShortcuts.places)
-          ExplorerMenu.item<Object>(
+          ExplorerMenu.item<ShortcutPlace>(
             context,
             value: place,
-            label: _placeLabel(place),
+            label: place == ShortcutPlace.appDrawer && inAppDrawer ? 'Remove from the app drawer' : _placeLabel(place),
             icon: _placeIcon(place),
           ),
       ],
     );
-    if (choice == null || !context.mounted) return;
+    if (place == null || !context.mounted) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
-    if (choice is! ShortcutPlace) {
-      await PinnedTools.instance.toggle(tool);
+    if (place == ShortcutPlace.appDrawer && inAppDrawer) {
+      final removed = await AppShortcuts.setInAppDrawer(tool.shortcut, false);
       HapticFeedback.lightImpact();
       messenger?.showSnackBar(SnackBar(
-        content: Text(pinned ? '${tool.title} removed from the $_sideMenu' : '${tool.title} pinned to the $_sideMenu'),
+        content: Text(removed ? '${tool.title} removed from the app drawer' : "Couldn't remove ${tool.title} from the app drawer"),
       ));
       return;
     }
-    final place = choice;
     final colors = AppTheme.gradientOf(context.colors.primary);
     var added = false;
     try {
@@ -231,6 +195,7 @@ class _ToolTile extends StatelessWidget {
   }
 
   static String _placeLabel(ShortcutPlace place) => switch (place) {
+        ShortcutPlace.appDrawer => 'Add to the app drawer',
         ShortcutPlace.homeScreen => 'Add to home screen',
         ShortcutPlace.appIconMenu => "Add to the app icon's menu",
         ShortcutPlace.desktop => 'Add to desktop',
@@ -240,6 +205,7 @@ class _ToolTile extends StatelessWidget {
       };
 
   static String _placeName(ShortcutPlace place) => switch (place) {
+        ShortcutPlace.appDrawer => 'the app drawer',
         ShortcutPlace.homeScreen => 'the home screen',
         ShortcutPlace.appIconMenu => "the app icon's menu",
         ShortcutPlace.desktop => 'the desktop',
@@ -252,7 +218,11 @@ class _ToolTile extends StatelessWidget {
         ShortcutPlace.homeScreen => LucideIcons.house,
         ShortcutPlace.appIconMenu => LucideIcons.smartphone,
         ShortcutPlace.desktop => LucideIcons.monitor,
-        ShortcutPlace.startMenu || ShortcutPlace.appMenu || ShortcutPlace.applications => LucideIcons.layoutGrid,
+        ShortcutPlace.appDrawer ||
+        ShortcutPlace.startMenu ||
+        ShortcutPlace.appMenu ||
+        ShortcutPlace.applications =>
+          LucideIcons.layoutGrid,
       };
 
   /// Where a menu opens from a widget without a pointer: under its centre.
@@ -307,15 +277,14 @@ class _ToolTile extends StatelessWidget {
             top: 2,
             right: 2,
             child: ExcludeFocus(
-              child: ValueListenableBuilder<List<Tool>>(
-                valueListenable: PinnedTools.instance,
-                builder: (pin, pinned, _) => IconButton(
-                  tooltip: 'Pin or add a shortcut',
+              child: Builder(
+                builder: (pin) => IconButton(
+                  tooltip: 'Add shortcut',
                   visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints.tightFor(width: 28, height: 28),
                   padding: EdgeInsets.zero,
                   iconSize: 14,
-                  color: pinned.contains(tool) ? colors.primary : colors.mutedForeground,
+                  color: colors.mutedForeground,
                   icon: const Icon(LucideIcons.pin),
                   onPressed: () => _addShortcut(pin, _centerOf(pin)),
                 ),

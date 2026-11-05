@@ -89,6 +89,10 @@ class IncomingFiles(private val activity: Activity, messenger: BinaryMessenger) 
         intent.getStringExtra(EXTRA_ROUTE)?.let {
             return mapOf("route" to it)
         }
+        // A tool's own entry in the app drawer: its manifest entry says which.
+        routeOfEntry(intent)?.let {
+            return mapOf("route" to it)
+        }
         // A link shared from another app (e.g. a video page from a browser).
         if (intent.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) {
             val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
@@ -104,6 +108,15 @@ class IncomingFiles(private val activity: Activity, messenger: BinaryMessenger) 
             "mime" to intent.type,
             "writable" to canWrite(uri, intent),
         )
+    }
+
+    private fun routeOfEntry(intent: Intent): String? {
+        val entry = intent.component ?: return null
+        return try {
+            activity.packageManager.getActivityInfo(entry, PackageManager.GET_META_DATA).metaData?.getString(EXTRA_ROUTE)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
     }
 
     private fun canWrite(uri: Uri, intent: Intent): Boolean {
