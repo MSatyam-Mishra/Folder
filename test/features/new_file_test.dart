@@ -113,6 +113,20 @@ void main() {
       }
     }
 
+    /// What [file] holds once it's [expected], or the last seen if it never is:
+    /// a save takes longer than a settle on a busy machine.
+    Future<String?> savedAs(WidgetTester tester, File file, String expected) async {
+      String? seen;
+      for (var i = 0; i < 50 && seen != expected; i++) {
+        seen = await tester.runAsync<String?>(() async {
+          if (!await file.exists()) return null;
+          return file.readAsString();
+        });
+        if (seen != expected) await settle(tester);
+      }
+      return seen;
+    }
+
     Future<void> open(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1;
@@ -174,7 +188,7 @@ void main() {
       await settle(tester);
 
       final made = File(p.join(root.path, 'notes for later.txt'));
-      expect(await tester.runAsync(made.readAsString), 'hello', reason: 'the extension was added');
+      expect(await savedAs(tester, made, 'hello'), 'hello', reason: 'the extension was added');
       expect(find.byType(TabbedTextEditorScreen), findsOneWidget, reason: 'still editing');
 
       // Saving again goes to that file, without asking.
@@ -185,7 +199,7 @@ void main() {
       await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
       await settle(tester);
       expect(find.text('Save as'), findsNothing);
-      expect(await tester.runAsync(made.readAsString), 'hello again');
+      expect(await savedAs(tester, made, 'hello again'), 'hello again');
       await tester.pumpWidget(const SizedBox());
     });
 
