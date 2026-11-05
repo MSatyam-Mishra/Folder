@@ -82,6 +82,19 @@ abstract final class DeviceFiles {
   /// All the music on an Android device, from the MediaStore index.
   static Future<List<DeviceFile>> findAndroidAudio() => _find(FileTypes.audio);
 
+  /// A picture from a video on Android: JPEG, [size] pixels on the long side.
+  /// Null if it has none, or Android can't read it.
+  static Future<Uint8List?> videoFrame(String path, int size) async {
+    try {
+      return await _channel.invokeMethod<Uint8List>('videoFrame', {'path': path, 'size': size});
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  /// All the videos on an Android device, from the MediaStore index.
+  static Future<List<DeviceFile>> findAndroidVideo() => _find(FileTypes.video);
+
   static Future<List<DeviceFile>> _find(Set<String> extensions) async {
     if (Platform.isAndroid) {
       final rows = await _channel.invokeListMethod<Map<Object?, Object?>>(

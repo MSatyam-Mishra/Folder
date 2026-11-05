@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 
 import 'package:archive/archive_io.dart';
 import 'package:explorer/core/files/file_types.dart';
+import 'package:explorer/core/services/device_files.dart';
 import 'package:explorer/core/formats/design_preview.dart';
 import 'package:explorer/core/formats/raw_preview.dart';
 import 'package:explorer/core/services/thumbnails/windows_shell_thumbnail.dart';
@@ -41,6 +42,7 @@ abstract final class Thumbnails {
     if (!enabled) return false;
     final kind = FileTypes.kindOf(path);
     if (Platform.isWindows && _windowsKinds.contains(kind)) return true;
+    if (Platform.isAndroid && kind == FileKind.video) return true;
     return _ownKinds.contains(kind) || _office.contains(FileTypes.extensionOf(path));
   }
 
@@ -127,6 +129,9 @@ abstract final class Thumbnails {
   }
 
   static Future<Uint8List?> _make(String path, int size) async {
+    if (Platform.isAndroid && FileTypes.kindOf(path) == FileKind.video) {
+      return DeviceFiles.videoFrame(path, size);
+    }
     if (Platform.isWindows) {
       final shell = await Isolate.run(() => windowsShellThumbnail(path, size));
       if (shell != null) return shell;

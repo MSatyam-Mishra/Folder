@@ -127,9 +127,8 @@ class MainDrawerContent extends StatelessWidget {
                 label: 'Toolbox',
                 detail: 'Cleaners, duplicates and players',
                 onTap: () {
-                  final explorer = context.read<FileExplorerBloc>();
                   dismissDrawer(context);
-                  showToolboxMenu(context, showFolder: (folder) => explorer.add(LoadDirectory(folder)));
+                  showToolboxMenu(context);
                 },
               ),
               AppSidebarItem(

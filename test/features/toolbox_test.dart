@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/toolbox/duplicate_finder.dart';
 import 'package:explorer/core/services/toolbox/junk_scanner.dart';
 import 'package:explorer/core/services/toolbox/ram_cleaner.dart';
@@ -208,14 +207,14 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    Future<void> openMenu(WidgetTester tester, {ValueChanged<String>? showFolder}) async {
+    Future<void> openMenu(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(themedApp(Scaffold(
         body: Builder(
           builder: (context) => TextButton(
-            onPressed: () => showToolboxMenu(context, showFolder: showFolder ?? (_) {}),
+            onPressed: () => showToolboxMenu(context),
             child: const Text('Toolbox'),
           ),
         ),
@@ -249,16 +248,6 @@ void main() {
       expect(find.byType(MemoryCleanerScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
-
-    testWidgets('where the browser shows the videos as a folder, Video player goes there', (tester) async {
-      String? shown;
-      await openMenu(tester, showFolder: (folder) => shown = folder);
-      await tester.tap(find.text('Video player'));
-      await settle(tester);
-      expect(find.byType(ToolboxMenu), findsNothing);
-      expect(shown, ExplorerPaths.categoryPath('Video'));
-      await tester.pumpWidget(const SizedBox());
-    }, skip: !ExplorerPaths.categoryIsFolder('Video'));
 
     testWidgets('the pin and a right-click offer the places this system has, and the menu stays', (tester) async {
       await openMenu(tester);

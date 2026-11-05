@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:explorer/core/platform/desktop.dart';
 import 'package:explorer/core/platform/windows_default_app.dart';
 import 'package:explorer/core/files/file_types.dart';
 import 'package:explorer/features/viewer_3d/screens/blend_viewer_screen.dart';
@@ -14,7 +15,7 @@ import 'package:explorer/features/viewer_hex/screens/hex_viewer_screen.dart';
 import 'package:explorer/features/viewer_html/screens/html_viewer_screen.dart';
 import 'package:explorer/features/viewer_image/screens/viewer_image_screen.dart';
 import 'package:explorer/features/viewer_media/screens/audio_player_screen.dart';
-import 'package:explorer/features/viewer_media/screens/video_player_screen.dart';
+import 'package:explorer/features/video_player/video_player_page.dart';
 import 'package:explorer/features/viewer_office/screens/ppt_viewer_screen.dart';
 import 'package:explorer/features/viewer_office/screens/word_viewer_screen.dart';
 import 'package:explorer/features/viewer_pdf/screens/viewer_pdf_screen.dart';
@@ -81,7 +82,9 @@ class FileOpener {
     return switch (kind) {
       FileKind.image || FileKind.rasterImage => ImageViewerScreen(imageFile: file),
       FileKind.svg => SvgViewerScreen(filePath: file.path),
-      FileKind.video => VideoPlayerScreen(videoFile: file),
+      // Without its libmpv a Mac has no player here, and uses another app.
+      FileKind.video when Platform.isMacOS && !Desktop.macMediaKit => null,
+      FileKind.video => VideoPlayerPage(playlist: [file.path], withFolder: true),
       FileKind.audio => AudioPlayerScreen(audioFile: file),
       FileKind.pdf => PdfViewerScreen(pdfFile: file),
       FileKind.epub || FileKind.ebook => EpubViewerScreen(epubFile: file),

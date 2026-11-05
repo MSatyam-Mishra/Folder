@@ -29,6 +29,17 @@ class ExplorerTab {
 /// The tabs of this window (desktop). Each window is its own process, so
 /// there's one list; [enabled] once the window shows tabs.
 class ExplorerTabs extends ChangeNotifier {
+  /// Whether the tab bar is hidden, for a video in full screen or in its small
+  /// window. The bar is the window's title bar on Windows, so it goes with it.
+  bool get chromeHidden => _chromeHidden;
+  bool _chromeHidden = false;
+
+  void setChromeHidden(bool hidden) {
+    if (_chromeHidden == hidden) return;
+    _chromeHidden = hidden;
+    notifyListeners();
+  }
+
   ExplorerTabs._();
 
   static final instance = ExplorerTabs._();

@@ -72,11 +72,11 @@ void main() {
   });
 
   test(
-    'macOS without Mpv.framework keeps the AVFoundation players',
+    'macOS without Mpv.framework still starts, and says it has no player',
     () {
       // The test runner has no Mpv.framework next to it.
       expect(Desktop.initMedia, returnsNormally);
-      expect(Desktop.mediaKitVideo, isFalse);
+      expect(Desktop.macMediaKit, isFalse);
     },
     testOn: 'mac-os',
   );

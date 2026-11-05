@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:explorer/features/viewer_image/screens/image_editor_screen.dart';
 import 'package:explorer/features/viewer_image/screens/viewer_image_screen.dart';
 import 'package:explorer/features/viewer_media/screens/audio_player_screen.dart';
-import 'package:explorer/features/viewer_media/screens/video_player_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -125,10 +124,4 @@ void main() {
     await settle(tester, rounds: 8);
     await shot.shot('audio_player');
   });
-
-  viewerShots('video player', (tester, shot) async {
-    await shot.open(VideoPlayerScreen(videoFile: File(p.join(dir.path, 'Trailer.mp4'))));
-    await settle(tester, rounds: 8);
-    await shot.shot('video_player_error');
-  }, devices: const ['phone']);
 }

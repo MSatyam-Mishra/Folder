@@ -7,16 +7,21 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Icon
+import android.media.MediaMetadataRetriever
+import android.media.ThumbnailUtils
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Size
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -28,7 +33,8 @@ import java.util.concurrent.Executors
  * - `keepAwake`: keeps the screen on and Wi-Fi at full power while a folder
  *   is shared over Wi-Fi, so transfers don't stall when the phone idles;
  * - `memoryInfo`, `canFreeMemory`, `freeMemory`: the RAM cleaner;
- * - `addShortcut`: a tool on the home screen, or in the app icon's menu.
+ * - `addShortcut`: a tool on the home screen, or in the app icon's menu;
+ * - `videoFrame`: a picture from a video, for its thumbnail.
  */
 class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
     private val channel = MethodChannel(messenger, "explorer/device")
@@ -64,6 +70,14 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                     val closed = closeBackgroundApps()
                     main.post { result.success(closed) }
                 }
+                "videoFrame" -> worker.execute {
+                    val frame = try {
+                        videoFrame(call.argument<String>("path")!!, call.argument<Int>("size")!!)
+                    } catch (e: Exception) {
+                        null
+                    }
+                    main.post { result.success(frame) }
+                }
                 "addShortcut" -> {
                     val added = try {
                         addShortcut(
@@ -83,6 +97,29 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /** Android's own thumbnail of it since Android 10, before that a frame from its start. */
+    private fun videoFrame(path: String, size: Int): ByteArray? {
+        val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ThumbnailUtils.createVideoThumbnail(File(path), Size(size, size), null)
+        } else {
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(path)
+                retriever.getFrameAtTime(1_000_000)?.let { frame ->
+                    val scale = size.toFloat() / maxOf(frame.width, frame.height)
+                    if (scale >= 1) frame
+                    else Bitmap.createScaledBitmap(frame, (frame.width * scale).toInt(), (frame.height * scale).toInt(), true)
+                }
+            } finally {
+                retriever.release()
+            }
+        } ?: return null
+        val out = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+        bitmap.recycle()
+        return out.toByteArray()
     }
 
     /**

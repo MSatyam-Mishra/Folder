@@ -11,12 +11,17 @@ abstract final class Desktop {
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
   /// Windows, Linux and macOS play video and audio with media_kit (libmpv,
-  /// with FFmpeg's decoders): video in DesktopVideoPlayer, audio through
+  /// with FFmpeg's decoders): video in VideoPlayerPage, audio through
   /// just_audio. just_audio has no implementation of its own on Windows and
   /// Linux, and on macOS AVFoundation can't open MKV, WebM, AVI, Ogg, Opus
   /// or WMA.
   static void initMedia() {
-    if (!isDesktop) return;
+    if (!isDesktop) {
+      // Android's videos too, for their subtitles, tracks and formats; its
+      // audio stays with just_audio's own player.
+      MediaKit.ensureInitialized();
+      return;
+    }
     if (Platform.isMacOS) {
       // Mpv.framework ships inside the app (media_kit_libs_macos_video).
       // Should it be missing, keep the AVFoundation players.
@@ -50,11 +55,8 @@ abstract final class Desktop {
     );
   }
 
-  /// Whether videos play in DesktopVideoPlayer (media_kit) rather than
-  /// video_player: always on Windows and Linux, where video_player has no
-  /// implementation, and on macOS once [initMedia] has loaded libmpv.
-  static bool get mediaKitVideo =>
-      Platform.isWindows || Platform.isLinux || _macMediaKit;
+  /// Whether libmpv has loaded on a Mac, where it's the one thing that can fail.
+  static bool get macMediaKit => _macMediaKit;
   static bool _macMediaKit = false;
 
   /// Whether files can be shared with other apps (share_plus shares only

@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.hardware.usb.*
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var imageText: ImageTextNative? = null
     private var imageConvert: ImageConvertNative? = null
     private var notifications: NotificationsNative? = null
+    private var videoPlayer: VideoPlayerNative? = null
 
     // Back at the top of the app while work goes on: the app stays, as closing
     // it would end the work. Only reached when Flutter has nothing left to pop.
@@ -48,6 +50,16 @@ class MainActivity : FlutterFragmentActivity() {
         onBackPressedDispatcher.addCallback(keepWorking)
         BackgroundWorkService.onWorkingChanged = { keepWorking.isEnabled = it }
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        videoPlayer?.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        videoPlayer?.onPipChanged(isInPictureInPictureMode)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -71,6 +83,8 @@ class MainActivity : FlutterFragmentActivity() {
         imageConvert = null
         notifications?.dispose()
         notifications = null
+        videoPlayer?.dispose()
+        videoPlayer = null
         BackgroundWorkService.onWorkingChanged = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -84,6 +98,7 @@ class MainActivity : FlutterFragmentActivity() {
         imageText = ImageTextNative(flutterEngine.dartExecutor.binaryMessenger)
         imageConvert = ImageConvertNative(flutterEngine.dartExecutor.binaryMessenger)
         notifications = NotificationsNative(this, flutterEngine.dartExecutor.binaryMessenger)
+        videoPlayer = VideoPlayerNative(this, flutterEngine.dartExecutor.binaryMessenger)
         
         usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
 

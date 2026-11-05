@@ -135,7 +135,7 @@ class _TabbedExplorerState extends State<TabbedExplorer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _TabBar(tabs: _tabs),
+            if (!_tabs.chromeHidden) _TabBar(tabs: _tabs),
             Expanded(
               child: IndexedStack(
                 index: _tabs.activeIndex,

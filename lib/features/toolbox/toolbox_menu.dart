@@ -1,16 +1,14 @@
-import 'package:explorer/core/platform/explorer_paths.dart';
 import 'package:explorer/core/services/app_shortcuts.dart';
 import 'package:explorer/core/theme/app_theme.dart';
-import 'package:explorer/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
 import 'package:explorer/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:explorer/features/toolbox/duplicate_finder_screen.dart';
 import 'package:explorer/features/toolbox/memory_cleaner_screen.dart';
 import 'package:explorer/features/toolbox/music_player_screen.dart';
 import 'package:explorer/features/toolbox/ram_cleaner_screen.dart';
+import 'package:explorer/features/video_player/video_library_screen.dart';
 import 'package:explorer/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// What the Toolbox holds.
@@ -38,31 +36,27 @@ enum Tool {
     return null;
   }
 
-  /// Whether the browser itself is this tool: its videos, as a folder.
-  bool get isFolder => this == videoPlayer && ExplorerPaths.categoryIsFolder('Video');
-
   AppShortcut get shortcut => AppShortcut(
         id: 'tool_$id',
         title: title,
         description: description,
         icon: icon,
         route: '$_routePrefix$id',
-        desktopArgs: isFolder ? ['--folder=${ExplorerPaths.categoryPath('Video')}'] : null,
       );
 
   Widget get screen => switch (this) {
         ramCleaner => const RamCleanerScreen(),
         memoryCleaner => const MemoryCleanerScreen(),
         duplicateFinder => const DuplicateFinderScreen(),
-        videoPlayer => const CategoryViewerScreen(categoryType: RequestType.video, title: 'Video player'),
+        videoPlayer => const VideoLibraryScreen(),
         musicPlayer => const MusicPlayerScreen(),
       };
 }
 
 /// The sidebar's Toolbox: a menu over the page, closed by a tap outside it or
 /// Esc. A tool opens from it; the pin, a right-click or a long press on a tool
-/// adds a shortcut to it. [showFolder] shows a folder in the browser.
-Future<void> showToolboxMenu(BuildContext context, {required ValueChanged<String> showFolder}) {
+/// adds a shortcut to it.
+Future<void> showToolboxMenu(BuildContext context) {
   // Over the whole window, but tools open in the tab it was called from.
   final navigator = Navigator.of(context);
   return showGeneralDialog<void>(
@@ -75,11 +69,7 @@ Future<void> showToolboxMenu(BuildContext context, {required ValueChanged<String
     pageBuilder: (menu, _, _) => ToolboxMenu(
       onOpen: (tool) {
         Navigator.pop(menu);
-        if (tool.isFolder) {
-          showFolder(ExplorerPaths.categoryPath('Video'));
-        } else {
-          navigator.push(MaterialPageRoute(builder: (_) => tool.screen));
-        }
+        navigator.push(MaterialPageRoute(builder: (_) => tool.screen));
       },
     ),
   );
