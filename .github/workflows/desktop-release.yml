@@ -195,7 +195,8 @@ jobs:
   linux-packages:
     needs: linux-build
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Installing the packages pulls libmpv's dependencies, and the runners' mirror is slow some days.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

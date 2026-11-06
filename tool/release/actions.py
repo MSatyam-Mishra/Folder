@@ -7,6 +7,7 @@ Usage:
   python actions.py log OWNER/REPO JOB_ID [LINES]
   python actions.py artifact OWNER/REPO RUN_ID ARTIFACT_NAME DEST.zip
   python actions.py cancel OWNER/REPO RUN_ID
+  python actions.py rerun-failed OWNER/REPO RUN_ID   (only what failed or was cancelled, reusing what built)
 """
 import json
 import os
@@ -59,6 +60,8 @@ if cmd == 'dispatch':
     inputs = dict(p.split('=', 1) for p in pairs)
     print(call('POST', f'/repos/{repo}/actions/workflows/{workflow}/dispatches',
                {'ref': ref, 'inputs': inputs}))
+elif cmd == 'rerun-failed':
+    print(call('POST', f'/repos/{repo}/actions/runs/{rest[0]}/rerun-failed-jobs'))
 elif cmd == 'runs':
     status, data = call('GET', f'/repos/{repo}/actions/workflows/{rest[0]}/runs?per_page=5')
     if status != 200:
