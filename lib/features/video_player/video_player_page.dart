@@ -226,6 +226,9 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
           : VideoControllerConfiguration(enableHardwareAcceleration: _settings.decoder != VideoDecoder.sw),
     );
     unawaited(_native?.setProperty('volume-max', '${_maxVolume.toInt()}'));
+    // media_kit gives phones OpenSL ES alone, which is silent on some of them:
+    // Android's AudioTrack first, as mpv-android has it, with OpenSL ES after.
+    if (Platform.isAndroid) await _native?.setProperty('ao', 'audiotrack,opensles');
     // This page finds them, once a video has opened: on its own, mpv would
     // load them twice, and its errors would come before the video has started.
     await _native?.setProperty('sub-auto', 'no');
