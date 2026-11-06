@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:folder/shared/widgets/theme_choices.dart';
 import 'package:folder/core/files/file_types.dart';
 import 'package:folder/core/platform/desktop.dart';
 import 'package:folder/core/platform/explorer_paths.dart';
@@ -1605,6 +1606,8 @@ class _PlayerState extends State<_Player> with WidgetsBindingObserver {
                     },
                   ),
               ],
+              // For someone who only uses the player, the app's look from here.
+              ThemeChoices(heading: (label) => _heading(sheet, label)),
               _heading(sheet, 'Advanced'),
               if (_phone)
                 SwitchListTile(

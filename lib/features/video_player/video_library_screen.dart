@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:folder/shared/widgets/theme_choices.dart';
 import 'package:folder/core/services/device_files.dart';
 import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
@@ -809,6 +810,13 @@ Future<void> showPlayerDefaults(BuildContext context) async {
               value: settings.gestures,
               onChanged: (on) => unawaited(settings.update(gestures: on)),
             ),
+          // For someone who only uses the player, the app's look from here.
+          ThemeChoices(
+            heading: (label) => Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 8),
+              child: Text(label, style: Theme.of(sheet).textTheme.titleSmall),
+            ),
+          ),
         ],
       ),
     ),
