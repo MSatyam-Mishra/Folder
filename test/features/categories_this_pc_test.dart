@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
-import 'package:folder/shared/layout/adaptive_layout.dart';
-import 'package:folder/shared/layout/sidebar_width.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folders/shared/layout/adaptive_layout.dart';
+import 'package:folders/shared/layout/sidebar_width.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

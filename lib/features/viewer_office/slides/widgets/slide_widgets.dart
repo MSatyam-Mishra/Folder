@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:folder/core/platform/system_bars.dart';
+import 'package:folders/core/platform/system_bars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

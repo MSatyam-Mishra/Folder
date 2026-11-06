@@ -1,4 +1,4 @@
-import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:flutter/widgets.dart';
 
 /// One tab of a window: a browser with its own folder, history and screens
@@ -16,7 +16,7 @@ class ExplorerTab {
   final navigatorKey = GlobalKey<NavigatorState>();
 
   /// Keeps where the keyboard was in the tab while another one is shown.
-  final focusScope = FocusScopeNode(debugLabel: 'Folder tab');
+  final focusScope = FocusScopeNode(debugLabel: 'Folders tab');
 
   String get title => ExplorerPaths.titleForPath(folder.value);
 

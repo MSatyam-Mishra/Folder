@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/core/services/file_action_service.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
-import 'package:folder/shared/ui/app_ui.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/core/services/file_action_service.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
+import 'package:folders/shared/ui/app_ui.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;

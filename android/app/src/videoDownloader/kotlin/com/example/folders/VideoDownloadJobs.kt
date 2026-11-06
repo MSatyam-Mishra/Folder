@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.content.Context
 import android.media.MediaScannerConnection
@@ -133,7 +133,7 @@ object VideoDownloadJobs {
             )
             val roots = listOf(
                 VideoDownloadEngine.workRoot(app),
-                File(publicDownloads, "Folder Videos/.explorer-tmp"),
+                File(publicDownloads, "Folders Videos/.explorer-tmp"),
             )
             for (root in roots) {
                 root.listFiles()?.forEach { dir ->

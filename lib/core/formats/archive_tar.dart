@@ -610,7 +610,7 @@ class _TarWalker {
         if (entries.length > limits.maxEntries) {
           throw ArcException(
             ArcErrorKind.tooLarge,
-            'The archive has more entries than Folder will open.',
+            'The archive has more entries than Folders will open.',
           );
         }
       }

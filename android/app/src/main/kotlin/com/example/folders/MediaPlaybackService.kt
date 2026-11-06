@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -41,11 +41,11 @@ class MediaPlaybackService : Service() {
         private const val TAG = "MediaPlayback"
         private const val CHANNEL = "video_playback"
         private const val NOTIFICATION_ID = 0x7F0001
-        private const val ACTION_UPDATE = "com.example.folder.media.UPDATE"
-        private const val ACTION_PLAY_PAUSE = "com.example.folder.media.PLAY_PAUSE"
-        private const val ACTION_NEXT = "com.example.folder.media.NEXT"
-        private const val ACTION_PREVIOUS = "com.example.folder.media.PREVIOUS"
-        private const val ACTION_STOP = "com.example.folder.media.STOP"
+        private const val ACTION_UPDATE = "com.example.folders.media.UPDATE"
+        private const val ACTION_PLAY_PAUSE = "com.example.folders.media.PLAY_PAUSE"
+        private const val ACTION_NEXT = "com.example.folders.media.NEXT"
+        private const val ACTION_PREVIOUS = "com.example.folders.media.PREVIOUS"
+        private const val ACTION_STOP = "com.example.folders.media.STOP"
 
         /** What to play next, or a seek with its position: "play", "pause", "next", "previous", "stop", "seek". */
         var onCommand: ((String, Long?) -> Unit)? = null

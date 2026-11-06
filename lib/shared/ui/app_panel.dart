@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:folder/shared/ui/app_tokens.dart';
+import 'package:folders/shared/ui/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Card surface (border, soft shadow) for panels floating over content.

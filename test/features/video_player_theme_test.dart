@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/core/theme/app_color_theme.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/core/theme/theme_cubit.dart';
-import 'package:folder/features/video_player/video_library_screen.dart';
+import 'package:folders/core/theme/app_color_theme.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/core/theme/theme_cubit.dart';
+import 'package:folders/features/video_player/video_library_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/themed_app.dart';

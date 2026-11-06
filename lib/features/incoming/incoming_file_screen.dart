@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/incoming_files.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/incoming_files.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
-/// Opens a file another app sent to Folder ("Open with").
+/// Opens a file another app sent to Folders ("Open with").
 ///
 /// When [closeAppWhenDone] is true (the app was launched just for this file)
 /// leaving the viewer returns to the app that sent it, like other viewers.

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:folder/features/viewer_pdf/services/pdf_page_rasterizer.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_page_rasterizer.dart';
 import 'package:flutter/material.dart';
 
 /// Small rendered preview of one page, shown with an optional pending

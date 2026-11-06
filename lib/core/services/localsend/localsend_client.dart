@@ -5,8 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:folder/core/services/localsend/localsend_identity.dart';
-import 'package:folder/core/services/localsend/localsend_models.dart';
+import 'package:folders/core/services/localsend/localsend_identity.dart';
+import 'package:folders/core/services/localsend/localsend_models.dart';
 
 /// Cancels in-flight requests.
 class LsCancelToken {
@@ -67,7 +67,7 @@ class LsClient {
       ..connectionTimeout = connectTimeout
       ..idleTimeout = const Duration(seconds: 10)
       ..maxConnectionsPerHost = 8
-      ..userAgent = 'Folder-LocalSend/1.0'
+      ..userAgent = 'Folders-LocalSend/1.0'
       ..findProxy = ((_) => 'DIRECT')
       ..badCertificateCallback = _acceptCertificate;
   }

@@ -1,7 +1,7 @@
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/cfb_reader.dart';
+import 'package:folders/core/formats/cfb_reader.dart';
 
 import '../common/office_package.dart';
 import 'doc_binary_parser.dart';

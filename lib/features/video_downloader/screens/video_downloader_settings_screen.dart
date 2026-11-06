@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:folder/core/services/video_downloader/downloader_backend.dart';
-import 'package:folder/core/services/video_downloader/downloader_settings.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
-import 'package:folder/shared/layout/adaptive_layout.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/downloader_settings.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/shared/layout/adaptive_layout.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:folder/core/app_licenses.dart';
+import 'package:folders/core/app_licenses.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -66,8 +66,8 @@ class _VideoDownloaderSettingsScreenState
         SnackBar(
           content: Text(
             Platform.isAndroid
-                ? "Folder can't write to that folder. Allow Folder to manage all files, or pick another folder."
-                : "Folder can't write to that folder.",
+                ? "Folders can't write to that folder. Allow Folders to manage all files, or pick another folder."
+                : "Folders can't write to that folder.",
           ),
         ),
       );
@@ -367,7 +367,7 @@ class _VideoDownloaderSettingsScreenState
                   ),
                   onTap: () => showLicensePage(
                     context: context,
-                    applicationName: 'Folder',
+                    applicationName: 'Folders',
                     applicationLegalese: appLegalese,
                   ),
                 ),

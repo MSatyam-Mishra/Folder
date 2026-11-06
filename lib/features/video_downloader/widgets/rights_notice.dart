@@ -1,4 +1,4 @@
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 
 const rightsNoticeText =

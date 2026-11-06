@@ -5,9 +5,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:folder/features/viewer_pdf/models/pdf_edit_models.dart';
-import 'package:folder/features/viewer_pdf/services/pdf_encryption.dart';
-import 'package:folder/features/viewer_pdf/services/pdfium_native.dart';
+import 'package:folders/features/viewer_pdf/models/pdf_edit_models.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_encryption.dart';
+import 'package:folders/features/viewer_pdf/services/pdfium_native.dart';
 import 'package:ffi/ffi.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdfium_dart/pdfium_dart.dart' as pdfium_bindings;

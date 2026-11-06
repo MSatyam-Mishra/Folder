@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/blend/blend_file.dart';
-import 'package:folder/core/formats/blend/blend_to_gltf.dart';
+import 'package:folders/core/formats/blend/blend_file.dart';
+import 'package:folders/core/formats/blend/blend_to_gltf.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Fixtures made with Blender 4.2 (see scene.json for what Blender itself

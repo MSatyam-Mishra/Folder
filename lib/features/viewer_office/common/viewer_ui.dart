@@ -7,11 +7,11 @@
 /// lib/shared/ui once other screens need it.)
 library;
 
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
-export 'package:folder/shared/ui/app_ui.dart';
+export 'package:folders/shared/ui/app_ui.dart';
 export 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 // ---------------------------------------------------------------------------

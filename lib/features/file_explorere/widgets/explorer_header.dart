@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/core/services/new_files.dart';
-import 'package:folder/features/file_explorere/bloc/grouping.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/new_files.dart';
+import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;

@@ -30,7 +30,7 @@ class EngineInfo {
     required this.downloadBytes,
     required this.diskBytes,
     this.contents = 'Python and FFmpeg',
-    this.source = "Folder's GitHub page",
+    this.source = "Folders' GitHub page",
   });
 
   final bool installed;
@@ -195,7 +195,7 @@ class UnsupportedDownloaderBackend extends VideoDownloaderBackend {
   const UnsupportedDownloaderBackend();
 
   static const _reason = "Video downloading isn't available on this device. "
-      'It needs yt-dlp, which iOS apps cannot run. Use Folder on Android, '
+      'It needs yt-dlp, which iOS apps cannot run. Use Folders on Android, '
       'Windows, macOS or Linux to download videos.';
 
   @override

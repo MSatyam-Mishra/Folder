@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:folder/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
-import 'package:folder/features/tools/screens/app_manager_screen.dart';
-import 'package:folder/features/tools/screens/usb_boot_screen.dart';
-import 'package:folder/features/vault/screens/vault_screen.dart';
+import 'package:folders/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
+import 'package:folders/features/tools/screens/app_manager_screen.dart';
+import 'package:folders/features/tools/screens/usb_boot_screen.dart';
+import 'package:folders/features/vault/screens/vault_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

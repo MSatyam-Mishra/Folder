@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
 import 'package:image/image.dart' as img;
 
 /// The header of a PostScript / EPS file: DSC comments and where its

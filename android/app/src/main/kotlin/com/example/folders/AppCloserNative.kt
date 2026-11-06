@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.app.Activity
 import android.content.Intent

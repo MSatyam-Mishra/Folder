@@ -1,7 +1,7 @@
-import 'package:folder/core/platform/window_effects.dart';
-import 'package:folder/core/theme/app_color_theme.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/shared/file_icons/file_icon_style.dart';
+import 'package:folders/core/platform/window_effects.dart';
+import 'package:folders/core/theme/app_color_theme.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/shared/file_icons/file_icon_style.dart';
 import 'package:flutter/material.dart';
 
 /// User-facing theme configuration (style, light/dark/system, colours,

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:folder/core/services/root_service.dart';
+import 'package:folders/core/services/root_service.dart';
 
 class BlockDevice {
   final String path;

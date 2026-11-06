@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/core/services/image_text.dart';
-import 'package:folder/features/viewer_image/widgets/image_text_layer.dart';
+import 'package:folders/core/services/image_text.dart';
+import 'package:folders/features/viewer_image/widgets/image_text_layer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

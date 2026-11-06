@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.synqixlabs.folder</id>
+  <id>com.synqixlabs.folders</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <name>Folder</name>
+  <name>Folders</name>
   <summary>Open, edit and share almost any file</summary>
   <description>
     <p>
-      Folder is a file manager that opens over 300 file types inside the app:
+      Folders is a file manager that opens over 300 file types inside the app:
       documents, e-books, comics, archives, photos, video, music, 3D models and code.
     </p>
     <p>
@@ -16,7 +16,7 @@
       over Wi-Fi, and download videos with yt-dlp.
     </p>
   </description>
-  <launchable type="desktop-id">com.synqixlabs.folder.desktop</launchable>
+  <launchable type="desktop-id">com.synqixlabs.folders.desktop</launchable>
   <url type="homepage">https://github.com/MSatyam-Mishra/explorer</url>
   <url type="bugtracker">https://github.com/MSatyam-Mishra/explorer/issues</url>
   <screenshots>

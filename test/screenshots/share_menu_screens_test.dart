@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/core/services/file_action_service.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folders/core/services/file_action_service.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

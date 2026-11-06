@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
 
 /// One file inside a [DesignContainer].
 class DesignEntry {

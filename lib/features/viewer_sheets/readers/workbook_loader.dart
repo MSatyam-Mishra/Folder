@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/cfb_reader.dart';
+import 'package:folders/core/formats/cfb_reader.dart';
 
 import '../formula/evaluator.dart';
 import '../model/workbook.dart';

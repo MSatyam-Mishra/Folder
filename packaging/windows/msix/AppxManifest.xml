@@ -3,7 +3,7 @@
   MSIX manifest for the Windows app. The release workflow replaces @VERSION@
   (four numbers, e.g. 1.0.6.0) and fills in the file types for Open with
   from file-types.txt. Publisher must match the subject of the signing
-  certificate (packaging/windows/folder-msix.cer).
+  certificate (packaging/windows/folders-msix.cer).
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -14,13 +14,13 @@
   IgnorableNamespaces="uap uap3 uap5 rescap">
 
   <Identity
-    Name="MSatyamMishra.Folder"
+    Name="MSatyamMishra.Folders"
     Publisher="CN=MSatyam-Mishra"
     Version="@VERSION@"
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Folder</DisplayName>
+    <DisplayName>Folders</DisplayName>
     <PublisherDisplayName>MSatyam-Mishra</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>The universal file manager: open, edit and share almost any file.</Description>
@@ -35,9 +35,9 @@
   </Resources>
 
   <Applications>
-    <Application Id="Folder" Executable="folder.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="Folders" Executable="folders.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Folder"
+        DisplayName="Folders"
         Description="The universal file manager: open, edit and share almost any file."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -53,9 +53,9 @@
         </uap3:Extension>
         <!-- Shortcuts start the app through this, with their arguments: its
              own folder can't be started from outside. -->
-        <uap5:Extension Category="windows.appExecutionAlias" Executable="folder.exe" EntryPoint="Windows.FullTrustApplication">
+        <uap5:Extension Category="windows.appExecutionAlias" Executable="folders.exe" EntryPoint="Windows.FullTrustApplication">
           <uap5:AppExecutionAlias>
-            <uap5:ExecutionAlias Alias="folder.exe" />
+            <uap5:ExecutionAlias Alias="folders.exe" />
           </uap5:AppExecutionAlias>
         </uap5:Extension>
       </Extensions>

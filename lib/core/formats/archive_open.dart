@@ -271,7 +271,7 @@ Future<ArcOpened> openArchive(
     if (format == null) {
       throw ArcException(
         ArcErrorKind.notArchive,
-        'This file isn\'t an archive Folder recognises.',
+        'This file isn\'t an archive Folders recognises.',
       );
     }
     final name = set.kind == 'split'

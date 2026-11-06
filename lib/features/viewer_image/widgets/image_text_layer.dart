@@ -1,4 +1,4 @@
-import 'package:folder/core/services/image_text.dart';
+import 'package:folders/core/services/image_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 

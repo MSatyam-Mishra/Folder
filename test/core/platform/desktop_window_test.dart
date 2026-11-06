@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/desktop.dart';
+import 'package:folders/core/platform/desktop.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// New windows (how the app starts another copy of itself) and the media
 /// players' setup on desktops.
 void main() {
   group('windowCommand', () {
-    const exe = '/Applications/Folder.app/Contents/MacOS/Folder';
+    const exe = '/Applications/Folders.app/Contents/MacOS/Folders';
 
     /// The command as a list: the program, then its arguments.
     List<String> command(String executable, List<String> args,
@@ -21,22 +21,22 @@ void main() {
       expect(command(exe, ['--folder=/Users/me/Docs'], macOS: true), [
         '/usr/bin/open',
         '-n',
-        '/Applications/Folder.app',
+        '/Applications/Folders.app',
         '--args',
         '--folder=/Users/me/Docs',
       ]);
       const file = '/Users/me/My Notes/a b.txt';
       expect(command(exe, [file], macOS: true),
-          ['/usr/bin/open', '-n', '/Applications/Folder.app', '--args', file]);
+          ['/usr/bin/open', '-n', '/Applications/Folders.app', '--args', file]);
       expect(command(exe, [], macOS: true),
-          ['/usr/bin/open', '-n', '/Applications/Folder.app']);
+          ['/usr/bin/open', '-n', '/Applications/Folders.app']);
     });
 
     test('a binary outside an .app bundle runs as it is', () {
       for (final path in [
         '/Users/me/flutter/bin/cache/artifacts/engine/darwin-x64/flutter_tester',
-        '/opt/Folder.app/Folder',
-        '/opt/Folder/Contents/MacOS/Folder',
+        '/opt/Folders.app/Folders',
+        '/opt/Folders/Contents/MacOS/Folders',
       ]) {
         expect(command(path, ['--folder=/tmp'], macOS: true),
             [path, '--folder=/tmp']);
@@ -45,7 +45,7 @@ void main() {
 
     test('Windows and Linux are unchanged', () {
       for (final path in [
-        r'C:\Program Files\Folder\explorer.exe',
+        r'C:\Program Files\Folders\explorer.exe',
         '/usr/lib/explorer/explorer',
         exe,
       ]) {

@@ -1,6 +1,6 @@
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:folder/features/viewer_pdf/services/pdf_annotation_ops.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_annotation_ops.dart';
 
 /// What a tap or text selection on the page does in edit mode.
 enum PdfAnnotationMode {

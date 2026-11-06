@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/windows_default_app.dart';
+import 'package:folders/core/platform/windows_default_app.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Windows: which program opens a type, so Folder never hands a file to
-/// itself (that started Folder again and again for .apk files).
+/// Windows: which program opens a type, so Folders never hands a file to
+/// itself (that started Folders again and again for .apk files).
 void main() {
   test('finds the program for a type; this app is not it', () {
     final notepad = WindowsDefaultApp.executableFor(r'C:\notes\read me.txt');

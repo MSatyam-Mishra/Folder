@@ -40,7 +40,7 @@ class AndroidDownloaderBackend extends VideoDownloaderBackend {
       needsSetup: !installed,
       hasFfmpeg: true,
       ffmpegNote: 'FFmpeg is part of the video engine.',
-      setupNote: "A one-time download. Keep Folder open until it's done.",
+      setupNote: "A one-time download. Keep Folders open until it's done.",
       engine: download is int && disk is int
           ? EngineInfo(installed: installed, downloadBytes: download, diskBytes: disk)
           : null,

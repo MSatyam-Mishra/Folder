@@ -9,9 +9,9 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/localsend/localsend_der.dart';
-import 'package:folder/core/services/localsend/localsend_hash.dart';
-import 'package:folder/core/services/localsend/localsend_models.dart';
+import 'package:folders/core/services/localsend/localsend_der.dart';
+import 'package:folders/core/services/localsend/localsend_hash.dart';
+import 'package:folders/core/services/localsend/localsend_models.dart';
 import 'package:pointycastle/api.dart';
 import 'package:pointycastle/asymmetric/api.dart';
 import 'package:pointycastle/digests/sha256.dart';

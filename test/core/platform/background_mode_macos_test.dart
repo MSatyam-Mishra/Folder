@@ -3,8 +3,8 @@ library;
 
 import 'dart:ui' show AppExitResponse;
 
-import 'package:folder/core/platform/background_mode.dart';
-import 'package:folder/core/services/background_tasks.dart';
+import 'package:folders/core/platform/background_mode.dart';
+import 'package:folders/core/services/background_tasks.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,7 +75,7 @@ void main() {
     await pumpEventQueue();
     expect(await quitAsked(), AppExitResponse.exit);
 
-    // Back in Folder, the next quit shows the Tasks view first again.
+    // Back in Folders, the next quit shows the Tasks view first again.
     await BackgroundMode.instance.openExplorer();
     expect(await quitAsked(), AppExitResponse.cancel);
     await pumpEventQueue();

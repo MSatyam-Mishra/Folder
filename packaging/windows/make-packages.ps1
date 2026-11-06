@@ -1,12 +1,12 @@
 <#
   Packages the Windows build (flutter build windows --release) as:
-    folder-v<version>-windows-x64-setup.exe   Inno Setup installer
-    folder-v<version>-windows-x64.msix        signed MSIX
-    folder-v<version>-windows.msixbundle      signed bundle of the MSIX
+    folders-v<version>-windows-x64-setup.exe   Inno Setup installer
+    folders-v<version>-windows-x64.msix        signed MSIX
+    folders-v<version>-windows.msixbundle      signed bundle of the MSIX
   Used by .github/workflows/desktop-release.yml; works locally too:
     pwsh packaging/windows/make-packages.ps1 -Version 1.0.6 -CertificatePath my.pfx -CertificatePassword ...
   The MSIX files are signed with a self-signed certificate (public part:
-  packaging/windows/folder-msix.cer), which users trust once to install them.
+  packaging/windows/folders-msix.cer), which users trust once to install them.
 #>
 param(
   [Parameter(Mandatory)] [string] $Version,
@@ -23,7 +23,7 @@ $RepoDir = (Resolve-Path $RepoDir).Path
 $AppDir = (Resolve-Path $AppDir).Path
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 $OutDir = (Resolve-Path $OutDir).Path
-$name = "folder-v$Version"
+$name = "folders-v$Version"
 
 function Find-SdkTool([string] $tool) {
   $found = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\$tool" -ErrorAction SilentlyContinue |
@@ -45,7 +45,7 @@ if (-not $SkipInstaller) {
   Invoke-Tool $iscc @(
     "/DAppVersion=$Version", "/DAppDir=$AppDir", "/DRepoDir=$RepoDir",
     "/DOutputDir=$OutDir", "/DOutputName=$name-windows-x64-setup",
-    "$here\folder.iss")
+    "$here\folders.iss")
 }
 
 # MSIX: the app files, the manifest and its logos.
@@ -53,7 +53,7 @@ $makeappx = Find-SdkTool 'makeappx.exe'
 $signtool = Find-SdkTool 'signtool.exe'
 # MSIX versions have four numbers.
 $msixVersion = "$Version.0"
-$stage = Join-Path ([IO.Path]::GetTempPath()) "folder-msix-$([guid]::NewGuid())"
+$stage = Join-Path ([IO.Path]::GetTempPath()) "folders-msix-$([guid]::NewGuid())"
 Copy-Item -Recurse $AppDir $stage
 # Web view data left by running the app from the build folder.
 Remove-Item -Recurse -Force "$stage\*.WebView2" -ErrorAction SilentlyContinue
@@ -70,13 +70,13 @@ Invoke-Tool $makeappx @('pack', '/o', '/d', $stage, '/p', $msix)
 Invoke-Tool $signtool @('sign', '/fd', 'SHA256', '/f', $CertificatePath, '/p', $CertificatePassword, $msix)
 
 # Bundle (.msixbundle) of the MSIX, signed the same way.
-$bundleIn = Join-Path ([IO.Path]::GetTempPath()) "folder-bundle-$([guid]::NewGuid())"
+$bundleIn = Join-Path ([IO.Path]::GetTempPath()) "folders-bundle-$([guid]::NewGuid())"
 New-Item -ItemType Directory $bundleIn | Out-Null
 Copy-Item $msix $bundleIn
 $bundle = Join-Path $OutDir "$name-windows.msixbundle"
 Invoke-Tool $makeappx @('bundle', '/o', '/bv', $msixVersion, '/d', $bundleIn, '/p', $bundle)
 Invoke-Tool $signtool @('sign', '/fd', 'SHA256', '/f', $CertificatePath, '/p', $CertificatePassword, $bundle)
 
-Copy-Item "$here\folder-msix.cer" (Join-Path $OutDir "$name-windows-msix-certificate.cer")
+Copy-Item "$here\folders-msix.cer" (Join-Path $OutDir "$name-windows-msix-certificate.cer")
 Remove-Item -Recurse -Force $stage, $bundleIn
 Get-ChildItem $OutDir | Format-Table Name, Length

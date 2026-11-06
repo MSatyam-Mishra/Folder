@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.app.Notification
 import android.content.Context

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:path/path.dart' as p;
 
 /// How [groupBy] is named in menus.

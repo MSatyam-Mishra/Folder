@@ -1,8 +1,8 @@
-import 'package:folder/core/services/video_downloader/downloader_backend.dart';
-import 'package:folder/core/services/video_downloader/downloader_settings.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
-import 'package:folder/features/video_downloader/widgets/history_list.dart';
+import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/downloader_settings.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/features/video_downloader/widgets/history_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -20,7 +20,7 @@ void main() {
   testWidgets('download history: a playlist folder and its downloads', (tester) async {
     SharedPreferences.setMockInitialValues({});
     setScreenSize(tester, const Size(420, 760));
-    final out = p.join('downloads', 'Folder Videos');
+    final out = p.join('downloads', 'Folders Videos');
     final now = DateTime(2026, 10, 23, 15, 40);
     HistoryEntry entry(String title, int mb, {String? playlist, int minutes = 0}) => HistoryEntry(
           id: title,

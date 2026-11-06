@@ -9,7 +9,7 @@ name: Desktop apps
 # without uploading.
 #
 # Secrets: MSIX_CERTIFICATE (base64 .pfx) and MSIX_CERTIFICATE_PASSWORD sign
-# the MSIX files; packaging/windows/folder-msix.cer is its public part.
+# the MSIX files; packaging/windows/folders-msix.cer is its public part.
 on:
   release:
     types: [published]
@@ -86,14 +86,14 @@ jobs:
         run: |
           $setup = (Get-ChildItem dist/*-setup.exe).FullName
           Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
-          $dir = "$env:LOCALAPPDATA\Programs\Folder"
-          if (-not (Test-Path "$dir\folder.exe")) { throw 'The installer did not install folder.exe' }
+          $dir = "$env:LOCALAPPDATA\Programs\Folders"
+          if (-not (Test-Path "$dir\folders.exe")) { throw 'The installer did not install folders.exe' }
           Start-Process "$dir\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES' -Wait
 
           Import-Certificate -FilePath (Get-ChildItem dist/*.cer).FullName -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
           foreach ($package in Get-ChildItem dist/*.msix, dist/*.msixbundle) {
             Add-AppxPackage -Path $package.FullName
-            $installed = Get-AppxPackage MSatyamMishra.Folder
+            $installed = Get-AppxPackage MSatyamMishra.Folders
             if (-not $installed) { throw "$($package.Name) did not install" }
             Write-Output "$($package.Name): installed $($installed.PackageFullName)"
             Remove-AppxPackage $installed.PackageFullName
@@ -227,15 +227,15 @@ jobs:
           chmod +x dist/*.AppImage
           export APPIMAGE_EXTRACT_AND_RUN=1
           running dist/*.AppImage
-          mkdir tar-check && tar -C tar-check -xJf dist/*.tar.xz && running tar-check/folder/folder
+          mkdir tar-check && tar -C tar-check -xJf dist/*.tar.xz && running tar-check/folders/folders
           # Its Tesseract reads text without one on the system.
-          TESSDATA_PREFIX=tar-check/folder/tesseract/tessdata \
-            tar-check/folder/tesseract/tesseract test/fixtures/ocr_invoice.png stdout | tee ocr.txt
+          TESSDATA_PREFIX=tar-check/folders/tesseract/tessdata \
+            tar-check/folders/tesseract/tesseract test/fixtures/ocr_invoice.png stdout | tee ocr.txt
           grep -q 'Invoice 2041' ocr.txt
           # Then the .deb, which installs the system's libmpv.
           sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 install -y --no-install-recommends ./dist/*.deb
-          running folder
-          sudo apt-get remove -y folder
+          running folders
+          sudo apt-get remove -y folders
           rpm -qip dist/*.rpm
 
       - uses: actions/upload-artifact@v4
@@ -268,16 +268,16 @@ jobs:
           mkdir -p fp/input dist
           tar -xf portable.tar
           mv portable fp/input/bundle
-          cp packaging/linux/flatpak/com.synqixlabs.folder.yml fp/
-          cp packaging/linux/com.synqixlabs.folder.desktop packaging/linux/com.synqixlabs.folder.metainfo.xml fp/input/
+          cp packaging/linux/flatpak/com.synqixlabs.folders.yml fp/
+          cp packaging/linux/com.synqixlabs.folders.desktop packaging/linux/com.synqixlabs.folders.metainfo.xml fp/input/
           cp -a packaging/linux/icons fp/input/
-          flatpak-builder --user --force-clean --repo=fp/repo fp/build fp/com.synqixlabs.folder.yml
+          flatpak-builder --user --force-clean --repo=fp/repo fp/build fp/com.synqixlabs.folders.yml
           flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
-            fp/repo "dist/folder-$TAG-linux-x86_64.flatpak" com.synqixlabs.folder
+            fp/repo "dist/folders-$TAG-linux-x86_64.flatpak" com.synqixlabs.folders
       - name: Check that it installs and starts
         run: |
-          flatpak install --user -y --noninteractive "dist/folder-$TAG-linux-x86_64.flatpak"
-          status=0; dbus-run-session -- xvfb-run -a timeout 30 flatpak run com.synqixlabs.folder || status=$?
+          flatpak install --user -y --noninteractive "dist/folders-$TAG-linux-x86_64.flatpak"
+          status=0; dbus-run-session -- xvfb-run -a timeout 30 flatpak run com.synqixlabs.folders || status=$?
           [ "$status" = 124 ]
       - uses: actions/upload-artifact@v4
         with:
@@ -301,7 +301,7 @@ jobs:
           mkdir snap-project
           tar -C snap-project -xf bundle.tar
           cp -a packaging/linux/snap snap-project/snap
-          cp packaging/linux/icons/hicolor/256x256/apps/com.synqixlabs.folder.png snap-project/snap/gui/folder.png
+          cp packaging/linux/icons/hicolor/256x256/apps/com.synqixlabs.folders.png snap-project/snap/gui/folders.png
           sed -i "s/@VERSION@/${TAG#v}/" snap-project/snap/snapcraft.yaml
       - uses: snapcore/action-build@v1
         id: build
@@ -310,9 +310,9 @@ jobs:
       - name: Check that it installs
         run: |
           sudo snap install --dangerous "${{ steps.build.outputs.snap }}"
-          snap list folder
+          snap list folders
           mkdir dist
-          mv "${{ steps.build.outputs.snap }}" "dist/folder-$TAG-linux-amd64.snap"
+          mv "${{ steps.build.outputs.snap }}" "dist/folders-$TAG-linux-amd64.snap"
       - uses: actions/upload-artifact@v4
         with:
           name: packages-snap

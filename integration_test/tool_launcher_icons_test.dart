@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/core/services/app_shortcuts.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/core/theme/app_theme.dart';
-import 'package:folder/core/theme/app_theme_settings.dart';
-import 'package:folder/core/theme/icon_strokes.dart';
-import 'package:folder/features/toolbox/toolbox_menu.dart';
+import 'package:folders/core/services/app_shortcuts.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/core/theme/app_theme.dart';
+import 'package:folders/core/theme/app_theme_settings.dart';
+import 'package:folders/core/theme/icon_strokes.dart';
+import 'package:folders/features/toolbox/toolbox_menu.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;
 

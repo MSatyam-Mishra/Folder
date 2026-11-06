@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show AppExitResponse;
 
-import 'package:folder/core/build_features.dart';
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/services/background_tasks.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/core/build_features.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/services/background_tasks.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:window_manager/window_manager.dart';
@@ -102,7 +102,7 @@ class BackgroundMode extends ChangeNotifier with WindowListener {
       await windowManager.hide();
       await _tray.invokeMethod('show', {'tooltip': _tooltip});
       await _tray.invokeMethod('notify', {
-        'title': 'Folder is still working',
+        'title': 'Folders is still working',
         'text': _running == 1
             ? 'A task is still running. Click here to see it.'
             : '$_running tasks are still running. Click here to see them.',
@@ -156,8 +156,8 @@ class BackgroundMode extends ChangeNotifier with WindowListener {
   }
 
   String get _tooltip => busy
-      ? (_running == 1 ? 'Folder: 1 task running' : 'Folder: $_running tasks running')
-      : 'Folder: all done';
+      ? (_running == 1 ? 'Folders: 1 task running' : 'Folders: $_running tasks running')
+      : 'Folders: all done';
 
   void _changed() {
     if (!_tasksOnly) return;
@@ -166,7 +166,7 @@ class BackgroundMode extends ChangeNotifier with WindowListener {
         unawaited(_tray.invokeMethod('show', {'tooltip': _tooltip}));
         if (!busy) {
           unawaited(_tray.invokeMethod('notify', {
-            'title': 'Folder is done',
+            'title': 'Folders is done',
             'text': 'Everything finished. Click here to see it.',
           }));
         }

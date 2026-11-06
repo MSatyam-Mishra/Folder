@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:folder/core/services/new_files.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
-import 'package:folder/features/viewer_text/screens/text_editor_screen.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/services/new_files.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/features/viewer_text/screens/text_editor_screen.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

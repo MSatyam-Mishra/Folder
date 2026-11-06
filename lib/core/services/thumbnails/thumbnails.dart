@@ -6,12 +6,12 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:archive/archive_io.dart';
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/core/formats/design_preview.dart';
-import 'package:folder/core/formats/raw_preview.dart';
-import 'package:folder/core/services/thumbnails/windows_shell_thumbnail.dart';
-import 'package:folder/features/viewer_design/services/design_pdf_renderer.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/core/formats/design_preview.dart';
+import 'package:folders/core/formats/raw_preview.dart';
+import 'package:folders/core/services/thumbnails/windows_shell_thumbnail.dart';
+import 'package:folders/features/viewer_design/services/design_pdf_renderer.dart';
 import 'package:image/image.dart' as img;
 
 /// Pictures of files for the file list, in place of their icons: the ones

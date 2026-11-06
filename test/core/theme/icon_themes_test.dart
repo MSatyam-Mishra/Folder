@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/shared/file_icons/place_icon.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/shared/file_icons/place_icon.dart';
 
 /// The icon themes come from Linux icon packs, where some icons are symbolic
 /// links. Copied without following them they become tiny text files holding

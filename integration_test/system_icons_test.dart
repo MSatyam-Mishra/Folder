@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/services/thumbnails/system_icons.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
-import 'package:folder/shared/file_icons/place_icon.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/thumbnails/system_icons.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:folders/shared/file_icons/place_icon.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;

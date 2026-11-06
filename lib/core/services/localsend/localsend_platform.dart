@@ -7,8 +7,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/services/localsend/localsend.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/localsend/localsend.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';

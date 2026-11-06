@@ -1,5 +1,5 @@
-import 'package:folder/core/services/bookmark_service.dart';
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/core/services/bookmark_service.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart' as pdfrx;
 

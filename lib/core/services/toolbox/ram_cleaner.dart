@@ -31,7 +31,7 @@ class RamCleanResult {
 /// trims every process it may touch, Linux drops its file cache and macOS runs
 /// `purge` (those two ask for the password), and older Android closes
 /// background apps. Android 14 and newer don't let an app close others, so
-/// there it's only what Folder holds.
+/// there it's only what Folders holds.
 abstract final class RamCleaner {
   static const _channel = MethodChannel('explorer/device');
 
@@ -73,7 +73,7 @@ abstract final class RamCleaner {
   }
 
   static Future<RamCleanResult> clean() async {
-    // Folder's own first: decoded pictures are most of what it holds.
+    // Folders' own first: decoded pictures are most of what it holds.
     PaintingBinding.instance.imageCache
       ..clear()
       ..clearLiveImages();

@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/platform/windows_locations.dart';
-import 'package:folder/core/services/thumbnails/system_icons.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/shared/file_icons/place_icon.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/windows_locations.dart';
+import 'package:folders/core/services/thumbnails/system_icons.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/shared/file_icons/place_icon.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 

@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/exif_bytes.dart';
-import 'package:folder/core/formats/exif_jpeg.dart';
-import 'package:folder/core/formats/exif_tiff.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_jpeg.dart';
+import 'package:folders/core/formats/exif_tiff.dart';
 
 /// A JPEG image embedded in a camera raw file.
 class RawJpeg {

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:folder/core/services/thumbnails/system_icons.dart';
+import 'package:folders/core/services/thumbnails/system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -23,7 +23,7 @@ enum AppStyle {
   dracula;
 
   String get label => switch (this) {
-        AppStyle.standard => 'Folder',
+        AppStyle.standard => 'Folders',
         AppStyle.macos => 'macOS',
         AppStyle.windows => 'Windows',
         AppStyle.sweet => 'Sweet',

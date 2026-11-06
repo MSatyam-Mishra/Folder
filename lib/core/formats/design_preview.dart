@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/design_postscript.dart';
-import 'package:folder/core/formats/design_xmp.dart';
-import 'package:folder/core/formats/design_zip.dart';
-import 'package:folder/core/formats/exif_bytes.dart';
-import 'package:folder/core/formats/exif_jpeg.dart';
+import 'package:folders/core/formats/design_postscript.dart';
+import 'package:folders/core/formats/design_xmp.dart';
+import 'package:folders/core/formats/design_zip.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_jpeg.dart';
 import 'package:image/image.dart' as img;
 
 /// What can be shown for a design, CAD or print file without the app that

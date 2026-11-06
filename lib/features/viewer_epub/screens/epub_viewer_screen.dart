@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:folder/core/services/bookmark_service.dart';
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
-import 'package:folder/shared/layout/adaptive_layout.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/services/bookmark_service.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/shared/layout/adaptive_layout.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

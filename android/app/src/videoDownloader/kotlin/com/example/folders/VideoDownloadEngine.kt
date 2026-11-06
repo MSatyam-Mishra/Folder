@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.content.Context
 import android.os.Environment
@@ -69,16 +69,16 @@ object VideoDownloadEngine {
     fun workRoot(context: Context): File =
         File(context.externalCacheDir ?: context.cacheDir, "video-downloads")
 
-    /** Public Download/Folder Videos when writable, else the app's own folder. */
+    /** Public Download/Folders Videos when writable, else the app's own folder. */
     fun defaultOutputDir(context: Context): File {
         @Suppress("DEPRECATION")
         val public = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "Folder Videos",
+            "Folders Videos",
         )
         if (canWrite(public)) return public
         val own = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-        return File(own, "Folder Videos")
+        return File(own, "Folders Videos")
     }
 
     fun canWrite(dir: File): Boolean = try {
@@ -191,7 +191,7 @@ object VideoDownloadEngine {
             connectTimeout = 15_000
             readTimeout = 30_000
             instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "Folder-VideoDownloader")
+            setRequestProperty("User-Agent", "Folders-VideoDownloader")
             if (api) setRequestProperty("Accept", "application/vnd.github+json")
         }
 

@@ -14,28 +14,28 @@ bundle=$(realpath "$2")
 portable=$(realpath "$3")
 out=$(realpath -m "$4")
 here=$(cd "$(dirname "$0")" && pwd)
-id=com.synqixlabs.folder
-name=folder-v$version-linux
+id=com.synqixlabs.folders
+name=folders-v$version-linux
 work=$(mktemp -d)
 mkdir -p "$out"
 
-# Archives: an folder/ folder holding the app.
-mkdir -p "$work/tar/folder"
-cp -a "$portable/." "$work/tar/folder/"
-tar -C "$work/tar" -czf "$out/$name-x64.tar.gz" folder
-tar -C "$work/tar" -cJf "$out/$name-x64.tar.xz" folder
+# Archives: an folders/ folder holding the app.
+mkdir -p "$work/tar/folders"
+cp -a "$portable/." "$work/tar/folders/"
+tar -C "$work/tar" -czf "$out/$name-x64.tar.gz" folders
+tar -C "$work/tar" -cJf "$out/$name-x64.tar.xz" folders
 
 # The installed layout, shared by the .deb, the .rpm and the AppImage.
 root=$work/root
-mkdir -p "$root/usr/lib/folder" "$root/usr/bin"
-cp -a "$bundle/." "$root/usr/lib/folder/"
-ln -s ../lib/folder/folder "$root/usr/bin/folder"
+mkdir -p "$root/usr/lib/folders" "$root/usr/bin"
+cp -a "$bundle/." "$root/usr/lib/folders/"
+ln -s ../lib/folders/folders "$root/usr/bin/folders"
 install -Dm644 "$here/$id.desktop" "$root/usr/share/applications/$id.desktop"
 install -Dm644 "$here/$id.metainfo.xml" "$root/usr/share/metainfo/$id.metainfo.xml"
 cp -a "$here/icons" "$root/usr/share/"
 
 common=(
-  -s dir -C "$root" -n folder -v "$version" --iteration 1
+  -s dir -C "$root" -n folders -v "$version" --iteration 1
   --license GPL-3.0-or-later --vendor MSatyam-Mishra
   --maintainer 'MSatyam-Mishra <https://github.com/MSatyam-Mishra>'
   --url https://github.com/MSatyam-Mishra/explorer
@@ -59,11 +59,11 @@ fpm "${common[@]}" -t rpm -a x86_64 --rpm-os linux \
   -p "$out/$name-x86_64.rpm" usr
 
 # AppImage
-appdir=$work/Folder.AppDir
+appdir=$work/Folders.AppDir
 mkdir -p "$appdir"
 cp -a "$root/usr" "$appdir/"
-cp -a "$portable/lib/." "$appdir/usr/lib/folder/lib/"
-cp -a "$portable/tesseract" "$appdir/usr/lib/folder/"
+cp -a "$portable/lib/." "$appdir/usr/lib/folders/lib/"
+cp -a "$portable/tesseract" "$appdir/usr/lib/folders/"
 # appimagetool fails on AppStream data its validator dislikes; it's optional.
 rm -rf "$appdir/usr/share/metainfo"
 cp "$here/$id.desktop" "$appdir/"
@@ -71,7 +71,7 @@ cp "$here/icons/hicolor/256x256/apps/$id.png" "$appdir/$id.png"
 cat > "$appdir/AppRun" <<'EOF'
 #!/bin/sh
 here=$(dirname "$(readlink -f "$0")")
-exec "$here/usr/lib/folder/folder" "$@"
+exec "$here/usr/lib/folders/folders" "$@"
 EOF
 chmod +x "$appdir/AppRun"
 curl -fsSL -o "$work/appimagetool" \

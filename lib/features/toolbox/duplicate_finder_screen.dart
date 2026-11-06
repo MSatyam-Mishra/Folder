@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/toolbox/duplicate_finder.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:folder/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
-import 'package:folder/features/toolbox/toolbox_menu.dart';
-import 'package:folder/shared/file_icons/file_thumbnail.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/toolbox/duplicate_finder.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folders/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
+import 'package:folders/features/toolbox/toolbox_menu.dart';
+import 'package:folders/shared/file_icons/file_thumbnail.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;

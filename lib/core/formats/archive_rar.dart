@@ -168,7 +168,7 @@ class RarBackend extends ArcBackend {
     if (headers.length > limits.maxEntries) {
       throw ArcException(
         ArcErrorKind.tooLarge,
-        'The archive has more entries than Folder will open.',
+        'The archive has more entries than Folders will open.',
       );
     }
 
@@ -230,7 +230,7 @@ class RarBackend extends ArcBackend {
   static String? _unsupported(Rar5FileHeader h) {
     if (h.version != 50 && h.version != 29) {
       return 'This file uses RAR 7 compression (very large dictionary), '
-          'which Folder can\'t decode.';
+          'which Folders can\'t decode.';
     }
     if (h.version == 29 && h.method != 0) {
       final uv = h.unpackVersion;
@@ -293,7 +293,7 @@ class RarBackend extends ArcBackend {
       if (e.message.contains('not supported')) {
         throw ArcException(
           ArcErrorKind.unsupported,
-          '"${entry.name}" uses a RAR feature Folder can\'t decode.',
+          '"${entry.name}" uses a RAR feature Folders can\'t decode.',
           entryPath: entry.path,
           detail: e.message,
         );
@@ -506,7 +506,7 @@ class RarBackend extends ArcBackend {
     if (window > _limits.maxInMemoryEntry) {
       throw ArcException(
         ArcErrorKind.tooLarge,
-        '"${entry.name}" is too large for Folder to unpack '
+        '"${entry.name}" is too large for Folders to unpack '
         '(RAR members are decoded in memory).',
         entryPath: entry.path,
       );
@@ -578,7 +578,7 @@ class _SolidRun {
     if (size > owner._limits.maxInMemoryEntry) {
       throw ArcException(
         ArcErrorKind.tooLarge,
-        'This solid archive needs more memory than Folder can use to '
+        'This solid archive needs more memory than Folders can use to '
         'unpack it.',
       );
     }

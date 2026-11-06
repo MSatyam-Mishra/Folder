@@ -5,10 +5,10 @@ import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
-import 'package:folder/features/viewer_text/code_editor_controller.dart';
-import 'package:folder/features/viewer_text/large_text_index.dart';
-import 'package:folder/features/viewer_text/text_document.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/features/viewer_text/code_editor_controller.dart';
+import 'package:folders/features/viewer_text/large_text_index.dart';
+import 'package:folders/features/viewer_text/text_document.dart';
 import 'package:flutter/material.dart';
 
 /// What [LargeTextView] knows about the file so far.

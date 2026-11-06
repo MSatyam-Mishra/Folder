@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/services/video_downloader/downloader_backend.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
-import 'package:folder/features/video_downloader/screens/video_downloader_screen.dart';
-import 'package:folder/features/video_downloader/screens/video_downloader_settings_screen.dart';
-import 'package:folder/features/video_downloader/widgets/history_list.dart';
+import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_settings_screen.dart';
+import 'package:folders/features/video_downloader/widgets/history_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,7 +107,7 @@ class FakeBackend extends VideoDownloaderBackend {
 
   @override
   Future<BackendPaths> paths() async =>
-      const BackendPaths(defaultOutputDir: '/downloads/Folder Videos', workRoot: '/tmp/work');
+      const BackendPaths(defaultOutputDir: '/downloads/Folders Videos', workRoot: '/tmp/work');
 
   @override
   Future<bool> canWrite(String dir) async => true;
@@ -212,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(backend.specs, hasLength(1));
     expect(backend.specs.single.args, containsAllInOrder(['--format-sort', 'res:720,fps,vcodec:h264,acodec:aac']));
-    expect(backend.specs.single.outputDir, '/downloads/Folder Videos');
+    expect(backend.specs.single.outputDir, '/downloads/Folders Videos');
     // Ready for the next link.
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
     expect(find.text('Test clip'), findsNothing);
@@ -256,7 +256,7 @@ void main() {
     await tester.tap(find.text('Download 1 item'));
     await tester.pumpAndSettle();
     expect(backend.specs.single.url, 'https://example.com/watch/2');
-    expect(backend.specs.single.outputDir, p.join('/downloads/Folder Videos', 'A playlist'));
+    expect(backend.specs.single.outputDir, p.join('/downloads/Folders Videos', 'A playlist'));
     // The queue is visible beside the panel.
     expect(find.textContaining('42%'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -456,7 +456,7 @@ void main() {
           completedAt: DateTime(2026, 10, 23),
           playlist: playlist,
         );
-    final out = p.join('downloads', 'Folder Videos');
+    final out = p.join('downloads', 'Folders Videos');
 
     test('gathers a playlist where its newest download is', () {
       final items = groupHistory([

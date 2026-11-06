@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/theme/icon_strokes.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/theme/icon_strokes.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

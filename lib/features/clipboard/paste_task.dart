@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:folder/core/platform/macos_files.dart';
+import 'package:folders/core/platform/macos_files.dart';
 import 'package:path/path.dart' as p;
 
 /// How far a paste is: bytes copied of [total], and the file being copied.

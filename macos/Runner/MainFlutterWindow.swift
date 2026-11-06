@@ -193,16 +193,16 @@ class ImageTextChannel {
 ///
 /// macOS 26 asks the user when an app reads what another app copied, so
 /// `peek` tells what's on it from the kinds of data alone: whether it holds
-/// files, whether Folder put them there, and whether `read` (the paths)
+/// files, whether Folders put them there, and whether `read` (the paths)
 /// would go ahead without asking. `write` {paths} puts the files on it and
 /// gives its change count, `changeCount` tells when it changed, and `clear`
 /// empties it if it holds files.
 class FileClipboardChannel {
   private let channel: FlutterMethodChannel
 
-  /// Marks files an Folder window put on the pasteboard; the shared file
+  /// Marks files an Folders window put on the pasteboard; the shared file
   /// says which, and whether they were cut.
-  private static let explorerFiles = NSPasteboard.PasteboardType("com.synqixlabs.folder.files")
+  private static let explorerFiles = NSPasteboard.PasteboardType("com.synqixlabs.folders.files")
 
   init(messenger: FlutterBinaryMessenger) {
     channel = FlutterMethodChannel(name: "explorer/mac_clipboard", binaryMessenger: messenger)
@@ -231,7 +231,7 @@ class FileClipboardChannel {
     }
   }
 
-  /// Puts the files on the pasteboard, marked as Folder's.
+  /// Puts the files on the pasteboard, marked as Folders'.
   private static func write(_ paths: [String], to pasteboard: NSPasteboard) -> Bool {
     pasteboard.clearContents()
     let urls = paths.map { NSURL(fileURLWithPath: $0) }
@@ -256,7 +256,7 @@ class FileClipboardChannel {
 
   /// Whether reading what another app copied goes ahead without the system
   /// asking the user: from macOS 26 it asks, unless they chose to always
-  /// allow Folder in Privacy & Security settings.
+  /// allow Folders in Privacy & Security settings.
   private static func readsQuietly(_ pasteboard: NSPasteboard) -> Bool {
     guard #available(macOS 15.4, *) else { return true }
     switch pasteboard.accessBehavior {

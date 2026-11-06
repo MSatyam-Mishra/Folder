@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/video_downloader/downloader_backend.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
-import 'package:folder/shared/layout/adaptive_layout.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/shared/layout/adaptive_layout.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/download_panel.dart';

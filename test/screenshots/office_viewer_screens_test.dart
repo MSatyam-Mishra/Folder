@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:folder/features/viewer_office/common/office_files.dart';
-import 'package:folder/features/viewer_office/screens/ppt_viewer_screen.dart';
-import 'package:folder/features/viewer_office/screens/word_viewer_screen.dart';
-import 'package:folder/features/viewer_office/slides/widgets/slide_widgets.dart';
+import 'package:folders/features/viewer_office/common/office_files.dart';
+import 'package:folders/features/viewer_office/screens/ppt_viewer_screen.dart';
+import 'package:folders/features/viewer_office/screens/word_viewer_screen.dart';
+import 'package:folders/features/viewer_office/slides/widgets/slide_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' show QuillEditor;
 import 'package:flutter_test/flutter_test.dart';

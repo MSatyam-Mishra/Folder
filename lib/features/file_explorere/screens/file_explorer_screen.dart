@@ -2,43 +2,43 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:folder/shared/layout/sidebar_width.dart';
-import 'package:folder/features/file_explorere/widgets/this_pc_view.dart';
-import 'package:folder/features/file_explorere/explorer_zoom.dart';
-import 'package:folder/shared/widgets/scrollbar_scroll_view.dart';
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/archive_service.dart';
-import 'package:folder/core/services/file_action_service.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/features/clipboard/bloc/clipboard_bloc.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/file_explorere/bloc/grouping.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_empty_state.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_header.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_menu.dart';
-import 'package:folder/features/file_explorere/widgets/file_drag_drop.dart';
-import 'package:folder/features/file_explorere/widgets/file_grid_item.dart';
-import 'package:folder/features/file_explorere/widgets/file_list_item.dart';
-import 'package:folder/features/file_explorere/widgets/file_peek.dart';
-import 'package:folder/features/file_explorere/widgets/selection_band.dart';
-import 'package:folder/features/file_explorere/widgets/social_tabs.dart';
-import 'package:folder/features/file_explorere/widgets/image_actions.dart';
-import 'package:folder/features/file_explorere/widgets/inline_rename.dart';
-import 'package:folder/features/file_explorere/widgets/new_file_button.dart';
-import 'package:folder/features/file_explorere/widgets/paste_bar.dart';
-import 'package:folder/features/localsend/screens/localsend_screen.dart';
-import 'package:folder/features/network/screens/file_server_screen.dart';
-import 'package:folder/features/sidebar/bloc/bloc/sidebar_bloc.dart';
-import 'package:folder/features/tasks/bloc/task_progress_bloc.dart';
-import 'package:folder/shared/layout/adaptive_layout.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_options_sheet.dart';
-import 'package:folder/shared/widgets/main_drawer.dart';
-import 'package:folder/shared/widgets/progress_dock.dart';
+import 'package:folders/shared/layout/sidebar_width.dart';
+import 'package:folders/features/file_explorere/widgets/this_pc_view.dart';
+import 'package:folders/features/file_explorere/explorer_zoom.dart';
+import 'package:folders/shared/widgets/scrollbar_scroll_view.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/archive_service.dart';
+import 'package:folders/core/services/file_action_service.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_header.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folders/features/file_explorere/widgets/file_drag_drop.dart';
+import 'package:folders/features/file_explorere/widgets/file_grid_item.dart';
+import 'package:folders/features/file_explorere/widgets/file_list_item.dart';
+import 'package:folders/features/file_explorere/widgets/file_peek.dart';
+import 'package:folders/features/file_explorere/widgets/selection_band.dart';
+import 'package:folders/features/file_explorere/widgets/social_tabs.dart';
+import 'package:folders/features/file_explorere/widgets/image_actions.dart';
+import 'package:folders/features/file_explorere/widgets/inline_rename.dart';
+import 'package:folders/features/file_explorere/widgets/new_file_button.dart';
+import 'package:folders/features/file_explorere/widgets/paste_bar.dart';
+import 'package:folders/features/localsend/screens/localsend_screen.dart';
+import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
+import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:folders/shared/layout/adaptive_layout.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_options_sheet.dart';
+import 'package:folders/shared/widgets/main_drawer.dart';
+import 'package:folders/shared/widgets/progress_dock.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1424,7 +1424,7 @@ class _FileExplorerUI extends StatelessWidget {
 
   static String _friendlyError(String message) {
     if (message.contains('not found or access denied')) {
-      return "It may have been moved or deleted, or Folder isn't allowed "
+      return "It may have been moved or deleted, or Folders isn't allowed "
           'to read it.';
     }
     return message;
@@ -1746,7 +1746,7 @@ class _PermissionDeniedScreen extends StatelessWidget {
           icon: LucideIcons.folderLock,
           title: 'Allow access to your files',
           description:
-              'Folder needs the "All files access" permission to '
+              'Folders needs the "All files access" permission to '
               'browse, open and organise the files on this device. Nothing '
               'leaves your device.',
           actions: [

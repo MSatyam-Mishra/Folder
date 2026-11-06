@@ -1,6 +1,6 @@
-import 'package:folder/core/theme/theme_cubit.dart';
-import 'package:folder/shared/ui/app_glass.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/theme/theme_cubit.dart';
+import 'package:folders/shared/ui/app_glass.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

@@ -3,13 +3,13 @@ library;
 
 import 'dart:io';
 
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/file_explorere/bloc/folder_search.dart';
-import 'package:folder/features/file_explorere/bloc/grouping.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/bloc/folder_search.dart';
+import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';

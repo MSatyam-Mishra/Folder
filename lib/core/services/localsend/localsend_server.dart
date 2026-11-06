@@ -6,10 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/localsend/localsend_hash.dart';
-import 'package:folder/core/services/localsend/localsend_identity.dart';
-import 'package:folder/core/services/localsend/localsend_models.dart';
-import 'package:folder/core/services/localsend/localsend_names.dart';
+import 'package:folders/core/services/localsend/localsend_hash.dart';
+import 'package:folders/core/services/localsend/localsend_identity.dart';
+import 'package:folders/core/services/localsend/localsend_models.dart';
+import 'package:folders/core/services/localsend/localsend_names.dart';
 import 'package:path/path.dart' as p;
 
 enum LsReceiveFileStatus { queued, receiving, done, failed, skipped }

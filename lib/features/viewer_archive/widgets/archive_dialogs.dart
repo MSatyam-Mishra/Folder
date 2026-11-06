@@ -1,7 +1,7 @@
-import 'package:folder/core/formats/archive_backend.dart';
-import 'package:folder/core/formats/archive_extract.dart';
-import 'package:folder/features/viewer_archive/archive_ui_utils.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/core/formats/archive_backend.dart';
+import 'package:folders/core/formats/archive_extract.dart';
+import 'package:folders/features/viewer_archive/archive_ui_utils.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;

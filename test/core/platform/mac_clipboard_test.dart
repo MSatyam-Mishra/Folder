@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/services/file_clipboard.dart';
+import 'package:folders/core/services/file_clipboard.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -12,7 +12,7 @@ class _Pasteboard {
   List<String> paths = [];
   int count = 0;
 
-  /// Whether an Folder window put the files there.
+  /// Whether an Folders window put the files there.
   bool explorer = false;
 
   /// Whether reading another app's files goes ahead without the system
@@ -89,7 +89,7 @@ void main() {
 
     await window.write(const ClipboardFiles(['/a/notes.txt'], cut: true));
     expect(await other.read(), const ClipboardFiles(['/a/notes.txt'], cut: true));
-    expect(pasteboard.reads, 0, reason: "Folder's own files come from the shared file");
+    expect(pasteboard.reads, 0, reason: "Folders' own files come from the shared file");
   });
 
   test('a cut name with accents stays a cut in the other windows', () async {
@@ -135,7 +135,7 @@ void main() {
 
     await window.write(const ClipboardFiles(['/a/notes.txt'], cut: true));
     expect(await MacFileClipboard(file).read(), const ClipboardFiles(['/a/notes.txt'], cut: true));
-    expect(pasteboard.reads, 1, reason: "Folder's own files need no asking");
+    expect(pasteboard.reads, 1, reason: "Folders' own files need no asking");
   });
 
   test('a read during a write sees the write finished', () async {

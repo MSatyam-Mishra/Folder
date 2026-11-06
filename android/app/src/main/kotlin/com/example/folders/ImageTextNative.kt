@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

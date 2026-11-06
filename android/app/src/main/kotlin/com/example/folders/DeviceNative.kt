@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -168,7 +168,7 @@ class DeviceNative(private val activity: Activity, messenger: BinaryMessenger) {
      * A tool's activity-alias in the manifest: on, it lists in the launcher as
      * an app of its own. Spelled out, as a release build renames this class's package.
      */
-    private fun toolEntry(id: String) = ComponentName(activity.packageName, "com.example.folder.$id")
+    private fun toolEntry(id: String) = ComponentName(activity.packageName, "com.example.folders.$id")
 
     /**
      * Pinning asks the launcher, which shows its own confirmation and may not

@@ -296,7 +296,7 @@ ArcException mapKoniError(Object error, {String? entryPath}) {
     return ArcException(
       unsupported ? ArcErrorKind.unsupported : ArcErrorKind.needPassword,
       unsupported
-          ? 'This archive uses an encryption method Folder can\'t read.'
+          ? 'This archive uses an encryption method Folders can\'t read.'
           : 'This archive is password protected.',
       entryPath: path,
       detail: error.message,
@@ -316,9 +316,9 @@ ArcException mapKoniError(Object error, {String? entryPath}) {
     return ArcException(
       ArcErrorKind.unsupported,
       method == null
-          ? 'This archive uses a compression method Folder can\'t decode.'
+          ? 'This archive uses a compression method Folders can\'t decode.'
           : 'This archive uses ${_methodLabel(method)} compression, which '
-              'Folder can\'t decode.',
+              'Folders can\'t decode.',
       entryPath: path,
       detail: error.message,
     );
@@ -326,7 +326,7 @@ ArcException mapKoniError(Object error, {String? entryPath}) {
   if (error is koni.UnsupportedFeatureException) {
     return ArcException(
       ArcErrorKind.unsupported,
-      'This archive uses a feature Folder can\'t read '
+      'This archive uses a feature Folders can\'t read '
       '(${error.message}).',
       entryPath: path,
       detail: error.message,
@@ -335,7 +335,7 @@ ArcException mapKoniError(Object error, {String? entryPath}) {
   if (error is koni.SizeLimitExceededException) {
     return ArcException(
       ArcErrorKind.tooLarge,
-      'An entry is larger than Folder can unpack safely.',
+      'An entry is larger than Folders can unpack safely.',
       entryPath: path,
       detail: error.message,
     );
@@ -359,7 +359,7 @@ ArcException mapKoniError(Object error, {String? entryPath}) {
   if (error is koni.UnsupportedFormatException) {
     return ArcException(
       ArcErrorKind.notArchive,
-      'This isn\'t an archive format Folder recognises.',
+      'This isn\'t an archive format Folders recognises.',
       detail: error.message,
     );
   }

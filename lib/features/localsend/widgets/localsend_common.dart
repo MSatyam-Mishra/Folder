@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/services/localsend/localsend.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/services/localsend/localsend.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;

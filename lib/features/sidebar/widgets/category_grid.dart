@@ -1,6 +1,6 @@
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
-import 'package:folder/features/sidebar/model/category_model.dart';
-import 'package:folder/features/sidebar/widgets/category_card.dart';
+import 'package:folders/features/sidebar/model/category_model.dart';
+import 'package:folders/features/sidebar/widgets/category_card.dart';
 import 'package:flutter/material.dart';
 
 

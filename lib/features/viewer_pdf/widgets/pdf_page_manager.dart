@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
-import 'package:folder/features/viewer_pdf/models/pdf_edit_models.dart';
-import 'package:folder/features/viewer_pdf/services/pdf_page_rasterizer.dart';
-import 'package:folder/features/viewer_pdf/widgets/pdf_page_thumbnail.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/features/viewer_pdf/models/pdf_edit_models.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_page_rasterizer.dart';
+import 'package:folders/features/viewer_pdf/widgets/pdf_page_thumbnail.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context

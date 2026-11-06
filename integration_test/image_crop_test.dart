@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/features/viewer_image/screens/image_editor_screen.dart';
-import 'package:folder/features/viewer_image/widgets/crop_frame.dart';
+import 'package:folders/features/viewer_image/screens/image_editor_screen.dart';
+import 'package:folders/features/viewer_image/widgets/crop_frame.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

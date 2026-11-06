@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/file_explorere/explorer_zoom.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/explorer_zoom.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

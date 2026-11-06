@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/features/category_view/home_media.dart';
-import 'package:folder/features/sidebar/model/category_model.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/features/category_view/home_media.dart';
+import 'package:folders/features/sidebar/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';

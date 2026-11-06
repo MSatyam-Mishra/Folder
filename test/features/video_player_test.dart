@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/features/toolbox/toolbox_menu.dart';
-import 'package:folder/features/video_player/play_queue.dart';
-import 'package:folder/features/video_player/video_library.dart';
-import 'package:folder/features/video_player/video_library_screen.dart';
-import 'package:folder/features/video_player/video_player_settings.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/features/toolbox/toolbox_menu.dart';
+import 'package:folders/features/video_player/play_queue.dart';
+import 'package:folders/features/video_player/video_library.dart';
+import 'package:folders/features/video_player/video_library_screen.dart';
+import 'package:folders/features/video_player/video_player_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

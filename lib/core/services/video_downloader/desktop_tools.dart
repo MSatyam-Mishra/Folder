@@ -121,7 +121,7 @@ class DesktopTools {
     final asset = ffmpegAsset();
     if (asset == null) {
       throw const DownloaderException(
-          'Folder has no FFmpeg download for this computer. Install FFmpeg '
+          'Folders has no FFmpeg download for this computer. Install FFmpeg '
           'and reopen the downloader.');
     }
     final List<_Download> downloads;
@@ -176,7 +176,7 @@ class DesktopTools {
   }) async {
     final asset = denoAsset();
     if (asset == null) {
-      throw const DownloaderException('Folder has no Deno download for this computer.');
+      throw const DownloaderException('Folders has no Deno download for this computer.');
     }
     final sum = await _getText(Uri.parse('$denoBase/$asset.sha256sum'));
     // "hash  name", or PowerShell's "Hash : HASH" for Windows builds.
@@ -284,7 +284,7 @@ class DesktopTools {
   }
 
   static HttpClient _client() => HttpClient()
-    ..userAgent = 'Folder-VideoDownloader'
+    ..userAgent = 'Folders-VideoDownloader'
     ..connectionTimeout = const Duration(seconds: 20);
 
   /// Tries again this many times when the connection drops, continuing

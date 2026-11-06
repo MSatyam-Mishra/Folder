@@ -1,5 +1,5 @@
-import 'package:folder/features/sidebar/model/category_model.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/features/sidebar/model/category_model.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io' show gzip;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/zstd_decoder.dart';
+import 'package:folders/core/formats/zstd_decoder.dart';
 
 /// A Blender .blend file: its data blocks and SDNA (the struct definitions
 /// written into every file), read without Blender.

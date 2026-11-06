@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:folder/features/viewer_pdf/models/pdf_edit_models.dart';
-import 'package:folder/features/viewer_pdf/services/pdf_document_ops.dart';
-import 'package:folder/features/viewer_pdf/services/pdfium_native.dart';
+import 'package:folders/features/viewer_pdf/models/pdf_edit_models.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_document_ops.dart';
+import 'package:folders/features/viewer_pdf/services/pdfium_native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdfrx/pdfrx.dart';

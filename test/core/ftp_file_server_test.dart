@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/file_server/ftp_file_server.dart';
+import 'package:folders/core/services/file_server/ftp_file_server.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -257,7 +257,7 @@ void main() {
 
   test('greets and accepts an anonymous login', () async {
     final c = await connect(login: false);
-    expect(c.greeting.lines.single, '220 Folder FTP server ready');
+    expect(c.greeting.lines.single, '220 Folders FTP server ready');
     expect((await c.cmd('USER anonymous')).code, 331);
     expect((await c.cmd('PASS')).code, 230);
     expect(

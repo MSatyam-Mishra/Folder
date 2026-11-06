@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:folder/core/services/file_server/http_file_server.dart';
-import 'package:folder/core/services/file_server/zip_stream.dart';
+import 'package:folders/core/services/file_server/http_file_server.dart';
+import 'package:folders/core/services/file_server/zip_stream.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

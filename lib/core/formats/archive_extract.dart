@@ -498,7 +498,7 @@ ArcException _ioError(FileSystemException e, String path) {
     full
         ? 'The storage is full.'
         : denied
-        ? 'Folder isn\'t allowed to write to "${p.dirname(path)}". Choose '
+        ? 'Folders isn\'t allowed to write to "${p.dirname(path)}". Choose '
             'another folder.'
         : 'Couldn\'t write "${p.basename(path)}"'
             '${os?.message == null || os!.message.isEmpty ? '' : ': ${os.message}'}.',

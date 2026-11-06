@@ -1,4 +1,4 @@
-import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:flutter/material.dart';
 
 /// File icon in the explorer; see [FileIcon] for how icons are chosen.

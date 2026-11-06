@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/cfb_reader.dart';
+import 'package:folders/core/formats/cfb_reader.dart';
 
 import '../model/number_format.dart';
 import '../model/workbook.dart';

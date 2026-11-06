@@ -1,6 +1,6 @@
-import 'package:folder/core/platform/window_effects.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/core/theme/app_theme_settings.dart';
+import 'package:folders/core/platform/window_effects.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/core/theme/app_theme_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 

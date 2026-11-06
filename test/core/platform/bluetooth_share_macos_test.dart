@@ -3,7 +3,7 @@ library;
 
 import 'dart:io';
 
-import 'package:folder/core/services/bluetooth_share.dart';
+import 'package:folders/core/services/bluetooth_share.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

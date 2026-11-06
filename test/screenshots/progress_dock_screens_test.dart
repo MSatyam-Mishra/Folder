@@ -1,4 +1,4 @@
-import 'package:folder/shared/widgets/progress_dock.dart';
+import 'package:folders/shared/widgets/progress_dock.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

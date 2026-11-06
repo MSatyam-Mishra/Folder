@@ -4,7 +4,7 @@ import macos_window_utils
 
 @main
 class AppDelegate: FlutterAppDelegate {
-  /// Files and folders Finder asked Folder to open ("Open With", or
+  /// Files and folders Finder asked Folders to open ("Open With", or
   /// dropped on the Dock icon) before Dart took them with `takeInitial`.
   private var pendingPaths: [String] = []
   /// Set once Dart has taken the launch items; later ones go straight to it.

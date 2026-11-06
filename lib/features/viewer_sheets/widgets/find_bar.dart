@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

@@ -37,7 +37,7 @@ class YtDlpInstaller {
   bool get isInstalled => binary.existsSync();
 
   HttpClient _client() => HttpClient()
-    ..userAgent = 'Folder-VideoDownloader'
+    ..userAgent = 'Folders-VideoDownloader'
     ..connectionTimeout = const Duration(seconds: 20);
 
   /// The latest stable release tag, e.g. "2026.08.19".

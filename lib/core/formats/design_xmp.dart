@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
 
 /// A thumbnail stored in XMP (`xmpGImg:image`, base64 JPEG), as Illustrator
 /// and InDesign write them.

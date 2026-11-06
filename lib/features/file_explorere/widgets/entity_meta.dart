@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';

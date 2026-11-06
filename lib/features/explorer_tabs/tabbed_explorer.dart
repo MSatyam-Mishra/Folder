@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/shared/file_icons/place_icon.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/theme/app_style.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
-import 'package:folder/features/file_explorere/widgets/file_drag_drop.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/shared/file_icons/place_icon.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folders/features/file_explorere/widgets/file_drag_drop.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,7 +85,7 @@ class _TabbedExplorerState extends State<TabbedExplorer> {
   void _setTitle() {
     final tab = _titled;
     if (tab == null || _testing) return;
-    unawaited(windowManager.setTitle(Platform.isMacOS ? tab.title : '${tab.title} - Folder'));
+    unawaited(windowManager.setTitle(Platform.isMacOS ? tab.title : '${tab.title} - Folders'));
   }
 
   /// Ctrl+T, Ctrl+W, Ctrl+Tab, Ctrl+1…9 (Cmd on macOS), wherever the

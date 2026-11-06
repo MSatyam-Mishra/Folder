@@ -24,7 +24,7 @@ class DownloaderSettings {
   /// bytes so names stay under the 255-byte limit of most file systems.
   static const defaultFilenameTemplate = '%(title).150B [%(id)s].%(ext)s';
 
-  /// Null: the platform default (Download/Folder Videos).
+  /// Null: the platform default (Download/Folders Videos).
   final String? outputDir;
   final DownloadKind defaultKind;
   final VideoQuality defaultQuality;

@@ -3,8 +3,8 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/features/viewer_image/raw_image.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/features/viewer_image/raw_image.dart';
 import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
 

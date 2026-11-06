@@ -68,7 +68,7 @@ abstract final class Desktop {
 
   static const _folderFlag = '--folder=';
 
-  /// Opens another Folder window showing [folder], or viewing [file]
+  /// Opens another Folders window showing [folder], or viewing [file]
   /// (over its folder). Each window is its own process, so it keeps working
   /// if another one closes.
   static Future<void> openWindow({String? folder, String? file}) {
@@ -87,7 +87,7 @@ abstract final class Desktop {
 
   /// How [openWindow] starts [executable] with [args]. On macOS a new
   /// window goes through LaunchServices (`open -n`, a new instance of the
-  /// app), so it comes to the front: the bare binary inside Folder.app
+  /// app), so it comes to the front: the bare binary inside Folders.app
   /// would open behind the current window.
   @visibleForTesting
   static (String, List<String>) windowCommand(

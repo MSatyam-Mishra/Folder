@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/features/toolbox/toolbox_menu.dart';
+import 'package:folders/features/toolbox/toolbox_menu.dart';
 
 /// A tool in the app drawer is an entry of the Android manifest, so each tool
 /// needs one, off until asked for, opening that tool, with its icons.

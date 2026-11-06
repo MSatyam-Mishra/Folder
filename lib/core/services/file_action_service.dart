@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'package:archive/archive_io.dart';
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/services/bluetooth_share.dart';
-import 'package:folder/core/services/new_files.dart';
-import 'package:folder/features/clipboard/bloc/clipboard_bloc.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/features/file_explorere/widgets/explorer_menu.dart';
-import 'package:folder/features/file_explorere/widgets/image_actions.dart';
-import 'package:folder/features/file_explorere/widgets/info_row.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/services/bluetooth_share.dart';
+import 'package:folders/core/services/new_files.dart';
+import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folders/features/file_explorere/widgets/image_actions.dart';
+import 'package:folders/features/file_explorere/widgets/info_row.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
@@ -23,12 +23,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 import 'package:share_plus/share_plus.dart';
 
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/features/localsend/screens/localsend_screen.dart';
-import 'package:folder/features/network/screens/file_server_screen.dart';
-import 'package:folder/features/vault/vault_store.dart';
-import 'package:folder/core/services/device_files.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/features/localsend/screens/localsend_screen.dart';
+import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/vault/vault_store.dart';
+import 'package:folders/core/services/device_files.dart';
 
 class FileActionsService {
   final FileRepository repository;

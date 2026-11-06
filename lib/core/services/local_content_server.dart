@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/core/services/http_range.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/services/http_range.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;

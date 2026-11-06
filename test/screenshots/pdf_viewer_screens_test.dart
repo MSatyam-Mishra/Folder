@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/bookmark_service.dart';
-import 'package:folder/features/viewer_pdf/models/pdf_edit_models.dart';
-import 'package:folder/features/viewer_pdf/screens/pdf_page_canvas_screen.dart';
-import 'package:folder/features/viewer_pdf/screens/viewer_pdf_screen.dart';
-import 'package:folder/features/viewer_pdf/widgets/pdf_dialogs.dart';
+import 'package:folders/core/services/bookmark_service.dart';
+import 'package:folders/features/viewer_pdf/models/pdf_edit_models.dart';
+import 'package:folders/features/viewer_pdf/screens/pdf_page_canvas_screen.dart';
+import 'package:folders/features/viewer_pdf/screens/viewer_pdf_screen.dart';
+import 'package:folders/features/viewer_pdf/widgets/pdf_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/features/viewer_pdf/services/pdf_document_ops.dart';
-import 'package:folder/features/viewer_pdf/services/pdfium_native.dart';
+import 'package:folders/features/viewer_pdf/services/pdf_document_ops.dart';
+import 'package:folders/features/viewer_pdf/services/pdfium_native.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show pdfrxInitialize;
 

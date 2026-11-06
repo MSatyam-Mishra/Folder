@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:folder/core/services/video_downloader/ytdlp_installer.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_models.dart';
-import 'package:folder/core/services/video_downloader/ytdlp_output.dart';
-import 'package:folder/features/video_downloader/widgets/downloader_text.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_installer.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/core/services/video_downloader/ytdlp_output.dart';
+import 'package:folders/features/video_downloader/widgets/downloader_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Fixtures are trimmed from real `yt-dlp -J --flat-playlist` output
@@ -70,7 +70,7 @@ __EXPL_PP__started|EmbedThumbnail
 __EXPL_PP__finished|EmbedThumbnail
 __EXPL_PP__started|MoveFiles
 __EXPL_PP__finished|MoveFiles
-__EXPL_FILE__C:\Users\me\Downloads\Folder Videos\trailer_400p [trailer_400p].ogg
+__EXPL_FILE__C:\Users\me\Downloads\Folders Videos\trailer_400p [trailer_400p].ogg
 ''';
 
 void main() {
@@ -166,7 +166,7 @@ void main() {
       expect(t.downloaded, 4360399);
       expect(t.part, 1);
       expect(t.stage, 'pp:MoveFiles');
-      expect(t.filePath, r'C:\Users\me\Downloads\Folder Videos\trailer_400p [trailer_400p].ogg');
+      expect(t.filePath, r'C:\Users\me\Downloads\Folders Videos\trailer_400p [trailer_400p].ogg');
       expect(t.errors, isEmpty);
     });
 

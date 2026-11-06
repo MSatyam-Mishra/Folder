@@ -1,6 +1,6 @@
-import 'package:folder/features/clipboard/bloc/clipboard_bloc.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;

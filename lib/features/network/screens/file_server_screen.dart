@@ -2,24 +2,24 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/core/services/file_server/app_file_server_resources.dart';
-import 'package:folder/core/services/file_server/ftp_file_server.dart';
-import 'package:folder/core/services/file_server/http_file_server.dart';
-import 'package:folder/core/services/incoming_files.dart';
-import 'package:folder/core/services/localsend/localsend_platform.dart';
-import 'package:folder/core/services/task_notifications.dart';
-import 'package:folder/core/theme/theme_cubit.dart';
-import 'package:folder/shared/file_icons/file_icons.dart';
-import 'package:folder/shared/ui/app_ui.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/core/services/file_server/app_file_server_resources.dart';
+import 'package:folders/core/services/file_server/ftp_file_server.dart';
+import 'package:folders/core/services/file_server/http_file_server.dart';
+import 'package:folders/core/services/incoming_files.dart';
+import 'package:folders/core/services/localsend/localsend_platform.dart';
+import 'package:folders/core/services/task_notifications.dart';
+import 'package:folders/core/theme/theme_cubit.dart';
+import 'package:folders/shared/file_icons/file_icons.dart';
+import 'package:folders/shared/ui/app_ui.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
-import 'package:folder/shared/widgets/round_qr_code.dart';
+import 'package:folders/shared/widgets/round_qr_code.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 enum ShareProtocol { http, ftp }

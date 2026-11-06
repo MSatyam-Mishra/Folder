@@ -1,4 +1,4 @@
-package com.example.folder
+package com.example.folders
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -27,7 +27,7 @@ fun appLaunchIntent(context: Context): Intent = Intent(Intent.ACTION_MAIN)
 class MainActivity : FlutterFragmentActivity() {
     private val CHANNEL = "explorer/usb"
     private var usbManager: UsbManager? = null
-    private val ACTION_USB_PERMISSION = "com.example.folder.USB_PERMISSION"
+    private val ACTION_USB_PERMISSION = "com.example.folders.USB_PERMISSION"
     
     // Cache open connections: deviceId -> UsbDeviceConnection
     private val openConnections = HashMap<Int, UsbDeviceConnection>()

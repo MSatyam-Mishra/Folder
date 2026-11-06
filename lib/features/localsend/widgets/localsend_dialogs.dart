@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:folder/core/services/localsend/localsend.dart';
-import 'package:folder/features/localsend/widgets/localsend_common.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/core/services/localsend/localsend.dart';
+import 'package:folders/features/localsend/widgets/localsend_common.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
 import 'package:flutter/material.dart';
 
 /// Result of the incoming-transfer dialog.

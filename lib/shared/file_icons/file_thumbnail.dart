@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/thumbnails/thumbnails.dart';
-import 'package:folder/core/theme/theme_cubit.dart';
+import 'package:folders/core/services/thumbnails/thumbnails.dart';
+import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

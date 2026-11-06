@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// Folders are only ever made at real paths. On Windows a path with no drive

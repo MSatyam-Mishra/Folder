@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:folder/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show IconData;
 import 'package:path/path.dart' as p;
@@ -11,7 +11,7 @@ import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 enum JunkKind {
   temporary('Temporary files', 'Left behind by apps; nothing needs them', LucideIcons.fileX2, true),
   thumbnails('Thumbnail caches', 'Small previews; they are made again when needed', LucideIcons.images, true),
-  appCache("Folder's cache", 'Previews and leftovers of this app', LucideIcons.folderX, true),
+  appCache("Folders' cache", 'Previews and leftovers of this app', LucideIcons.folderX, true),
   logs('Log files', 'Records apps keep of what they did', LucideIcons.scrollText, false),
   caches('App caches', 'Apps make these again, so they may be slower at first', LucideIcons.layers, false),
   trash('Trash', 'Files you deleted earlier; they are gone for good after this', LucideIcons.trash2, false),

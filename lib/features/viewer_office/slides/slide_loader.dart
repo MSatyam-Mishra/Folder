@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/cfb_reader.dart';
+import 'package:folders/core/formats/cfb_reader.dart';
 import 'package:image/image.dart' as img;
 
 import '../common/office_package.dart';

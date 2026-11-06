@@ -3,36 +3,36 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/shared/layout/sidebar_width.dart';
-import 'package:folder/features/file_explorere/explorer_zoom.dart';
-import 'package:folder/core/app/app_bloc_observer.dart';
-import 'package:folder/core/app_licenses.dart';
-import 'package:folder/core/platform/background_mode.dart';
-import 'package:folder/core/platform/window_effects.dart';
-import 'package:folder/core/platform/windows_drop_files.dart';
-import 'package:folder/core/theme/icon_strokes.dart';
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/platform/old_app_data.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/platform/macos_open_files.dart';
-import 'package:folder/shared/widgets/tasks_view.dart';
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/core/build_features.dart';
-import 'package:folder/core/services/app_shortcuts.dart';
-import 'package:folder/core/services/incoming_files.dart';
-import 'package:folder/core/services/task_notifications.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_licenses.dart';
-import 'package:folder/core/services/webview_warmup.dart';
-import 'package:folder/core/theme/app_theme.dart';
-import 'package:folder/core/theme/app_theme_settings.dart';
-import 'package:folder/core/theme/theme_cubit.dart';
-import 'package:folder/features/explorer_tabs/explorer_tabs.dart';
-import 'package:folder/features/explorer_tabs/tabbed_explorer.dart';
-import 'package:folder/features/file_explorere/screens/file_explorer_screen.dart';
-import 'package:folder/features/incoming/incoming_file_screen.dart';
-import 'package:folder/features/network/screens/file_server_screen.dart';
-import 'package:folder/features/toolbox/toolbox_menu.dart';
-import 'package:folder/features/video_downloader/screens/video_downloader_screen.dart';
+import 'package:folders/shared/layout/sidebar_width.dart';
+import 'package:folders/features/file_explorere/explorer_zoom.dart';
+import 'package:folders/core/app/app_bloc_observer.dart';
+import 'package:folders/core/app_licenses.dart';
+import 'package:folders/core/platform/background_mode.dart';
+import 'package:folders/core/platform/window_effects.dart';
+import 'package:folders/core/platform/windows_drop_files.dart';
+import 'package:folders/core/theme/icon_strokes.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/platform/old_app_data.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/macos_open_files.dart';
+import 'package:folders/shared/widgets/tasks_view.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/core/build_features.dart';
+import 'package:folders/core/services/app_shortcuts.dart';
+import 'package:folders/core/services/incoming_files.dart';
+import 'package:folders/core/services/task_notifications.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_licenses.dart';
+import 'package:folders/core/services/webview_warmup.dart';
+import 'package:folders/core/theme/app_theme.dart';
+import 'package:folders/core/theme/app_theme_settings.dart';
+import 'package:folders/core/theme/theme_cubit.dart';
+import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
+import 'package:folders/features/explorer_tabs/tabbed_explorer.dart';
+import 'package:folders/features/file_explorere/screens/file_explorer_screen.dart';
+import 'package:folders/features/incoming/incoming_file_screen.dart';
+import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/toolbox/toolbox_menu.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -78,8 +78,8 @@ void main(List<String> args) async {
       // In the first tab, so closing the file shows its folder.
       final context = ExplorerTabs.instance.active?.navigatorKey.currentContext ??
           _navigatorKey.currentContext;
-      // Never back to the system: if Folder is the file's default app,
-      // that would start another Folder for it, and so on.
+      // Never back to the system: if Folders is the file's default app,
+      // that would start another Folders for it, and so on.
       if (context != null) FileOpener.open(context, File(launchFile), allowExternal: false);
     });
   }
@@ -115,7 +115,7 @@ void main(List<String> args) async {
   runApp(App(launchItem: startItem));
   unawaited(WindowsDropFiles.init());
   // macOS: a window opened for a folder or a file (from Finder or another
-  // Folder window) comes to the front once it's up, rather than staying
+  // Folders window) comes to the front once it's up, rather than staying
   // behind the app that asked for it.
   if (Platform.isMacOS &&
       !Platform.environment.containsKey('FLUTTER_TEST') &&
@@ -175,7 +175,7 @@ class App extends StatelessWidget {
             darkTheme: AppTheme.shad(settings, Brightness.dark),
             appBuilder: (context) => MaterialApp(
               navigatorKey: _navigatorKey,
-              title: 'Folder',
+              title: 'Folders',
               // Who handles Back. WidgetsApp's own handler ignores this until
               // it hears of a lifecycle change, which never comes if the app
               // was already resumed when it started: opened by a shortcut, Back

@@ -59,7 +59,7 @@ Source: https://github.com/yausername/youtubedl-android
 
 Copyright (C) 2019-2025 yausername and the youtubedl-android contributors.
 
-Licensed under the GNU General Public License, version 3 (GPL-3.0). The full license text is listed under this package. It provides yt-dlp, a Python 3.12 runtime, FFmpeg 7.1.1 and QuickJS, each listed separately. Folder includes yt-dlp and QuickJS, and downloads the Python runtime and FFmpeg the first time you use the video downloader, unchanged from these packages, from https://github.com/MSatyam-Mishra/explorer/releases/tag/video-engine-0.18.1''';
+Licensed under the GNU General Public License, version 3 (GPL-3.0). The full license text is listed under this package. It provides yt-dlp, a Python 3.12 runtime, FFmpeg 7.1.1 and QuickJS, each listed separately. Folders includes yt-dlp and QuickJS, and downloads the Python runtime and FFmpeg the first time you use the video downloader, unchanged from these packages, from https://github.com/MSatyam-Mishra/explorer/releases/tag/video-engine-0.18.1''';
 
 const _ytDlp = '''
 yt-dlp, a feature-rich command-line audio/video downloader

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/platform/desktop.dart';
+import 'package:folders/core/platform/desktop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
@@ -10,7 +10,7 @@ import 'package:path/path.dart' as p;
 /// [Desktop.parseArgs] gives it.
 typedef OpenTarget = ({String? folder, String? file});
 
-/// What Finder asks Folder to open on macOS ("Open With", or items
+/// What Finder asks Folders to open on macOS ("Open With", or items
 /// dropped on the Dock icon). macOS sends these as events rather than on
 /// the command line; macos/Runner/AppDelegate.swift keeps the ones that
 /// arrive before Dart has taken the launch items.

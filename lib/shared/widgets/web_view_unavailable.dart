@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:folder/core/router/file_opener.dart';
-import 'package:folder/features/viewer_office/common/viewer_ui.dart';
+import 'package:folders/core/router/file_opener.dart';
+import 'package:folders/features/viewer_office/common/viewer_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,7 +32,7 @@ class WebViewUnavailable extends StatelessWidget {
           child: ViewerMessage(
             icon: LucideIcons.globe,
             title: title,
-            message: 'Folder can only show this with a web view, which it '
+            message: 'Folders can only show this with a web view, which it '
                 "doesn't have on Linux yet.",
             actions: [
               if (inBrowser)

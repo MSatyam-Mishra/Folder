@@ -1,4 +1,4 @@
-import 'package:folder/shared/widgets/main_drawer.dart';
+import 'package:folders/shared/widgets/main_drawer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Drives the sidebar lists from /Volumes on macOS.

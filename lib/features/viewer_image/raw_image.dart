@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui' as ui;
 
-import 'package:folder/core/files/file_types.dart';
-import 'package:folder/core/formats/raw_preview.dart';
+import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/formats/raw_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 

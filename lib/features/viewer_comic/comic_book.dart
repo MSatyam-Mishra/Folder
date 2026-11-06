@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:folder/core/formats/archive_backend.dart';
-import 'package:folder/core/formats/archive_comic.dart';
-import 'package:folder/core/formats/archive_extract.dart';
-import 'package:folder/core/formats/archive_session.dart';
+import 'package:folders/core/formats/archive_backend.dart';
+import 'package:folders/core/formats/archive_comic.dart';
+import 'package:folders/core/formats/archive_extract.dart';
+import 'package:folders/core/formats/archive_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';

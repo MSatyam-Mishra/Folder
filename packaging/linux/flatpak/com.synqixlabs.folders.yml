@@ -2,11 +2,11 @@
 # this file next to an input/ folder holding bundle/ (the flutter build linux
 # output), the .desktop and .metainfo.xml files and icons/, then runs
 # flatpak-builder and flatpak build-bundle.
-app-id: com.synqixlabs.folder
+app-id: com.synqixlabs.folders
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
-command: folder
+command: folders
 finish-args:
   - --share=ipc
   - --share=network
@@ -16,24 +16,24 @@ finish-args:
   # A file manager needs to see the user's files.
   - --filesystem=host
 modules:
-  - name: folder
+  - name: folders
     buildsystem: simple
     build-commands:
-      - mkdir -p /app/lib/folder /app/bin
-      - cp -a bundle/. /app/lib/folder/
+      - mkdir -p /app/lib/folders /app/bin
+      - cp -a bundle/. /app/lib/folders/
       # The bundle carries libmpv and what it needs; use the runtime's copy
       # of any library the runtime has.
       - |
-        for lib in /app/lib/folder/lib/*.so*; do
+        for lib in /app/lib/folders/lib/*.so*; do
           name=$(basename "$lib")
           case "$name" in
             libapp.so|libflutter_linux_gtk.so|*_plugin.so|libpdfium.so|libdartjni.so) continue ;;
           esac
           if [ -e "/usr/lib/x86_64-linux-gnu/$name" ]; then rm -f "$lib"; fi
         done
-      - ln -s /app/lib/folder/folder /app/bin/folder
-      - install -Dm644 com.synqixlabs.folder.desktop -t /app/share/applications
-      - install -Dm644 com.synqixlabs.folder.metainfo.xml -t /app/share/metainfo
+      - ln -s /app/lib/folders/folders /app/bin/folders
+      - install -Dm644 com.synqixlabs.folders.desktop -t /app/share/applications
+      - install -Dm644 com.synqixlabs.folders.metainfo.xml -t /app/share/metainfo
       - cp -a icons /app/share/
     sources:
       - type: dir

@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:photo_manager/photo_manager.dart' show RequestType;
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/features/category_view/home_media.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/platform/macos_files.dart';
-import 'package:folder/core/platform/windows_locations.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/core/services/social_files.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/features/category_view/home_media.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/macos_files.dart';
+import 'package:folders/core/platform/windows_locations.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/social_files.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
 import 'package:win32/win32.dart'

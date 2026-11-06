@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:folder/core/services/device_files.dart';
-import 'package:folder/features/category_view/home_media.dart';
+import 'package:folders/core/services/device_files.dart';
+import 'package:folders/features/category_view/home_media.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_manager/photo_manager.dart';

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/services/toolbox/ram_cleaner.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
-import 'package:folder/features/toolbox/ram_extreme_view.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
-import 'package:folder/shared/widgets/explorer_scaffold.dart';
+import 'package:folders/core/services/toolbox/ram_cleaner.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/features/toolbox/ram_extreme_view.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/widgets/explorer_scaffold.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
@@ -71,11 +71,11 @@ class _RamCleanerScreenState extends State<RamCleanerScreen> {
     if (Platform.isLinux) {
       return _canCleanOthers
           ? "This drops Linux's file cache, which asks for your password. Programs keep their memory, and things may open a little slower at first."
-          : 'Linux frees memory by itself when something needs it. This clears what Folder holds; dropping the file cache needs pkexec.';
+          : 'Linux frees memory by itself when something needs it. This clears what Folders holds; dropping the file cache needs pkexec.';
     }
     return _canCleanOthers
         ? 'Background apps are closed. Android may start some of them again.'
-        : "Android 14 and newer don't let any app close other apps, so this clears what Folder itself holds. "
+        : "Android 14 and newer don't let any app close other apps, so this clears what Folders itself holds. "
             'Android frees the rest by itself when something needs it, and Extreme mode closes apps through an '
             'Accessibility service.';
   }

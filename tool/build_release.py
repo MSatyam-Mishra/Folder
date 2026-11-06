@@ -7,7 +7,7 @@ Run from the project root:
 youtubedl-android, ~4 MB per APK; its Python and FFmpeg engine is never in
 the APK but downloaded on first use) and its menu entry and share target.
 
-Output: build/release/v<version>/folder-v<version>-<abi>.apk, the universal
+Output: build/release/v<version>/folders-v<version>-<abi>.apk, the universal
 APK and SHA256SUMS.txt. Dart code is obfuscated; the symbols needed to decode
 crash stack traces (`flutter symbolize`) are kept in build/symbols/v<version>/
 — keep them for every published release.
@@ -58,7 +58,7 @@ def stage(version, split):
              else [('app-release.apk', 'universal')])
     for src, label in names:
         shutil.copyfile(os.path.join(built, src),
-                        os.path.join(out, f'folder-v{version}-{label}.apk'))
+                        os.path.join(out, f'folders-v{version}-{label}.apk'))
     if split:
         return
     lines = []

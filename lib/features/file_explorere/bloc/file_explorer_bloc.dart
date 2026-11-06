@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
-import 'package:folder/core/platform/explorer_paths.dart';
-import 'package:folder/core/repositories/file_repository.dart';
-import 'package:folder/core/services/folder_prefs_service.dart';
-import 'package:folder/features/file_explorere/bloc/folder_search.dart';
-import 'package:folder/features/file_explorere/bloc/grouping.dart';
-import 'package:folder/features/file_explorere/widgets/entity_meta.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/file_explorere/bloc/folder_search.dart';
+import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 

@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:folder/core/services/background_tasks.dart';
-import 'package:folder/core/services/file_clipboard.dart';
-import 'package:folder/features/clipboard/bloc/clipboard_bloc.dart';
-import 'package:folder/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:folders/core/services/background_tasks.dart';
+import 'package:folders/core/services/file_clipboard.dart';
+import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -83,7 +83,7 @@ class _Unwatched extends MacFileClipboard {
   Stream<void> get changes => const Stream.empty();
 }
 
-/// Files copied in Finder paste into Folder on macOS: they're read only
+/// Files copied in Finder paste into Folders on macOS: they're read only
 /// when the user pastes.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -183,7 +183,7 @@ void main() {
     expect(names(here), ['notes.txt']);
   });
 
-  test('cut in another Folder window and pasted before this one saw it: moved', () async {
+  test('cut in another Folders window and pasted before this one saw it: moved', () async {
     final other = MacFileClipboard(file);
     await other.write(ClipboardFiles([p.join(finder.path, 'notes.txt')], cut: true));
     final bloc = window(_Behind(file));
@@ -223,7 +223,7 @@ void main() {
     expect(pasteboard.reads, 2);
   });
 
-  test('copied in Folder, then in Finder: Finder\'s files paste', () async {
+  test('copied in Folders, then in Finder: Finder\'s files paste', () async {
     final bloc = window(_Unwatched(file));
     await settle();
     bloc.add(CopyToClipboard([File(p.join(finder.path, 'notes.txt'))]));
@@ -232,7 +232,7 @@ void main() {
     bloc.add(PasteFromClipboard(here.path));
     await first;
     expect(names(here), ['notes.txt']);
-    expect(pasteboard.reads, 0, reason: "Folder's own files come from the shared file");
+    expect(pasteboard.reads, 0, reason: "Folders' own files come from the shared file");
 
     pasteboard.copyInFinder([p.join(finder.path, 'album')]);
     final second = after(bloc, (s) => s is ClipboardReadyToPaste && s.pasted);

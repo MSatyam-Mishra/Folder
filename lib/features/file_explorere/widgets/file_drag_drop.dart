@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/platform/desktop.dart';
-import 'package:folder/core/platform/macos_files.dart';
-import 'package:folder/core/platform/macos_writable.dart';
-import 'package:folder/core/platform/windows_drop_files.dart';
-import 'package:folder/features/file_explorere/widgets/selection_band.dart';
-import 'package:folder/shared/ui/app_ui.dart';
+import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/platform/macos_files.dart';
+import 'package:folders/core/platform/macos_writable.dart';
+import 'package:folders/core/platform/windows_drop_files.dart';
+import 'package:folders/features/file_explorere/widgets/selection_band.dart';
+import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
@@ -16,7 +16,7 @@ import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 final bool nativeDragAndDrop = !Platform.environment.containsKey('FLUTTER_TEST');
 
 /// Lets [entity] be dragged (desktop): to folders in this window or
-/// another Folder window, to File Explorer, the desktop or other apps.
+/// another Folders window, to File Explorer, the desktop or other apps.
 /// When it's part of a selection, [selection] gives the other items that
 /// go with it.
 class FileDragSource extends StatelessWidget {
@@ -69,7 +69,7 @@ class FileDragSource extends StatelessWidget {
   }
 }
 
-/// A folder files can be dropped on: from this window, another Folder
+/// A folder files can be dropped on: from this window, another Folders
 /// window, File Explorer or other apps. [builder] shows whether something
 /// is being dragged over it.
 class FileDropTarget extends StatefulWidget {

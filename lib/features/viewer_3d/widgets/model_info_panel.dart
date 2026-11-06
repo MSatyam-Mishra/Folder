@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
-import 'package:folder/features/viewer_3d/models/viewer_3d_models.dart';
-import 'package:folder/features/viewer_3d/services/three_d_viewer_controller.dart';
-import 'package:folder/features/viewer_kit/viewer_kit.dart';
+import 'package:folders/features/viewer_3d/models/viewer_3d_models.dart';
+import 'package:folders/features/viewer_3d/services/three_d_viewer_controller.dart';
+import 'package:folders/features/viewer_kit/viewer_kit.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

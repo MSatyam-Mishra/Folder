@@ -36,7 +36,7 @@ abstract final class WindowsDefaultApp {
   }
 
   /// Whether [path]'s type opens with this app: handing it to Windows
-  /// would only start Folder again.
+  /// would only start Folders again.
   static bool isThisApp(String path) {
     final exe = executableFor(path);
     return exe != null && p.equals(p.normalize(exe), p.normalize(Platform.resolvedExecutable));

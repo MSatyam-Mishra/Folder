@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:folder/core/services/file_clipboard.dart';
-import 'package:folder/features/clipboard/bloc/clipboard_bloc.dart';
-import 'package:folder/features/clipboard/paste_task.dart';
-import 'package:folder/features/file_explorere/bloc/file_explorer_bloc.dart';
-import 'package:folder/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:folders/core/services/file_clipboard.dart';
+import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
+import 'package:folders/features/clipboard/paste_task.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -199,8 +199,8 @@ void main() {
   }, skip: !(Platform.isWindows && Platform.environment['EXPLORER_REAL_CLIPBOARD'] == '1'));
 
   // File Explorer's Paste (the shell's paste verb on a folder) takes what
-  // Folder copied or cut. Uses the real clipboard too.
-  test('File Explorer pastes what Folder copied or cut', () async {
+  // Folders copied or cut. Uses the real clipboard too.
+  test('File Explorer pastes what Folders copied or cut', () async {
     Future<void> shellPaste(Directory into) async {
       // PowerShell's single quotes, with ' doubled.
       String quote(String s) => "'${s.replaceAll("'", "''")}'";

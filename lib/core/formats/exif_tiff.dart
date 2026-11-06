@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/exif_bytes.dart';
+import 'package:folders/core/formats/exif_bytes.dart';
 
 /// One IFD entry: where its value lives is resolved up front.
 class TiffEntry {

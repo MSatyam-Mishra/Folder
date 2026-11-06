@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data' show BytesBuilder;
 
-import 'package:folder/core/services/file_server/lan_address.dart';
+import 'package:folders/core/services/file_server/lan_address.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -255,7 +255,7 @@ class _FtpSession {
       onDone: close,
       cancelOnError: true,
     );
-    _reply(220, 'Folder FTP server ready');
+    _reply(220, 'Folders FTP server ready');
     _resetIdle();
   }
 
@@ -584,7 +584,7 @@ class _FtpSession {
   Future<void> _status(String arg) async {
     if (arg.trim().isEmpty) {
       _replyLines(211, [
-        'Folder FTP server status:',
+        'Folders FTP server status:',
         ' Connected from $_peer',
         ' Logged in',
         ' TYPE: BINARY, MODE: Stream, STRUcture: File',

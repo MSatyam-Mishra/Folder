@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:folder/core/services/localsend/localsend.dart';
-import 'package:folder/core/services/video_downloader/downloader_backend.dart';
-import 'package:folder/core/services/video_downloader/video_downloader_controller.dart';
-import 'package:folder/features/localsend/localsend_controller.dart';
-import 'package:folder/features/localsend/screens/localsend_screen.dart';
-import 'package:folder/features/video_downloader/screens/video_downloader_screen.dart';
-import 'package:folder/features/video_downloader/screens/video_downloader_settings_screen.dart';
+import 'package:folders/core/services/localsend/localsend.dart';
+import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
+import 'package:folders/features/localsend/localsend_controller.dart';
+import 'package:folders/features/localsend/screens/localsend_screen.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

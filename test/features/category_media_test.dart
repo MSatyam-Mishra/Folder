@@ -1,5 +1,5 @@
-import 'package:folder/features/category_view/bloc/bloc/category_bloc.dart';
-import 'package:folder/features/category_view/home_media.dart';
+import 'package:folders/features/category_view/bloc/bloc/category_bloc.dart';
+import 'package:folders/features/category_view/home_media.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The Photos, Video and Audio categories built from home folders (and, for

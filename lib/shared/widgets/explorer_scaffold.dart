@@ -1,6 +1,6 @@
-import 'package:folder/shared/icons/app_icons.dart';
-import 'package:folder/shared/widgets/clear_glass_panel.dart';
-import 'package:folder/shared/widgets/docked_glossy_top_bar.dart';
+import 'package:folders/shared/icons/app_icons.dart';
+import 'package:folders/shared/widgets/clear_glass_panel.dart';
+import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:flutter/material.dart';
 /// App-wide page shell with the docked clear-glass top bar.
 class ExplorerScaffold extends StatelessWidget {

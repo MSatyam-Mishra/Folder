@@ -1,6 +1,6 @@
 {
-    "name": "folder",
-    "short_name": "folder",
+    "name": "folders",
+    "short_name": "folders",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2563EB",

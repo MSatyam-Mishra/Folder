@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:folder/core/formats/cfb_reader.dart';
+import 'package:folders/core/formats/cfb_reader.dart';
 
 import 'doc_model.dart';
 import 'docx_parser.dart' show loadImageData, mapSymbolChar;
