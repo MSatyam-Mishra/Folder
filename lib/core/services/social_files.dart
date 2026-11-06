@@ -24,12 +24,14 @@ enum SocialApp {
 }
 
 /// Where an app keeps files: a folder whose subfolders are tabs, or (with
-/// [tab]) a folder that is one tab itself.
+/// [tab]) a folder that is one tab itself. With [only], just the subfolders
+/// whose tab is in it show, and files lying loose there don't.
 class _Place {
-  const _Place(this.path, {this.tab});
+  const _Place(this.path, {this.tab, this.only});
 
   final String path;
   final String? tab;
+  final Set<String>? only;
 }
 
 /// The files apps have saved, from the folders they're known to use: "All
@@ -40,6 +42,11 @@ abstract final class SocialFiles {
   static String? storageOverride;
 
   static const allFiles = 'All files';
+
+  /// The kinds of WhatsApp files shown: voice notes, audio, statuses,
+  /// stickers, backups and the app's other folders stay out.
+  @visibleForTesting
+  static const whatsAppTabs = {'Animated Gifs', 'Documents', 'Images', 'Video'};
 
   static List<_Place> _phonePlaces(SocialApp app, String s) => switch (app) {
         SocialApp.telegram => [
@@ -52,10 +59,10 @@ abstract final class SocialFiles {
             _Place('$s/Download/Telegram', tab: 'Downloads'),
           ],
         SocialApp.whatsapp => [
-            _Place('$s/Android/media/com.whatsapp/WhatsApp/Media'),
-            _Place('$s/WhatsApp/Media'),
-            _Place('$s/Android/media/com.whatsapp.w4b/WhatsApp Business/Media'),
-            _Place('$s/WhatsApp Business/Media'),
+            _Place('$s/Android/media/com.whatsapp/WhatsApp/Media', only: whatsAppTabs),
+            _Place('$s/WhatsApp/Media', only: whatsAppTabs),
+            _Place('$s/Android/media/com.whatsapp.w4b/WhatsApp Business/Media', only: whatsAppTabs),
+            _Place('$s/WhatsApp Business/Media', only: whatsAppTabs),
           ],
         SocialApp.instagram => [
             _Place('$s/Pictures/Instagram', tab: 'Images'),
@@ -130,13 +137,14 @@ abstract final class SocialFiles {
         (tabs[place.tab!] ??= []).add(place.path);
         continue;
       }
+      final only = place.only;
       try {
         for (final entry in dir.listSync(followLinks: false)) {
           final name = p.basename(entry.path);
           if (entry is Directory) {
             final tab = tabName(name);
-            if (tab != null) (tabs[tab] ??= []).add(entry.path);
-          } else if (entry is File && !name.startsWith('.')) {
+            if (tab != null && (only == null || only.contains(tab))) (tabs[tab] ??= []).add(entry.path);
+          } else if (entry is File && !name.startsWith('.') && only == null) {
             loose.add(entry.path);
           }
         }

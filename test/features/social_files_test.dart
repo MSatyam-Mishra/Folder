@@ -31,8 +31,17 @@ void main() {
     await save('$media/WhatsApp Images/.nomedia');
     await save('$media/WhatsApp Video/VID-1.mp4');
     await save('$media/WhatsApp Documents/report.pdf');
+    await save('$media/WhatsApp Animated Gifs/funny.mp4');
+    // Kinds WhatsApp keeps that don't show.
+    await save('$media/WhatsApp Voice Notes/202611/PTT-1.opus');
+    await save('$media/WhatsApp Audio/AUD-1.mp3');
+    await save('$media/WhatsApp Stickers/sticker.webp');
     await save('$media/.Statuses/status.jpg');
     await save('$media/.Links/link.jpg');
+    await save('$media/loose-in-media.txt');
+    // WhatsApp Business: the same kinds, under its own names.
+    await save('Android/media/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Animated Gifs/biz.mp4');
+    await save('Android/media/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Voice Notes/biz.opus');
     // The older place: the same tabs.
     await save('WhatsApp/Media/WhatsApp Images/IMG-old.jpg');
     await save('Pictures/Instagram/insta.jpg');
@@ -74,8 +83,13 @@ void main() {
   });
 
   group('tabs', () {
-    test('short names, hidden ones only for statuses, old and new places merged', () async {
-      expect(await SocialFiles.tabs(SocialApp.whatsapp), ['Documents', 'Images', 'Statuses', 'Video']);
+    test('WhatsApp: only documents, images, animated GIFs and video, from every place', () async {
+      expect(await SocialFiles.tabs(SocialApp.whatsapp), ['Animated Gifs', 'Documents', 'Images', 'Video']);
+    });
+
+    test('statuses still get a tab name where an app shows them', () {
+      expect(SocialFiles.tabName('.Statuses'), 'Statuses');
+      expect(SocialFiles.tabName('WhatsApp Business Animated Gifs'), 'Animated Gifs');
     });
 
     test('folders of their own become tabs by kind', () async {
@@ -88,15 +102,20 @@ void main() {
   });
 
   group('files', () {
-    test('All files has every file of the app, from inside subfolders too', () async {
+    test("All files has the shown kinds' files, from inside subfolders too, and nothing else", () async {
       expect(await names(ExplorerPaths.socialPath('whatsapp')), [
         'IMG-1.jpg',
         'IMG-2.jpg',
         'IMG-old.jpg',
         'VID-1.mp4',
+        'biz.mp4',
+        'funny.mp4',
         'report.pdf',
-        'status.jpg',
       ]);
+    });
+
+    test('a hidden kind has no files even when asked for by name', () async {
+      expect(await names(ExplorerPaths.socialPath('whatsapp', 'Voice Notes')), isEmpty);
     });
 
     test('a tab has its own, from every place', () async {
