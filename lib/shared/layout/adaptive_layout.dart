@@ -1,6 +1,8 @@
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
+import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/app_theme.dart';
+import 'package:folders/shared/ui/app_glass.dart';
 import 'package:folders/shared/ui/app_tokens.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -225,6 +227,17 @@ class DockedSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    // iOS: a pane of Liquid glass floating over the wallpaper, as iPadOS's
+    // sidebars do.
+    if (context.look.style.glass) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 8, 2, 8),
+        child: GlassPane(
+          borderRadius: BorderRadius.circular(18),
+          child: SafeArea(right: false, child: child),
+        ),
+      );
+    }
     return CustomPaint(
       painter: _SidebarCorners(colors.background),
       foregroundPainter: _SidebarEdge(colors.border),

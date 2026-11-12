@@ -41,9 +41,17 @@ abstract final class AppTheme {
     if (style.darkOnly || brightness == Brightness.dark) {
       scheme = scheme.copyWith(border: Colors.white.withValues(alpha: 0.16));
     }
-    // A see-through window: the main background and the panes (sidebar,
-    // tab bar) let the backdrop show through, as much as set.
-    if (settings.windowEffect && WindowEffects.supported) {
+    // iOS: the page and the panes are glass over the Liquid wallpaper
+    // (main.dart paints it, LiquidWallpaper), whatever the window effect.
+    if (style.glass) {
+      final dark = brightness == Brightness.dark;
+      scheme = scheme.copyWith(
+        background: scheme.background.withValues(alpha: dark ? 0.62 : 0.58),
+        muted: scheme.muted.withValues(alpha: dark ? 0.34 : 0.42),
+      );
+    } else if (settings.windowEffect && WindowEffects.supported) {
+      // A see-through window: the main background and the panes (sidebar,
+      // tab bar) let the backdrop show through, as much as set.
       final alpha = 1 - settings.transparency;
       scheme = scheme.copyWith(
         background: scheme.background.withValues(alpha: scheme.background.a * alpha),

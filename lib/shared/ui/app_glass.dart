@@ -106,12 +106,8 @@ class LiquidGlass extends StatelessWidget {
         filter: _filter,
         child: DecoratedBox(
           decoration: BoxDecoration(color: color),
-          child: DecoratedBox(
-            position: DecorationPosition.foreground,
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              border: Border.all(color: Colors.white.withValues(alpha: dark ? 0.16 : 0.6)),
-            ),
+          child: CustomPaint(
+            foregroundPainter: GlassRimPainter(borderRadius: borderRadius, dark: dark, width: 1),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -129,6 +125,141 @@ class LiquidGlass extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A large pane of Liquid glass for the iOS style's sidebar: frosted over the
+/// wallpaper, lifted by a soft shadow, with a rim that catches the light at
+/// the top left and fades towards the bottom right.
+class GlassPane extends StatelessWidget {
+  const GlassPane({super.key, required this.child, this.borderRadius = const BorderRadius.all(Radius.circular(18))});
+
+  final Widget child;
+  final BorderRadius borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.35 : 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: BackdropFilter(
+          filter: LiquidGlass._filter,
+          child: CustomPaint(
+            foregroundPainter: GlassRimPainter(borderRadius: borderRadius, dark: dark),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: dark
+                      ? [Colors.white.withValues(alpha: 0.13), Colors.white.withValues(alpha: 0.05)]
+                      : [Colors.white.withValues(alpha: 0.72), Colors.white.withValues(alpha: 0.42)],
+                ),
+              ),
+              child: Material(type: MaterialType.transparency, child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Liquid glass's rim: bright where the light comes from (the top left),
+/// fading round to the bottom right, as on the edge of real glass.
+class GlassRimPainter extends CustomPainter {
+  const GlassRimPainter({required this.borderRadius, required this.dark, this.width = 1.2});
+
+  final BorderRadius borderRadius;
+  final bool dark;
+  final double width;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(width / 2);
+    final rrect = borderRadius.toRRect(rect);
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: dark
+              ? [Colors.white.withValues(alpha: 0.42), Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.2)]
+              : [Colors.white, Colors.white.withValues(alpha: 0.35), Colors.white.withValues(alpha: 0.8)],
+          stops: const [0, 0.55, 1],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(GlassRimPainter old) => old.dark != dark || old.borderRadius != borderRadius || old.width != width;
+}
+
+/// What Liquid glass floats over in the iOS style: soft colour, like iOS's
+/// own wallpapers, so the glass has something to bend and blur. Glass over a
+/// plain white page looks like a white page.
+class LiquidWallpaper extends StatelessWidget {
+  const LiquidWallpaper({super.key, this.child});
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return CustomPaint(painter: _WallpaperPainter(dark), child: child);
+  }
+}
+
+class _WallpaperPainter extends CustomPainter {
+  const _WallpaperPainter(this.dark);
+
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final whole = Offset.zero & size;
+    canvas.drawRect(whole, Paint()..color = dark ? const Color(0xFF05070E) : const Color(0xFFE9EEF8));
+    final longest = size.longestSide;
+    // (centre as a fraction of the size, radius as a fraction of the longest side, colour)
+    final blobs = dark
+        ? const [
+            (Offset(0.08, 0.05), 0.75, Color(0x8C1F5BFF)),
+            (Offset(0.95, 0.35), 0.65, Color(0x737A3CFF)),
+            (Offset(0.35, 1.0), 0.7, Color(0x4D00A6C8)),
+          ]
+        : const [
+            (Offset(0.05, 0.0), 0.8, Color(0xE07FB0FF)),
+            (Offset(1.0, 0.3), 0.7, Color(0xCCB49CFF)),
+            (Offset(0.3, 1.05), 0.75, Color(0xB3FFBE9C)),
+            (Offset(0.75, 0.95), 0.45, Color(0x8C8FE3D0)),
+          ];
+    for (final (centre, radius, color) in blobs) {
+      final c = Offset(centre.dx * size.width, centre.dy * size.height);
+      final r = radius * longest;
+      canvas.drawRect(
+        whole,
+        Paint()
+          ..shader = RadialGradient(colors: [color, color.withValues(alpha: 0)])
+              .createShader(Rect.fromCircle(center: c, radius: r)),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_WallpaperPainter old) => old.dark != dark;
 }
 
 /// The round button of a page: on Liquid glass, tinted glass with the content

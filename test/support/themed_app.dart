@@ -2,6 +2,7 @@ import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/app_theme.dart';
 import 'package:folders/core/theme/app_theme_settings.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
+import 'package:folders/shared/ui/app_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -33,7 +34,10 @@ Widget themedApp(
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
         ],
-        builder: (context, child) => ShadAppBuilder(child: child!),
+        // As main.dart: iOS's pages are glass over the Liquid wallpaper.
+        builder: (context, child) => style.glass
+            ? ShadAppBuilder(backgroundColor: Colors.transparent, child: LiquidWallpaper(child: child!))
+            : ShadAppBuilder(child: child!),
         home: home,
       ),
     ),

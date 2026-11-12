@@ -16,6 +16,7 @@ import 'package:folders/core/platform/old_app_data.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/platform/macos_open_files.dart';
 import 'package:folders/shared/widgets/tasks_view.dart';
+import 'package:folders/shared/ui/app_glass.dart';
 import 'package:folders/core/router/file_opener.dart';
 import 'package:folders/core/build_features.dart';
 import 'package:folders/core/services/app_shortcuts.dart';
@@ -202,8 +203,36 @@ class App extends StatelessWidget {
               builder: (context, child) => ShadAppBuilder(
                 // With a window effect each page paints the one see-through
                 // background; a second one under it would hide the effect.
-                backgroundColor: settings.windowEffect && WindowEffects.supported ? Colors.transparent : null,
-                child: ListenableBuilder(
+                // iOS: the pages are glass over the Liquid wallpaper below.
+                backgroundColor:
+                    settings.style.glass || (settings.windowEffect && WindowEffects.supported) ? Colors.transparent : null,
+                child: settings.style.glass
+                    ? LiquidWallpaper(child: _AppBody(child: child))
+                    : _AppBody(child: child),
+              ),
+              home: launchItem != null
+                  ? _screenFor(launchItem!, launchedForIt: true)
+                  : Desktop.isDesktop
+                      ? TabbedExplorer(startFolder: ExplorerPaths.initialPath)
+                      : const FileExplorerScreen(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The app's pages, and only the Tasks view while the app works in the
+/// background (it stays as it was behind it).
+class _AppBody extends StatelessWidget {
+  const _AppBody({required this.child});
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
                   listenable: BackgroundMode.instance,
                   // The app stays as it was behind the Tasks view.
                   builder: (context, _) {
@@ -226,18 +255,7 @@ class App extends StatelessWidget {
                       ],
                     );
                   },
-                ),
-              ),
-              home: launchItem != null
-                  ? _screenFor(launchItem!, launchedForIt: true)
-                  : Desktop.isDesktop
-                      ? TabbedExplorer(startFolder: ExplorerPaths.initialPath)
-                      : const FileExplorerScreen(),
-            ),
-          );
-        },
-      ),
-    );
+                );
   }
 }
 

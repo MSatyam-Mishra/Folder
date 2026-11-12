@@ -78,11 +78,16 @@ void main() {
   test('iOS\'s colours, separators, switches and round selection marks', () {
     final light = AppTheme.shad(AppThemeSettings.defaults().copyWith(style: AppStyle.ios), Brightness.light).colorScheme;
     expect(light.primary, const Color(0xFF007AFF));
-    expect(light.muted, const Color(0xFFF2F2F7));
+    // The page and the panes are glass over the Liquid wallpaper: iOS's
+    // colours, see-through.
+    expect(light.muted.withValues(alpha: 1), const Color(0xFFF2F2F7));
+    expect(light.muted.a, lessThan(1));
+    expect(light.background.a, lessThan(1));
     expect(light.card, const Color(0xFFFFFFFF));
     final dark = AppTheme.shad(AppThemeSettings.defaults().copyWith(style: AppStyle.ios), Brightness.dark).colorScheme;
     expect(dark.primary, const Color(0xFF0A84FF));
-    expect(dark.background, const Color(0xFF000000));
+    expect(dark.background.withValues(alpha: 1), const Color(0xFF000000));
+    expect(dark.background.a, lessThan(1));
     expect(dark.card, const Color(0xFF1C1C1E));
     final theme = materialFor(AppStyle.ios, Brightness.light);
     expect(theme.dividerTheme.thickness, 0.5);
