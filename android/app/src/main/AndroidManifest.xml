@@ -191,12 +191,14 @@
             <meta-data android:name="explorer.route" android:value="tool/ram_cleaner"/>
         </activity-alias>
 
+        <!-- The Junk cleaner keeps the name it had as the Memory cleaner, so
+             entries already in the app drawer stay. -->
         <activity-alias
             android:name=".tool_memory_cleaner"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_tool_memory_cleaner"
-            android:label="Memory cleaner"
+            android:label="Junk cleaner"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

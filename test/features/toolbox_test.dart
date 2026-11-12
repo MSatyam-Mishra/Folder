@@ -4,7 +4,7 @@ import 'package:folders/core/services/toolbox/duplicate_finder.dart';
 import 'package:folders/core/services/toolbox/junk_scanner.dart';
 import 'package:folders/core/services/toolbox/ram_cleaner.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
-import 'package:folders/features/toolbox/memory_cleaner_screen.dart';
+import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/toolbox_menu.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +62,7 @@ void main() {
     });
   });
 
-  group('memory cleaner', () {
+  group('junk cleaner', () {
     JunkGroup? group(List<JunkGroup> groups, JunkKind kind) => groups.where((g) => g.kind == kind).firstOrNull;
     Iterable<String> names(JunkGroup? g) => [for (final item in g?.items ?? const <JunkItem>[]) p.basename(item.path)];
 
@@ -111,9 +111,12 @@ void main() {
       await Directory(p.join(root.path, 'temp')).create();
       final groups = JunkScanner.scanComputer(
         p.join(root.path, 'temp'),
-        logs: [p.join(root.path, 'logs')],
-        caches: [p.join(root.path, 'caches')],
-        trash: [p.join(root.path, 'trash'), p.join(root.path, 'not there')],
+        folders: [
+          JunkFolder(JunkKind.logs, p.join(root.path, 'logs')),
+          JunkFolder(JunkKind.caches, p.join(root.path, 'caches')),
+          JunkFolder(JunkKind.trash, p.join(root.path, 'trash')),
+          JunkFolder(JunkKind.trash, p.join(root.path, 'not there')),
+        ],
       );
       expect(names(group(groups, JunkKind.logs)), ['crash.dmp']);
       expect(names(group(groups, JunkKind.caches)), ['app']);
@@ -201,9 +204,16 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(themedApp(Scaffold(body: ToolboxMenu(onOpen: (_) {}))));
       await settle(tester);
-      for (final tool in ['RAM cleaner', 'Memory cleaner', 'Duplicate finder', 'Video player', 'Music player']) {
-        expect(find.text(tool), findsOneWidget);
+      for (final tool in [
+        'RAM cleaner',
+        'Junk cleaner',
+        'Duplicate finder',
+        'Video player',
+        'Music player',
+      ]) {
+        expect(find.text(tool), findsOneWidget, reason: tool);
       }
+      expect(find.text('Memory cleaner'), findsNothing, reason: 'it is the Junk cleaner now');
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -226,7 +236,7 @@ void main() {
     testWidgets('the menu shows the tools in a grid, over the page, and a tap outside closes it', (tester) async {
       await openMenu(tester);
       final first = tester.getTopLeft(find.text('RAM cleaner'));
-      final second = tester.getTopLeft(find.text('Memory cleaner'));
+      final second = tester.getTopLeft(find.text('Junk cleaner'));
       final fourth = tester.getTopLeft(find.text('Video player'));
       expect(first.dy, second.dy, reason: 'side by side');
       expect(fourth.dy, greaterThan(first.dy), reason: 'then the next row');
@@ -242,10 +252,11 @@ void main() {
     testWidgets('a tool opens as its own screen, from where the menu was asked for', (tester) async {
       JunkScanner.scanOverride = () async => [];
       await openMenu(tester);
-      await tester.tap(find.text('Memory cleaner'));
+      await tester.tap(find.text('Junk cleaner'));
       await settle(tester);
       expect(find.byType(ToolboxMenu), findsNothing);
-      expect(find.byType(MemoryCleanerScreen), findsOneWidget);
+      expect(find.byType(JunkCleanerScreen), findsOneWidget);
+      expect(find.text('Junk cleaner'), findsOneWidget, reason: "the screen's title");
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -267,14 +278,14 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('memory cleaner: safe kinds ticked, asks, deletes those only', (tester) async {
+    testWidgets('junk cleaner: safe kinds ticked, asks, deletes those only', (tester) async {
       final temp = await tester.runAsync(() => save('Download/x.tmp', '12345'));
       final apk = await tester.runAsync(() => save('Download/x.apk', '1234567'));
       JunkScanner.scanOverride = () async => [
             JunkGroup(JunkKind.temporary, [JunkItem(temp!.path, 5)]),
             JunkGroup(JunkKind.installers, [JunkItem(apk!.path, 7)]),
           ];
-      await tester.pumpWidget(themedApp(const MemoryCleanerScreen()));
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
       await until(tester, find.text('Temporary files'));
       expect(find.textContaining('Clean 5'), findsOneWidget, reason: 'installers are not ticked');
 
@@ -290,6 +301,48 @@ void main() {
       expect(apk!.existsSync(), isTrue);
       await until(tester, find.text('All clean'));
       expect(find.textContaining('Freed'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('junk cleaner: files tick one by one, and big files wait unticked under Review', (tester) async {
+      final a = (await tester.runAsync(() => save('Download/a.tmp', '123')))!;
+      final b = (await tester.runAsync(() => save('Download/b.tmp', '12345')))!;
+      final big = (await tester.runAsync(() => save('Movies/big.mkv', '1234567')))!;
+      JunkScanner.scanOverride = () async => [
+            JunkGroup(JunkKind.temporary, [JunkItem(a.path, 3), JunkItem(b.path, 5)]),
+            JunkGroup(JunkKind.largeFiles, [JunkItem(big.path, 7)]),
+          ];
+      tester.view.physicalSize = const Size(900, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await until(tester, find.text('Temporary files'));
+      expect(find.text('Review'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Review')).dy,
+        greaterThan(tester.getTopLeft(find.text('Temporary files')).dy),
+        reason: 'below the junk',
+      );
+      expect(find.textContaining('Clean 8 B'), findsOneWidget, reason: 'large files are not ticked');
+
+      await tester.tap(find.byTooltip('Show files').first);
+      await settle(tester);
+      await tester.tap(find.textContaining('a.tmp'));
+      await settle(tester);
+      expect(find.textContaining('Clean 5 B'), findsOneWidget, reason: 'one file unticked');
+
+      await tester.tap(find.byTooltip('Show files'));
+      await settle(tester);
+      await tester.tap(find.textContaining('big.mkv'));
+      await settle(tester);
+      expect(find.textContaining('Clean 12 B'), findsOneWidget, reason: 'one big file ticked');
+
+      await tester.tap(find.text('Temporary files'));
+      await settle(tester);
+      expect(find.textContaining('Clean 15 B'), findsOneWidget, reason: 'a kind ticked in part ticks all of it');
+      await tester.tap(find.text('Large files'));
+      await settle(tester);
+      expect(find.textContaining('Clean 8 B'), findsOneWidget, reason: 'and a kind ticked whole unticks');
       await tester.pumpWidget(const SizedBox());
     });
 

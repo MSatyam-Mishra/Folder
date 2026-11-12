@@ -2,7 +2,7 @@ import 'package:folders/core/services/app_shortcuts.dart';
 import 'package:folders/core/theme/app_theme.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
-import 'package:folders/features/toolbox/memory_cleaner_screen.dart';
+import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/music_player_screen.dart';
 import 'package:folders/features/toolbox/ram_cleaner_screen.dart';
 import 'package:folders/features/video_player/video_library_screen.dart';
@@ -11,10 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
-/// What the Toolbox holds.
+/// What the Toolbox holds. An id names the tool's route (`tool/<id>`), its
+/// shortcuts and its entry in Android's manifest, so it never changes: the
+/// Junk cleaner keeps the id it had as the Memory cleaner.
 enum Tool {
   ramCleaner('ram_cleaner', LucideIcons.memoryStick, 'RAM cleaner', 'See memory in use, and free what the system allows'),
-  memoryCleaner('memory_cleaner', LucideIcons.eraser, 'Memory cleaner', 'Remove temporary files, caches and other junk'),
+  junkCleaner('memory_cleaner', LucideIcons.eraser, 'Junk cleaner', 'Remove temporary files, caches and other junk'),
   duplicateFinder('duplicate_finder', LucideIcons.copy, 'Duplicate finder', 'Find files with the same contents, and clean them up'),
   videoPlayer('video_player', LucideIcons.film, 'Video player', 'All the videos on this device'),
   musicPlayer('music_player', LucideIcons.music, 'Music player', 'All your music, one song after another');
@@ -46,7 +48,7 @@ enum Tool {
 
   Widget get screen => switch (this) {
         ramCleaner => const RamCleanerScreen(),
-        memoryCleaner => const MemoryCleanerScreen(),
+        junkCleaner => const JunkCleanerScreen(),
         duplicateFinder => const DuplicateFinderScreen(),
         videoPlayer => const VideoLibraryScreen(),
         musicPlayer => const MusicPlayerScreen(),
