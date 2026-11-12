@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:folders/core/files/file_types.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
@@ -110,13 +112,108 @@ class JunkGroup {
 
 /// What a clean-up freed.
 class JunkCleanResult {
-  const JunkCleanResult(this.freed, this.removed, this.failed);
+  const JunkCleanResult(this.freed, this.removed, this.notDeleted);
 
   final int freed;
   final int removed;
 
-  /// In use or not allowed.
-  final int failed;
+  /// What couldn't be deleted, as it's in use or not allowed; it stays where
+  /// it was.
+  final List<JunkItem> notDeleted;
+
+  int get failed => notDeleted.length;
+}
+
+/// How far a clean-up has come: [done] of [total] items gone through.
+class JunkCleanProgress {
+  const JunkCleanProgress(this.done, this.total, this.freed);
+
+  final int done;
+  final int total;
+  final int freed;
+}
+
+/// What a scan tells as it goes, a few times a second: where it's looking,
+/// and what it has found so far.
+class JunkScanProgress {
+  const JunkScanProgress({required this.place, this.kind, required this.items, required this.bytes});
+
+  /// The folder being looked through.
+  final String place;
+
+  /// The kind of junk that folder holds; null while looking through the
+  /// user's own files for what's junk by its name.
+  final JunkKind? kind;
+
+  /// Found so far. Something found twice is counted once at the end, so
+  /// what the scan finds can come to a little less.
+  final int items;
+  final int bytes;
+}
+
+typedef JunkReport = void Function(JunkScanProgress progress);
+
+/// A scan of the places [JunkScanner] knows, in the background: it tells how
+/// far it has come, and can be stopped.
+class JunkScan {
+  JunkScan({this.onProgress});
+
+  final JunkReport? onProgress;
+
+  Isolate? _isolate;
+  ReceivePort? _port;
+  bool _stopped = false;
+  final _done = Completer<List<JunkGroup>?>();
+
+  /// What the scan finds; null if it was stopped. Throws if it failed.
+  Future<List<JunkGroup>?> start() async {
+    final job = JunkScanner.scanOverride ?? await JunkScanner._systemJob();
+    if (_stopped) return null;
+    final port = _port = ReceivePort();
+    Object? failure;
+    port.listen((message) {
+      if (message is JunkScanProgress) {
+        if (!_stopped) onProgress?.call(message);
+      } else if (message is _ScanResult) {
+        if (!_done.isCompleted) _done.complete(message.groups);
+      } else if (message is List) {
+        // An error, and its stack trace, as text.
+        failure = message.firstOrNull;
+      } else if (message == null) {
+        // The scan's isolate has ended.
+        if (!_done.isCompleted) _done.completeError(StateError("The scan didn't finish: ${failure ?? 'it ended'}"));
+        port.close();
+      }
+    });
+    final send = port.sendPort;
+    try {
+      _isolate = await Isolate.spawn(_run, (send, job), onExit: send, onError: send);
+    } on Object catch (error) {
+      port.close();
+      if (!_done.isCompleted) _done.completeError(error);
+    }
+    if (_stopped) _isolate?.kill(priority: Isolate.immediate);
+    return _done.future;
+  }
+
+  static void _run((SendPort, List<JunkGroup> Function(JunkReport report)) job) {
+    final (send, scan) = job;
+    Isolate.exit(send, _ScanResult(scan(send.send)));
+  }
+
+  /// Stops the scan at once; [start] gives null.
+  void stop() {
+    _stopped = true;
+    _isolate?.kill(priority: Isolate.immediate);
+    _port?.close();
+    if (!_done.isCompleted) _done.complete(null);
+  }
+}
+
+class _ScanResult {
+  const _ScanResult(this.groups);
+
+  final List<JunkGroup> groups;
 }
 
 /// A folder whose contents are junk of one [kind]: each thing right in it is
@@ -137,7 +234,57 @@ class JunkFolder {
   final Duration? minAge;
 }
 
-typedef _Found = Map<JunkKind, List<JunkItem>>;
+/// What a scan has found, by kind, and where it's looking: it tells
+/// [JunkScanProgress] at most every [_every] milliseconds.
+class _Found {
+  _Found(this._report);
+
+  final JunkReport? _report;
+  final byKind = {for (final kind in JunkKind.values) kind: <JunkItem>[]};
+
+  String place = '';
+  JunkKind? kind;
+
+  var _items = 0;
+  var _bytes = 0;
+
+  /// Counted so far in a folder being measured, before it's an item.
+  var _measuring = 0;
+
+  static const _every = 100;
+  final _clock = Stopwatch()..start();
+  var _told = -_every;
+
+  void look(String place, JunkKind? kind) {
+    this.place = place;
+    this.kind = kind;
+    tell();
+  }
+
+  void add(JunkKind kind, JunkItem item) {
+    byKind[kind]!.add(item);
+    _items++;
+    _bytes += item.size;
+    _measuring = 0;
+    tell();
+  }
+
+  void measured(int bytes) {
+    _measuring += bytes;
+    tell();
+  }
+
+  /// Tells how far the scan has come, unless it did a moment ago; [last]
+  /// tells it all the same, as the scan is done.
+  void tell({bool last = false}) {
+    final report = _report;
+    if (report == null) return;
+    final now = _clock.elapsedMilliseconds;
+    if (now - _told < _every && !last) return;
+    _told = now;
+    report(JunkScanProgress(place: place, kind: kind, items: _items, bytes: _bytes + _measuring));
+  }
+}
 
 /// Finds junk where each system keeps it. On a phone it looks across the
 /// shared storage. On a computer it lists only folders meant for it (the
@@ -146,9 +293,16 @@ typedef _Found = Map<JunkKind, List<JunkItem>>;
 /// junk by its name, as elsewhere an odd .log or empty folder may matter.
 /// Links and junctions are never followed.
 abstract final class JunkScanner {
-  /// What [scan] does instead; tests set it.
+  /// What a [JunkScan] looks through instead of this system's places; tests
+  /// set it. It runs in the scan's isolate, so make it where it holds only
+  /// what an isolate can be sent: in a top-level function, from paths.
   @visibleForTesting
-  static Future<List<JunkGroup>> Function()? scanOverride;
+  static List<JunkGroup> Function(JunkReport report)? scanOverride;
+
+  /// What [clean] does instead; tests set it.
+  @visibleForTesting
+  static Future<JunkCleanResult> Function(List<JunkItem> items, void Function(JunkCleanProgress)? onProgress)?
+      cleanOverride;
 
   /// From this size a file is listed under [JunkKind.largeFiles].
   static const largeOnPhones = 100 * 1024 * 1024;
@@ -158,39 +312,60 @@ abstract final class JunkScanner {
   static const _day = Duration(days: 1);
   static const _oldDownload = Duration(days: 90);
 
-  static Future<List<JunkGroup>> scan() async {
-    final override = scanOverride;
-    if (override != null) return override();
+  /// The scan of this system's places, to run in a [JunkScan]'s isolate.
+  static Future<List<JunkGroup> Function(JunkReport report)> _systemJob() async {
     if (Platform.isAndroid) {
       final cache = (await getTemporaryDirectory()).path;
-      return Isolate.run(() => scanStorage(ExplorerPaths.androidInternalStorage, appCache: cache));
+      return _storageJob(ExplorerPaths.androidInternalStorage, cache);
     }
     final home = ExplorerPaths.userFolder;
-    final temp = Directory.systemTemp.path;
-    final local = Platform.environment['LOCALAPPDATA'];
     final cache = Platform.environment['XDG_CACHE_HOME'];
-    final downloads = (await DirectoryService.findDownloadsDirectory())?.path ?? p.join(home, 'Downloads');
-    return Isolate.run(() {
-      return scanComputer(
-        temp,
-        folders: computerFolders(
-          system: Platform.operatingSystem,
-          home: home,
-          local: local,
-          cache: cache != null && p.isAbsolute(cache) ? cache : null,
-          uid: Platform.isLinux ? _linuxUid() : null,
-        ),
-        userFolders: {downloads, p.join(home, 'Desktop'), p.join(home, 'Documents')}.toList(),
-        downloads: [downloads],
-      );
-    });
+    return _computerJob(
+      home: home,
+      temp: Directory.systemTemp.path,
+      local: Platform.environment['LOCALAPPDATA'],
+      cache: cache != null && p.isAbsolute(cache) ? cache : null,
+      downloads: (await DirectoryService.findDownloadsDirectory())?.path ?? p.join(home, 'Downloads'),
+    );
   }
 
+  // Made here, so the scans hold only these paths and can go to an isolate.
+  static List<JunkGroup> Function(JunkReport report) _storageJob(String root, String appCache) =>
+      (report) => scanStorage(root, appCache: appCache, onProgress: report);
+
+  static List<JunkGroup> Function(JunkReport report) _computerJob({
+    required String home,
+    required String temp,
+    required String? local,
+    required String? cache,
+    required String downloads,
+  }) =>
+      (report) => scanComputer(
+            temp,
+            folders: computerFolders(
+              system: Platform.operatingSystem,
+              home: home,
+              local: local,
+              cache: cache,
+              uid: Platform.isLinux ? _linuxUid() : null,
+            ),
+            userFolders: {downloads, p.join(home, 'Desktop'), p.join(home, 'Documents')}.toList(),
+            downloads: [downloads],
+            onProgress: report,
+          );
+
   /// A phone's shared storage, leaving out Android's app folders but for
-  /// WhatsApp's viewed statuses. Works in any isolate.
+  /// WhatsApp's viewed statuses. Works in any isolate; [onProgress] hears
+  /// how far it has come.
   @visibleForTesting
-  static List<JunkGroup> scanStorage(String root, {String? appCache, DateTime? now, int largeAt = largeOnPhones}) {
-    final found = _empty();
+  static List<JunkGroup> scanStorage(
+    String root, {
+    String? appCache,
+    DateTime? now,
+    int largeAt = largeOnPhones,
+    JunkReport? onProgress,
+  }) {
+    final found = _Found(onProgress);
     final at = now ?? DateTime.now();
     _Walk(
       found,
@@ -203,6 +378,7 @@ abstract final class JunkScanner {
       _addContents(folder, found, at);
     }
     if (appCache != null) _addContents(JunkFolder(JunkKind.appCache, appCache), found, at);
+    found.tell(last: true);
     return _groups(found);
   }
 
@@ -224,7 +400,8 @@ abstract final class JunkScanner {
   /// A computer: what's stayed in its [temp]orary folder over a day, the
   /// contents of each of [folders], and junk by name in [userFolders]. Files in
   /// [downloads] not changed in three months, and files from [largeAt] bytes
-  /// in [userFolders], are listed for review. Works in any isolate.
+  /// in [userFolders], are listed for review. Works in any isolate;
+  /// [onProgress] hears how far it has come.
   @visibleForTesting
   static List<JunkGroup> scanComputer(
     String temp, {
@@ -234,8 +411,9 @@ abstract final class JunkScanner {
     DateTime? now,
     int largeAt = largeOnComputers,
     bool? macOS,
+    JunkReport? onProgress,
   }) {
-    final found = _empty();
+    final found = _Found(onProgress);
     final at = now ?? DateTime.now();
     _addContents(JunkFolder(JunkKind.temporary, temp, minAge: _day), found, at);
     for (final folder in folders) {
@@ -252,6 +430,7 @@ abstract final class JunkScanner {
     for (final folder in userFolders) {
       walk.run(Directory(folder));
     }
+    found.tell(last: true);
     return _groups(found);
   }
 
@@ -451,27 +630,29 @@ abstract final class JunkScanner {
     return null;
   }
 
-  static _Found _empty() => {for (final kind in JunkKind.values) kind: <JunkItem>[]};
-
   /// The size of everything in [dir], however deep, without following links;
-  /// a folder that can't be read counts what could be.
-  static int _sizeOf(Directory dir) {
+  /// a folder that can't be read counts what could be. A scan's [found]
+  /// hears it as it's counted.
+  static int _sizeOf(Directory dir, [_Found? found]) {
     final List<FileSystemEntity> entries;
     try {
       entries = dir.listSync(followLinks: false);
     } on FileSystemException {
       return 0;
     }
+    found?.place = dir.path;
     var total = 0;
     for (final entry in entries) {
       if (entry is File) {
         try {
-          total += entry.lengthSync();
+          final size = entry.lengthSync();
+          total += size;
+          found?.measured(size);
         } on FileSystemException {
           // Gone, or not allowed.
         }
       } else if (entry is Directory) {
-        total += _sizeOf(entry);
+        total += _sizeOf(entry, found);
       }
     }
     return total;
@@ -479,6 +660,7 @@ abstract final class JunkScanner {
 
   static void _addContents(JunkFolder folder, _Found found, DateTime now) {
     if (FileSystemEntity.typeSync(folder.path) != FileSystemEntityType.directory) return;
+    found.look(folder.path, folder.kind);
     final minAge = folder.minAge;
     final before = minAge == null ? null : now.subtract(minAge);
     final List<FileSystemEntity> entries;
@@ -496,8 +678,11 @@ abstract final class JunkScanner {
       final stat = entry.statSync();
       if (stat.type == FileSystemEntityType.notFound) continue;
       if (before != null && stat.modified.isAfter(before)) continue;
-      found[folder.kind]!.add(
-        entry is Directory ? JunkItem(entry.path, _sizeOf(entry), isFolder: true) : JunkItem(entry.path, stat.size),
+      found.add(
+        folder.kind,
+        entry is Directory
+            ? JunkItem(entry.path, _sizeOf(entry, found), isFolder: true)
+            : JunkItem(entry.path, stat.size),
       );
     }
   }
@@ -515,7 +700,7 @@ abstract final class JunkScanner {
     final kept = {
       for (final kind in JunkKind.values)
         kind: [
-          for (final item in found[kind]!)
+          for (final item in found.byKind[kind]!)
             if (taken.add(key(item.path))) item,
         ],
     };
@@ -545,27 +730,55 @@ abstract final class JunkScanner {
     return groups;
   }
 
-  /// Deletes exactly [items], for good; what can't go stays and is counted.
-  static Future<JunkCleanResult> clean(List<JunkItem> items) => Isolate.run(() {
-        var freed = 0;
-        var removed = 0;
-        var failed = 0;
-        for (final item in items) {
-          try {
-            if (item.isFolder) {
-              // Links inside it are removed, never followed.
-              Directory(item.path).deleteSync(recursive: true);
-            } else {
-              File(item.path).deleteSync();
-            }
-            freed += item.size;
-            removed++;
-          } on FileSystemException {
-            failed++;
-          }
+  /// Deletes exactly [items], for good; what can't go stays and is listed.
+  /// [onProgress] hears how far it has come, a few times a second.
+  static Future<JunkCleanResult> clean(List<JunkItem> items, {void Function(JunkCleanProgress progress)? onProgress}) async {
+    final override = cleanOverride;
+    if (override != null) return override(items, onProgress);
+    if (onProgress == null) return _cleanIn(items, null);
+    final port = ReceivePort();
+    port.listen((message) {
+      if (message is JunkCleanProgress) onProgress(message);
+    });
+    try {
+      return await _cleanIn(items, port.sendPort);
+    } finally {
+      port.close();
+    }
+  }
+
+  // Apart from [clean], so the isolate is sent only these.
+  static Future<JunkCleanResult> _cleanIn(List<JunkItem> items, SendPort? progress) =>
+      Isolate.run(() => _delete(items, progress));
+
+  static JunkCleanResult _delete(List<JunkItem> items, SendPort? progress) {
+    var freed = 0;
+    var removed = 0;
+    final notDeleted = <JunkItem>[];
+    final clock = Stopwatch()..start();
+    var told = -100;
+    for (final (index, item) in items.indexed) {
+      try {
+        if (item.isFolder) {
+          // Links inside it are removed, never followed.
+          Directory(item.path).deleteSync(recursive: true);
+        } else {
+          File(item.path).deleteSync();
         }
-        return JunkCleanResult(freed, removed, failed);
-      });
+        freed += item.size;
+        removed++;
+      } on FileSystemException {
+        notDeleted.add(item);
+        // What did go of a folder is freed all the same.
+        if (item.isFolder && _isFolder(item.path)) freed += math.max(0, item.size - _sizeOf(Directory(item.path)));
+      }
+      if (progress != null && clock.elapsedMilliseconds - told >= 100) {
+        told = clock.elapsedMilliseconds;
+        progress.send(JunkCleanProgress(index + 1, items.length, freed));
+      }
+    }
+    return JunkCleanResult(freed, removed, notDeleted);
+  }
 }
 
 /// A walk through the user's own files for what's junk by its name. On a
@@ -608,10 +821,12 @@ class _Walk {
   static const _appleDouble = [0x00, 0x05, 0x16, 0x07];
 
   void run(Directory root) {
-    if (FileSystemEntity.typeSync(root.path) == FileSystemEntityType.directory) _visit(root, 0);
+    if (FileSystemEntity.typeSync(root.path) != FileSystemEntityType.directory) return;
+    found.look(root.path, null);
+    _visit(root, 0);
   }
 
-  void _add(JunkKind kind, JunkItem item) => found[kind]!.add(item);
+  void _add(JunkKind kind, JunkItem item) => found.add(kind, item);
 
   void _visit(Directory dir, int depth) {
     final List<FileSystemEntity> entries;
@@ -620,6 +835,9 @@ class _Walk {
     } on FileSystemException {
       return;
     }
+    found
+      ..place = dir.path
+      ..tell();
     if (entries.isEmpty) {
       // Folders right in the storage (Music, Movies) are the system's.
       if (phone && depth >= 2) _add(JunkKind.emptyFolders, JunkItem(dir.path, 0, isFolder: true));
@@ -640,7 +858,7 @@ class _Walk {
 
   void _folder(Directory dir, String name, int depth) {
     if (phone && name == '.thumbnails') {
-      _add(JunkKind.thumbnails, JunkItem(dir.path, JunkScanner._sizeOf(dir), isFolder: true));
+      _add(JunkKind.thumbnails, JunkItem(dir.path, JunkScanner._sizeOf(dir, found), isFolder: true));
       return;
     }
     if (name == '__MACOSX') {
@@ -652,7 +870,7 @@ class _Walk {
     if (name.toLowerCase().endsWith('.download') &&
         File(p.join(dir.path, 'Info.plist')).existsSync() &&
         _isOld(dir.statSync().modified)) {
-      _add(JunkKind.partialDownloads, JunkItem(dir.path, JunkScanner._sizeOf(dir), isFolder: true));
+      _add(JunkKind.partialDownloads, JunkItem(dir.path, JunkScanner._sizeOf(dir, found), isFolder: true));
       return;
     }
     if (name.startsWith('.') ||

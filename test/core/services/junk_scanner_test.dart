@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:folders/core/services/toolbox/junk_scanner.dart';
@@ -34,7 +35,10 @@ void main() {
       ];
 
   setUp(() => root = Directory.systemTemp.createTempSync('explorer_junk'));
-  tearDown(() => root.deleteSync(recursive: true));
+  tearDown(() {
+    JunkScanner.scanOverride = null;
+    root.deleteSync(recursive: true);
+  });
 
   group('what is ticked at first', () {
     test('only what is certainly safe', () {
@@ -357,4 +361,106 @@ void main() {
       expect(exists('outside/keep.txt'), isTrue, reason: 'deleting a folder never goes through a link in it');
     });
   });
+
+  group('how far it has come, and stopping', () {
+    void junk() {
+      save('temp/old.tmp', [1, 2, 3], 3);
+      save('temp/new.tmp', [1]);
+      save('cache/app/data', [1, 2, 3, 4, 5]);
+      save('home/Downloads/movie.part', [1, 2], 3);
+      save('home/Downloads/keep.txt', [1]);
+    }
+
+    List<JunkGroup> scan({JunkReport? onProgress}) => _scanOf(root.path, now)(onProgress ?? (_) {});
+
+    test('a scan tells where it is looking, and at the end all it found', () {
+      junk();
+      final told = <JunkScanProgress>[];
+      final groups = scan(onProgress: told.add);
+      expect(told, isNotEmpty);
+      expect(told.first.place, at('temp'));
+      expect(told.first.kind, JunkKind.temporary);
+      final items = groups.fold(0, (sum, group) => sum + group.items.length);
+      final bytes = groups.fold(0, (sum, group) => sum + group.size);
+      expect(items, 3, reason: 'the old temporary file, the cache and the unfinished download');
+      expect(told.last.items, items);
+      expect(told.last.bytes, bytes);
+      expect(everything(groups), everything(scan()), reason: 'telling changes nothing it finds');
+    });
+
+    test('in the background it finds the same, telling as it goes', () async {
+      junk();
+      JunkScanner.scanOverride = _scanOf(root.path, now);
+      final told = <JunkScanProgress>[];
+      final groups = await JunkScan(onProgress: told.add).start();
+      expect(everything(groups!), everything(scan()));
+      expect(told, isNotEmpty);
+    });
+
+    test('Stop stops it at once, and it gives nothing', () async {
+      JunkScanner.scanOverride = _slowScan(at('somewhere'));
+      final told = Completer<JunkScanProgress>();
+      final scan = JunkScan(onProgress: (progress) {
+        if (!told.isCompleted) told.complete(progress);
+      });
+      final result = scan.start();
+      expect((await told.future.timeout(const Duration(seconds: 20))).kind, JunkKind.browserCaches);
+      final clock = Stopwatch()..start();
+      scan.stop();
+      expect(await result, isNull);
+      expect(clock.elapsed, lessThan(const Duration(seconds: 2)));
+    });
+
+    test('a scan that fails says so', () async {
+      JunkScanner.scanOverride = _failingScan();
+      await expectLater(JunkScan().start(), throwsStateError);
+    });
+
+    test('cleaning tells how far it has come, and lists what it could not delete', () async {
+      save('a.tmp', [1, 2, 3]);
+      save('folder/b.tmp', [1, 2, 3, 4]);
+      final told = <JunkCleanProgress>[];
+      final result = await JunkScanner.clean(
+        [
+          JunkItem(at('a.tmp'), 3),
+          JunkItem(at('gone.tmp'), 9),
+          JunkItem(at('folder'), 4, isFolder: true),
+        ],
+        onProgress: told.add,
+      );
+      expect(result.freed, 7);
+      expect(result.removed, 2);
+      expect(result.failed, 1);
+      expect([for (final item in result.notDeleted) p.basename(item.path)], ['gone.tmp']);
+      expect(told, isNotEmpty);
+      expect(told.first.total, 3);
+      expect(exists('a.tmp'), isFalse);
+      expect(exists('folder'), isFalse);
+    });
+  });
 }
+
+// Scans in an isolate of their own: made here, they hold only what they're given.
+
+/// A temporary folder, a cache and Downloads in [root].
+List<JunkGroup> Function(JunkReport report) _scanOf(String root, DateTime now) => (report) {
+      final downloads = p.join(root, 'home', 'Downloads');
+      return JunkScanner.scanComputer(
+        p.join(root, 'temp'),
+        folders: [JunkFolder(JunkKind.caches, p.join(root, 'cache'))],
+        userFolders: [downloads],
+        downloads: [downloads],
+        now: now,
+        onProgress: report,
+      );
+    };
+
+List<JunkGroup> Function(JunkReport report) _slowScan(String place) => (report) {
+      report(JunkScanProgress(place: place, kind: JunkKind.browserCaches, items: 1, bytes: 1));
+      for (var i = 0; i < 400; i++) {
+        sleep(const Duration(milliseconds: 50));
+      }
+      return const [];
+    };
+
+List<JunkGroup> Function(JunkReport report) _failingScan() => (_) => throw const FileSystemException('No');

@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:folders/core/services/toolbox/junk_scanner.dart';
 import 'package:folders/features/category_view/bloc/bloc/screens/category_viewer_screen.dart';
+import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/tools/screens/app_manager_screen.dart';
 import 'package:folders/features/tools/screens/usb_boot_screen.dart';
 import 'package:folders/features/vault/screens/vault_screen.dart';
@@ -86,8 +88,9 @@ void main() {
         Widget screen,
         String name, {
         int frames = 8,
+        Map<String, Object> prefs = const {},
       }) async {
-        SharedPreferences.setMockInitialValues({});
+        SharedPreferences.setMockInitialValues(prefs);
         setScreenSize(tester, size);
         // Pushed like in the app, so the header shows a back button.
         await tester.pumpWidget(
@@ -121,6 +124,41 @@ void main() {
           'category_files',
           frames: 24,
         );
+      }, skip: !screenshotsEnabled);
+
+      testWidgets('junk cleaner $tag', (tester) async {
+        addTearDown(() {
+          JunkScanner.scanOverride = null;
+          JunkScanner.cleanOverride = null;
+        });
+        JunkScanner.cleanOverride = (items, _) async => JunkCleanResult(
+              items.skip(2).fold(0, (sum, item) => sum + item.size),
+              items.length - 2,
+              items.take(2).toList(),
+            );
+        await shoot(tester, const JunkCleanerScreen(), 'junk_start', prefs: {
+          'junk_cleaner_last_at': DateTime.now().subtract(const Duration(days: 3, hours: 2)).millisecondsSinceEpoch,
+          'junk_cleaner_last_freed': 1288490189,
+          'junk_cleaner_last_items': 412,
+        });
+
+        JunkScanner.scanOverride = _slowJunkScan(sample.path);
+        await tester.tap(find.text('Scan'));
+        await settle(tester);
+        await saveScreenshot(tester, 'junk_scanning_$tag');
+        await tester.tap(find.text('Stop'));
+        await settle(tester, frames: 3);
+
+        JunkScanner.scanOverride = _sampleJunk(sample.path);
+        await tester.tap(find.text('Scan'));
+        await settle(tester, frames: 12);
+        await saveScreenshot(tester, 'junk_results_$tag');
+
+        await tester.tap(find.textContaining('Clean '));
+        await settle(tester, frames: 4);
+        await tester.tap(find.text('Delete'));
+        await settle(tester, frames: 12);
+        await saveScreenshot(tester, 'junk_done_$tag');
       }, skip: !screenshotsEnabled);
 
       testWidgets('category error $tag', (tester) async {
@@ -174,3 +212,42 @@ class _PusherState extends State<_Pusher> {
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
+
+// The junk cleaner's scans run in an isolate of their own: made here, they
+// hold only the paths they're given. What they find is made up and never
+// deleted (the shots set JunkScanner.cleanOverride).
+
+/// Junk of many kinds, as a computer might have, under [root].
+List<JunkGroup> Function(JunkReport report) _sampleJunk(String root) => (_) {
+      const mb = 1024 * 1024;
+      JunkGroup group(JunkKind kind, int count, int size) => JunkGroup(kind, [
+            for (var i = 0; i < count; i++)
+              JunkItem(p.join(root, 'not here', kind.name, 'item $i'), size ~/ count, isFolder: i.isEven),
+          ]);
+      return [
+        group(JunkKind.temporary, 38, 412 * mb),
+        group(JunkKind.thumbnails, 6, 96 * mb),
+        group(JunkKind.shaderCaches, 4, 310 * mb),
+        group(JunkKind.systemLeftovers, 12, mb + mb ~/ 2),
+        group(JunkKind.partialDownloads, 1, 700 * mb),
+        group(JunkKind.crashDumps, 3, 58 * mb),
+        group(JunkKind.browserCaches, 5, 1130 * mb),
+        group(JunkKind.trash, 21, 245 * mb),
+        group(JunkKind.oldDownloads, 17, 2300 * mb),
+        group(JunkKind.largeFiles, 2, 4100 * mb),
+      ];
+    };
+
+/// A scan looking through a browser's cache, a while.
+List<JunkGroup> Function(JunkReport report) _slowJunkScan(String root) => (report) {
+      report(JunkScanProgress(
+        place: p.join(root, 'not here', 'Google', 'Chrome', 'User Data', 'Default', 'Cache', 'Cache_Data'),
+        kind: JunkKind.browserCaches,
+        items: 1284,
+        bytes: 1874 * 1024 * 1024,
+      ));
+      for (var i = 0; i < 200; i++) {
+        sleep(const Duration(milliseconds: 50));
+      }
+      return const [];
+    };

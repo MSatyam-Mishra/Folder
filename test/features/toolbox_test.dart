@@ -289,13 +289,13 @@ void main() {
     });
 
     testWidgets('a tool opens as its own screen, from where the menu was asked for', (tester) async {
-      JunkScanner.scanOverride = () async => [];
       await openMenu(tester);
       await tester.tap(find.text('Junk cleaner'));
       await settle(tester);
       expect(find.byType(ToolboxMenu), findsNothing);
       expect(find.byType(JunkCleanerScreen), findsOneWidget);
       expect(find.text('Junk cleaner'), findsOneWidget, reason: "the screen's title");
+      expect(find.text('Scan'), findsOneWidget, reason: 'it waits to be asked');
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -354,11 +354,13 @@ void main() {
     testWidgets('junk cleaner: safe kinds ticked, asks, deletes those only', (tester) async {
       final temp = await tester.runAsync(() => save('Download/x.tmp', '12345'));
       final apk = await tester.runAsync(() => save('Download/x.apk', '1234567'));
-      JunkScanner.scanOverride = () async => [
-            JunkGroup(JunkKind.temporary, [JunkItem(temp!.path, 5)]),
-            JunkGroup(JunkKind.installers, [JunkItem(apk!.path, 7)]),
-          ];
+      JunkScanner.scanOverride = _finds([
+        JunkGroup(JunkKind.temporary, [JunkItem(temp!.path, 5)]),
+        JunkGroup(JunkKind.installers, [JunkItem(apk!.path, 7)]),
+      ]);
       await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      await tester.tap(find.text('Scan'));
       await until(tester, find.text('Temporary files'));
       expect(find.textContaining('Clean 5'), findsOneWidget, reason: 'installers are not ticked');
 
@@ -366,14 +368,13 @@ void main() {
       await settle(tester);
       expect(find.text('Delete 1 item?'), findsOneWidget);
       await tester.tap(find.text('Delete'));
-      JunkScanner.scanOverride = () async => [];
-      for (var i = 0; i < 40 && temp!.existsSync(); i++) {
+      for (var i = 0; i < 40 && temp.existsSync(); i++) {
         await settle(tester);
       }
-      expect(temp!.existsSync(), isFalse);
-      expect(apk!.existsSync(), isTrue);
-      await until(tester, find.text('All clean'));
-      expect(find.textContaining('Freed'), findsOneWidget);
+      expect(temp.existsSync(), isFalse);
+      expect(apk.existsSync(), isTrue);
+      await until(tester, find.text('5 B freed'));
+      expect(find.text('1 item deleted'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -381,14 +382,16 @@ void main() {
       final a = (await tester.runAsync(() => save('Download/a.tmp', '123')))!;
       final b = (await tester.runAsync(() => save('Download/b.tmp', '12345')))!;
       final big = (await tester.runAsync(() => save('Movies/big.mkv', '1234567')))!;
-      JunkScanner.scanOverride = () async => [
-            JunkGroup(JunkKind.temporary, [JunkItem(a.path, 3), JunkItem(b.path, 5)]),
-            JunkGroup(JunkKind.largeFiles, [JunkItem(big.path, 7)]),
-          ];
+      JunkScanner.scanOverride = _finds([
+        JunkGroup(JunkKind.temporary, [JunkItem(a.path, 3), JunkItem(b.path, 5)]),
+        JunkGroup(JunkKind.largeFiles, [JunkItem(big.path, 7)]),
+      ]);
       tester.view.physicalSize = const Size(900, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      await tester.tap(find.text('Scan'));
       await until(tester, find.text('Temporary files'));
       expect(find.text('Review'), findsOneWidget);
       expect(
@@ -397,6 +400,8 @@ void main() {
         reason: 'below the junk',
       );
       expect(find.textContaining('Clean 8 B'), findsOneWidget, reason: 'large files are not ticked');
+      expect(find.text('8 B'), findsWidgets, reason: 'what can be freed, at the top');
+      expect(find.text('15 B found in 3 items'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Show files').first);
       await settle(tester);
@@ -416,6 +421,118 @@ void main() {
       await tester.tap(find.text('Large files'));
       await settle(tester);
       expect(find.textContaining('Clean 8 B'), findsOneWidget, reason: 'and a kind ticked whole unticks');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('junk cleaner: waits for Scan, then scans, cleans and says what it freed', (tester) async {
+      final old = DateTime.now().subtract(const Duration(days: 3));
+      final temp = p.join(root.path, 'temp');
+      final leftover = (await tester.runAsync(() async {
+        final file = await save('temp/old.dat', 'old');
+        await file.setLastModified(old);
+        await (await save('home/Downloads/movie.mkv.part', 'part')).setLastModified(old);
+        await save('home/Documents/notes.txt.bak', 'backup');
+        return file;
+      }))!;
+      final userFolders = [p.join(root.path, 'home', 'Downloads'), p.join(root.path, 'home', 'Documents')];
+      JunkScanner.scanOverride = _scanOf(temp, userFolders);
+      tester.view.physicalSize = const Size(420, 860);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      expect(find.text('Scan'), findsOneWidget);
+      expect(find.textContaining('Last cleaned'), findsNothing, reason: 'it never cleaned');
+      expect(find.text('Temporary files'), findsNothing, reason: "it doesn't scan by itself");
+
+      await tester.tap(find.text('Scan'));
+      await until(tester, find.text('Temporary files'));
+      expect(find.text('Unfinished downloads'), findsOneWidget);
+      expect(find.text('Backup copies'), findsOneWidget);
+      expect(find.textContaining('Clean 3 B'), findsOneWidget, reason: 'only the temporary file is ticked');
+
+      await tester.tap(find.textContaining('Clean 3 B'));
+      await settle(tester);
+      await tester.tap(find.text('Delete'));
+      await until(tester, find.text('3 B freed'));
+      expect(find.text('1 item deleted'), findsOneWidget);
+      expect(find.textContaining("couldn't be deleted"), findsNothing);
+      expect(leftover.existsSync(), isFalse);
+      expect(exists('home/Downloads/movie.mkv.part'), isTrue);
+      expect(exists('home/Documents/notes.txt.bak'), isTrue);
+      final prefs = (await tester.runAsync(SharedPreferences.getInstance))!;
+      expect(prefs.getInt('junk_cleaner_last_freed'), 3);
+
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      expect(find.text('Scan'), findsOneWidget, reason: 'with nowhere to go back to, it starts again');
+      expect(find.text('Last cleaned just now: 3 B freed'), findsOneWidget);
+
+      await tester.tap(find.text('Scan'));
+      await until(tester, find.text('Backup copies'));
+      expect(find.text('Temporary files'), findsNothing, reason: 'it was cleaned');
+      expect(find.textContaining('Clean 0 B'), findsOneWidget, reason: 'nothing safe is left to tick');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('junk cleaner: shows the scan going on, and Stop stops it', (tester) async {
+      JunkScanner.scanOverride = _slowScan(p.join(root.path, 'Chrome', 'User Data', 'Default', 'Cache'));
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      await tester.tap(find.text('Scan'));
+      await until(tester, find.text('Browser caches'));
+      expect(find.text('12 items found'), findsOneWidget);
+      expect(find.text('3 MB'), findsOneWidget, reason: 'the size found so far');
+      expect(find.textContaining('Default${p.separator}Cache'), findsOneWidget, reason: 'where it is looking');
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.tap(find.text('Stop'));
+      await settle(tester);
+      expect(find.text('Scan'), findsOneWidget);
+      expect(find.text('Stop'), findsNothing);
+      for (var i = 0; i < 4; i++) {
+        await settle(tester);
+      }
+      expect(find.text('Temporary files'), findsNothing, reason: 'what it would have found never shows');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets("junk cleaner: says what couldn't be deleted, and shows which", (tester) async {
+      final gone = p.join(root.path, 'gone', 'locked.tmp');
+      final real = (await tester.runAsync(() => save('Download/x.tmp', '12345')))!;
+      JunkScanner.scanOverride = _finds([
+        JunkGroup(JunkKind.temporary, [JunkItem(real.path, 5), JunkItem(gone, 9)]),
+      ]);
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      await tester.tap(find.text('Scan'));
+      await until(tester, find.textContaining('Clean 14 B'));
+      await tester.tap(find.textContaining('Clean 14 B'));
+      await settle(tester);
+      await tester.tap(find.text('Delete'));
+      await until(tester, find.text('5 B freed'));
+      expect(find.text("1 item couldn't be deleted, as they're in use or protected."), findsOneWidget);
+
+      await tester.tap(find.text('See which'));
+      await settle(tester);
+      expect(find.text('Not deleted'), findsOneWidget);
+      expect(find.text('locked.tmp'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('junk cleaner: the start screen tells when it last cleaned', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'junk_cleaner_last_at': DateTime.now().subtract(const Duration(days: 3, hours: 1)).millisecondsSinceEpoch,
+        'junk_cleaner_last_freed': 1288490189,
+        'junk_cleaner_last_items': 412,
+      });
+      await tester.pumpWidget(themedApp(const JunkCleanerScreen()));
+      await settle(tester);
+      expect(find.text('Last cleaned 3 days ago: 1.2 GB freed'), findsOneWidget);
+      expect(find.text('Scan'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -447,3 +564,22 @@ void main() {
     });
   });
 }
+
+// Scans for the junk cleaner's screen. A scan runs in an isolate of its own,
+// so each is made here, where it holds only what it's given.
+
+/// A scan that finds [groups].
+List<JunkGroup> Function(JunkReport report) _finds(List<JunkGroup> groups) => (_) => groups;
+
+/// A real scan of [temp] and [userFolders].
+List<JunkGroup> Function(JunkReport report) _scanOf(String temp, List<String> userFolders) =>
+    (report) => JunkScanner.scanComputer(temp, userFolders: userFolders, onProgress: report);
+
+/// A scan that says where it's looking, then takes its time (ten seconds).
+List<JunkGroup> Function(JunkReport report) _slowScan(String place) => (report) {
+      report(JunkScanProgress(place: place, kind: JunkKind.browserCaches, items: 12, bytes: 3 * 1024 * 1024));
+      for (var i = 0; i < 200; i++) {
+        sleep(const Duration(milliseconds: 50));
+      }
+      return [JunkGroup(JunkKind.temporary, [JunkItem(place, 1)])];
+    };
