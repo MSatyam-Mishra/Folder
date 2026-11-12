@@ -56,7 +56,7 @@ void main(List<String> args) async {
   TaskNotifications.instance.init();
   // The translucent window (Acrylic, vibrancy), as last chosen.
   await WindowEffects.init();
-  await IconStrokes.useLight();
+  await IconStrokes.useSaved();
   await ExplorerZoom.instance.load();
   await SidebarWidth.instance.load();
   // Windows: the tabs take the title bar's place.

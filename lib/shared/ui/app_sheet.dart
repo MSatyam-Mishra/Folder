@@ -73,6 +73,8 @@ class AppSheet extends StatelessWidget {
         final colors = Theme.of(sheet).colorScheme;
         return LiquidGlass(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          // The sheet's own colour (iOS: its grouped grey).
+          tint: Theme.of(sheet).bottomSheetTheme.backgroundColor,
           opacity: 0.72,
           child: Column(
             mainAxisSize: MainAxisSize.min,

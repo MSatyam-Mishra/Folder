@@ -1,7 +1,9 @@
 import 'dart:ui' as ui;
 
+import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/icon_strokes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
@@ -13,14 +15,14 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   /// How much ink [icon] takes, drawn 200 px tall from [family].
-  Future<int> ink(IconData icon, {String? family}) async {
+  Future<int> ink(IconData icon, {String? family, bool inPackage = true}) async {
     final recorder = ui.PictureRecorder();
     TextPainter(
       text: TextSpan(
         text: String.fromCharCode(icon.codePoint),
         style: TextStyle(
           fontFamily: family ?? icon.fontFamily,
-          package: icon.fontPackage,
+          package: inPackage ? icon.fontPackage : null,
           fontSize: 200,
           color: Colors.black,
         ),
@@ -54,6 +56,32 @@ void main() {
     for (final (i, icon) in icons.indexed) {
       expect(light[i], lessThan(regular[i] * 0.9), reason: 'the light weight has thinner lines');
       expect(await ink(icon), closeTo(light[i], light[i] * 0.02), reason: '${icon.codePoint}: the light weight is used');
+    }
+  });
+
+  testWidgets('the fonts of the Android and iOS styles load, with their own glyphs where mapped', (tester) async {
+    // Under names of their own: Lucide's is taken by the set loaded above,
+    // and a family can't be swapped (IconStrokes).
+    for (final set in [IconSet.material, IconSet.cupertino]) {
+      final loader = FontLoader('Style${set.name}')..addFont(rootBundle.load(set.asset));
+      await loader.load();
+    }
+    const mapped = [
+      LucideIcons.folder, LucideIcons.search, LucideIcons.settings, LucideIcons.trash2,
+      LucideIcons.share2, LucideIcons.copy, LucideIcons.x, LucideIcons.house,
+    ];
+    for (final icon in mapped) {
+      final lucide = await ink(icon, family: 'Lucide300');
+      for (final set in [IconSet.material, IconSet.cupertino]) {
+        final drawn = await ink(icon, family: 'Style${set.name}', inPackage: false);
+        expect(drawn, greaterThan(0), reason: '${set.name} ${icon.codePoint}: a blank glyph');
+        expect((drawn - lucide).abs(), greaterThan(lucide * 0.02), reason: '${set.name} ${icon.codePoint}: still Lucide');
+      }
+    }
+    // Nothing close in either set: Lucide's light glyph.
+    final fallback = await ink(LucideIcons.betweenHorizontalEnd, family: 'Lucide300');
+    for (final set in [IconSet.material, IconSet.cupertino]) {
+      expect(await ink(LucideIcons.betweenHorizontalEnd, family: 'Style${set.name}', inPackage: false), closeTo(fallback, fallback * 0.02));
     }
   });
 }

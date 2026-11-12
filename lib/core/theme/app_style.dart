@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:folders/core/services/thumbnails/system_icons.dart';
+import 'package:folders/core/theme/app_color_theme.dart';
+import 'package:folders/core/theme/ios_style.dart';
+import 'package:folders/core/theme/material_style.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -16,6 +19,14 @@ enum AppStyle {
   /// File Explorer on Windows 11.
   windows,
 
+  /// Android: Material 3 Expressive, with Material's icons; its tonal colours
+  /// grow from the Color picked.
+  android,
+
+  /// iOS: Liquid glass bars, menus and sheets on every system, iOS's
+  /// colours and icons like its own.
+  ios,
+
   /// The Sweet theme (EliverLara): dark, with magenta and colourful icons.
   sweet,
 
@@ -26,6 +37,8 @@ enum AppStyle {
         AppStyle.standard => 'Folders',
         AppStyle.macos => 'macOS',
         AppStyle.windows => 'Windows',
+        AppStyle.android => 'Android',
+        AppStyle.ios => 'iOS',
         AppStyle.sweet => 'Sweet',
         AppStyle.dracula => 'Dracula',
       };
@@ -33,15 +46,36 @@ enum AppStyle {
   /// Sweet and Dracula only come dark.
   bool get darkOnly => this == AppStyle.sweet || this == AppStyle.dracula;
 
+  /// The styles the Color picked applies to: the app's own, and Android's
+  /// tonal colours, which grow from it.
+  bool get takesColor => this == AppStyle.standard || this == AppStyle.android;
+
+  /// The icons drawn for every `LucideIcons.x` (IconStrokes): Android's and
+  /// iOS's have their own.
+  IconSet get iconSet => switch (this) {
+        AppStyle.android => IconSet.material,
+        AppStyle.ios => IconSet.cupertino,
+        _ => IconSet.lucide,
+      };
+
+  /// Bars, menus and sheets of see-through glass on every system, not
+  /// only on phones with Liquid glass on.
+  bool get glass => this == AppStyle.ios;
+
   static AppStyle parse(String? name) =>
       AppStyle.values.firstWhere((s) => s.name == name, orElse: () => AppStyle.standard);
 
   /// The style's colours, or null for [standard] (its colour scheme is
-  /// the one picked under Color).
-  ShadColorScheme? schemeFor(Brightness brightness) {
+  /// the one picked under Color). Android's grow from [color], the one
+  /// picked, as Android's own grow from the wallpaper.
+  ShadColorScheme? schemeFor(Brightness brightness, {AppColorThemeSpec? color}) {
     final dark = brightness == Brightness.dark || darkOnly;
     return switch (this) {
       AppStyle.standard => null,
+      AppStyle.android => MaterialStyle.shadScheme(
+          MaterialStyle.scheme(color ?? AppColorThemes.byId(AppColorThemes.defaultId), brightness),
+        ),
+      AppStyle.ios => dark ? IosStyle.dark : IosStyle.light,
       AppStyle.macos => dark ? _macDark : _macLight,
       AppStyle.windows => dark ? _windowsDark : _windowsLight,
       AppStyle.sweet => _sweet,
@@ -50,11 +84,14 @@ enum AppStyle {
   }
 
   /// The style's typeface: the system's own on its system (San Francisco
-  /// on a Mac, Segoe UI Variable on Windows); null keeps the app's
-  /// (Geist), which is closer to either than another system's default.
+  /// on a Mac or an iPhone, Segoe UI Variable on Windows, Roboto on
+  /// Android); null keeps the app's (Geist), which is closer to any of them
+  /// than another system's default. San Francisco is never bundled.
   String? get fontFamily => switch (this) {
-        AppStyle.macos when Platform.isMacOS && _systemFonts => 'CupertinoSystemText',
+        AppStyle.macos || AppStyle.ios when (Platform.isMacOS || Platform.isIOS) && _systemFonts =>
+          'CupertinoSystemText',
         AppStyle.windows when Platform.isWindows && _systemFonts => 'Segoe UI Variable Text',
+        AppStyle.android when Platform.isAndroid && _systemFonts => 'Roboto',
         _ => null,
       };
 
@@ -62,17 +99,43 @@ enum AppStyle {
   static final bool _systemFonts = !Platform.environment.containsKey('FLUTTER_TEST');
 
   /// Corner radius of controls: Finder's are a little rounder than
-  /// Windows 11's.
+  /// Windows 11's; Android's and iOS's rounder still (their buttons are
+  /// pills, drawn by the Material theme).
   double get controlRadius => switch (this) {
         AppStyle.macos => 6,
         AppStyle.windows => 4,
+        AppStyle.android => 12,
+        AppStyle.ios => 10,
         _ => 8,
       };
 
-  AppLook look(Brightness brightness) {
+  /// Corner radius of cards, dialogs and sheets.
+  double get surfaceRadius => switch (this) {
+        AppStyle.android => 28,
+        AppStyle.ios => 22,
+        _ => 12,
+      };
+
+  /// [colors]: the Material colours of Android's style, whose folders are
+  /// drawn in its tones.
+  AppLook look(Brightness brightness, {ColorScheme? colors}) {
     final dark = brightness == Brightness.dark || darkOnly;
     return switch (this) {
       AppStyle.standard => const AppLook(style: AppStyle.standard),
+      // Material: tonal folders, pill-shaped selections.
+      AppStyle.android => MaterialStyle.look(
+          colors ?? MaterialStyle.scheme(AppColorThemes.byId(AppColorThemes.defaultId), brightness),
+        ),
+      // The Files app: light blue folders; the sidebar's symbols blue.
+      AppStyle.ios => AppLook(
+          style: this,
+          folder: dark ? const (Color(0xFF5FB8F3), Color(0xFF3F9BDC)) : const (Color(0xFF7CC8F8), Color(0xFF55AEEC)),
+          folderArt: FolderArt.files,
+          fileArt: FileArt.files,
+          sidebarIcons: dark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
+          itemRadius: 10,
+          groupedLists: true,
+        ),
       // Finder: blue folders; sidebar icons in the accent colour.
       AppStyle.macos => AppLook(
           style: this,
@@ -124,16 +187,27 @@ class AppLook extends ThemeExtension<AppLook> {
   const AppLook({
     required this.style,
     this.folder,
+    this.folderArt = FolderArt.flat,
+    this.fileArt,
     this.iconPalette,
     this.sidebarIcons,
     this.iconPack,
     this.systemIcons = false,
+    this.itemRadius = 8,
+    this.groupedLists = false,
   });
 
   final AppStyle style;
 
   /// Folder art colours (front, back); null for the app's glass folder.
   final (Color, Color)? folder;
+
+  /// How [folder] is drawn.
+  final FolderArt folderArt;
+
+  /// Files without a logo of their own drawn as the style draws them,
+  /// rather than from the set picked under File icons; null for the set.
+  final FileArt? fileArt;
 
   /// Icons take these colours (Sweet, Dracula); null leaves them plain.
   final List<Color>? iconPalette;
@@ -148,6 +222,14 @@ class AppLook extends ThemeExtension<AppLook> {
   /// Folders show the system's own icons: the Windows style on Windows, the
   /// macOS style on a Mac. Elsewhere [folder] draws them.
   final bool systemIcons;
+
+  /// Corner radius of a selected row in a list or the sidebar: Android's
+  /// are pills (half their height or more).
+  final double itemRadius;
+
+  /// Lists of settings as iOS's: rows on rounded cards, set in from the
+  /// sides, with thin lines between them (Options).
+  final bool groupedLists;
 
   /// The colour for [icon] in a colourful style: the same icon always gets
   /// the same colour, and kinds of action get fitting ones (delete red,
@@ -213,10 +295,14 @@ class AppLook extends ThemeExtension<AppLook> {
   AppLook copyWith({AppStyle? style}) => AppLook(
         style: style ?? this.style,
         folder: folder,
+        folderArt: folderArt,
+        fileArt: fileArt,
         iconPalette: iconPalette,
         sidebarIcons: sidebarIcons,
         iconPack: iconPack,
         systemIcons: systemIcons,
+        itemRadius: itemRadius,
+        groupedLists: groupedLists,
       );
 
   @override
@@ -224,6 +310,31 @@ class AppLook extends ThemeExtension<AppLook> {
 }
 
 enum _Role { danger, create, media, files, link, warm, store }
+
+/// How a style draws its folders: flat (Finder, File Explorer), Material's
+/// with their rounded tab, or the Files app's.
+enum FolderArt { flat, material, files }
+
+/// How a style draws files that have no logo of their own: a tonal Material
+/// page with its kind's symbol, or the Files app's white page.
+enum FileArt { material, files }
+
+/// The sets of icons the app draws its `LucideIcons` with (IconStrokes),
+/// each a font in assets/fonts (tool/icons/).
+enum IconSet {
+  /// Lucide's light weight, with Hi-icons where they fit.
+  lucide('assets/fonts/app_icons.ttf'),
+
+  /// Material's (Apache 2.0), Lucide's where Material has nothing close.
+  material('assets/fonts/app_icons_material.ttf'),
+
+  /// CupertinoIcons (MIT), Lucide's where they have nothing close.
+  cupertino('assets/fonts/app_icons_cupertino.ttf');
+
+  const IconSet(this.asset);
+
+  final String asset;
+}
 
 extension AppLookContext on BuildContext {
   /// The current style's extras ([AppLook]); the app's own look by default.

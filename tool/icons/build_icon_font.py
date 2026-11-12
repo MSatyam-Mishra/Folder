@@ -12,6 +12,9 @@ on purpose.
 
 Run it from the repo's root after changing HI_ICONS or adding to the pack; a
 Lucide name not used yet can simply be added.
+
+The Android and iOS styles have fonts of their own, built the same way by
+build_style_icon_fonts.py beside this one.
 """
 import glob
 import os

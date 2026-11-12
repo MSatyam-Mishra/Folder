@@ -2,11 +2,14 @@ import 'package:folders/features/file_explorere/explorer_zoom.dart';
 import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/platform/window_effects.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/core/theme/ios_style.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:folders/shared/widgets/theme_choices.dart';
 import 'package:folders/shared/ui/app_ui.dart';
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
@@ -57,28 +60,34 @@ class ExplorerOptionsSheet extends StatelessWidget {
     final cubit = context.read<ThemeCubit>();
     final text = Theme.of(context).textTheme;
     final ascending = fileState.sortOrder == SortOrder.ascending;
+    // iOS: a large title, and rows on rounded cards.
+    final grouped = context.look.groupedLists;
 
     return CompactText(by: 2, onPhones: true, child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Options', style: text.titleLarge),
+        Text(
+          'Options',
+          style: grouped ? text.headlineMedium?.copyWith(fontSize: 30, color: text.titleLarge?.color) : text.titleLarge,
+        ),
         const SizedBox(height: 4),
         Text('View, sorting and appearance.', style: text.bodySmall),
         const _Heading('Layout'),
+        _Group([
         SegmentedButton<ViewMode>(
           style: _compactSegments,
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: ViewMode.list, icon: Icon(LucideIcons.list, size: 15), label: Text('List')),
-            ButtonSegment(value: ViewMode.grid, icon: Icon(LucideIcons.layoutGrid, size: 15), label: Text('Grid')),
-            ButtonSegment(value: ViewMode.compact, icon: Icon(LucideIcons.rows3, size: 15), label: Text('Dense')),
-            ButtonSegment(value: ViewMode.gallery, icon: Icon(LucideIcons.images, size: 15), label: Text('Gallery')),
+          segments: [
+            ButtonSegment(value: ViewMode.list, icon: grouped ? null : const Icon(LucideIcons.list, size: 15), label: Text('List')),
+            ButtonSegment(value: ViewMode.grid, icon: grouped ? null : const Icon(LucideIcons.layoutGrid, size: 15), label: Text('Grid')),
+            ButtonSegment(value: ViewMode.compact, icon: grouped ? null : const Icon(LucideIcons.rows3, size: 15), label: Text('Dense')),
+            ButtonSegment(value: ViewMode.gallery, icon: grouped ? null : const Icon(LucideIcons.images, size: 15), label: Text('Gallery')),
           ],
           selected: {fileState.viewMode},
           onSelectionChanged: (s) => onViewModeChanged(s.first),
         ),
-        const SizedBox(height: 12),
+        if (!grouped) const SizedBox(height: 12),
         // Also Ctrl+wheel or a pinch over the files, and Ctrl+plus/minus.
         ValueListenableBuilder<double>(
           valueListenable: ExplorerZoom.instance,
@@ -106,10 +115,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
           ),
         ),
         StatefulBuilder(
-          builder: (context, setState) => SwitchListTile(
+          builder: (context, setState) => _SwitchRow(
             contentPadding: const EdgeInsets.only(top: 8),
-            title: const Text('Show hidden files'),
-            subtitle: const Text('Files starting with a dot, and system files'),
+            title: 'Show hidden files',
+            subtitle: 'Files starting with a dot, and system files',
             value: FolderPrefsService().showHidden,
             onChanged: (value) async {
               await FolderPrefsService().setShowHidden(value);
@@ -118,18 +127,20 @@ class ExplorerOptionsSheet extends StatelessWidget {
             },
           ),
         ),
+        ]),
         const _Heading('Sort by'),
+        _Group([
         Row(
           children: [
             Expanded(
               child: SegmentedButton<SortOption>(
                 style: _compactSegments,
                 showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: SortOption.name, icon: Icon(LucideIcons.arrowDownAZ, size: 15), label: Text('Name')),
-                  ButtonSegment(value: SortOption.date, icon: Icon(LucideIcons.calendarClock, size: 15), label: Text('Date')),
-                  ButtonSegment(value: SortOption.size, icon: Icon(LucideIcons.ruler, size: 15), label: Text('Size')),
-                  ButtonSegment(value: SortOption.type, icon: Icon(LucideIcons.shapes, size: 15), label: Text('Type')),
+                segments: [
+                  ButtonSegment(value: SortOption.name, icon: grouped ? null : const Icon(LucideIcons.arrowDownAZ, size: 15), label: Text('Name')),
+                  ButtonSegment(value: SortOption.date, icon: grouped ? null : const Icon(LucideIcons.calendarClock, size: 15), label: Text('Date')),
+                  ButtonSegment(value: SortOption.size, icon: grouped ? null : const Icon(LucideIcons.ruler, size: 15), label: Text('Size')),
+                  ButtonSegment(value: SortOption.type, icon: grouped ? null : const Icon(LucideIcons.shapes, size: 15), label: Text('Type')),
                 ],
                 selected: {fileState.sortOption},
                 onSelectionChanged: (s) =>
@@ -158,11 +169,14 @@ class ExplorerOptionsSheet extends StatelessWidget {
             ),
           ],
         ),
+        ]),
         ThemeChoices(
           heading: _Heading.new,
+          section: _Group.new,
           afterMode: [
             if (WindowEffects.supported) ...[
               const _Heading('Window'),
+              _Group([
               // The system's materials behind the window, and how much of them
               // shows through the app.
               SegmentedButton<WindowBackdrop>(
@@ -172,7 +186,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
                   for (final backdrop in WindowBackdrop.available)
                     ButtonSegment(
                       value: backdrop,
-                      icon: Icon(backdrop.icon, size: 15),
+                      icon: grouped ? null : Icon(backdrop.icon, size: 15),
                       label: Text(backdrop.label),
                     ),
                 ],
@@ -200,27 +214,37 @@ class ExplorerOptionsSheet extends StatelessWidget {
                 onChanged: settings.windowEffect ? (v) => cubit.setTransparency(v, save: false) : null,
                 onChangeEnd: settings.windowEffect ? cubit.setTransparency : null,
               ),
+              ]),
             ],
           ],
         ),
-        SwitchListTile(
+        if (grouped) const SizedBox(height: 24),
+        _Group([
+        _SwitchRow(
           contentPadding: EdgeInsets.zero,
-          secondary: const Icon(LucideIcons.images, size: 17),
+          icon: LucideIcons.images,
           value: settings.showThumbnails,
           onChanged: cubit.setShowThumbnails,
-          title: const Text('Thumbnails'),
-          subtitle: const Text('Pictures of images, videos, PDFs and documents instead of their icons'),
+          title: 'Thumbnails',
+          subtitle: 'Pictures of images, videos, PDFs and documents instead of their icons',
         ),
-        if (!Desktop.isDesktop)
-          SwitchListTile(
+        // Android's style is Material's, without glass; iOS's always has it.
+        if (!Desktop.isDesktop && settings.style != AppStyle.android && !settings.style.glass)
+          _SwitchRow(
             contentPadding: EdgeInsets.zero,
-            secondary: const Icon(LucideIcons.droplets, size: 17),
+            icon: LucideIcons.droplets,
             value: settings.liquidGlass,
             onChanged: cubit.setLiquidGlass,
-            title: const Text('Liquid glass'),
-            subtitle: const Text('See-through, blurred bars, menus and sheets'),
+            title: 'Liquid glass',
+            subtitle: 'See-through, blurred bars, menus and sheets',
           ),
+        ]),
         const _Heading('File icons'),
+        _Group([
+        // Android and iOS draw their own.
+        if (context.look.fileArt != null)
+          Text('The ${settings.style.label} style draws its own file icons.', style: text.bodySmall)
+        else
         SegmentedButton<FileIconStyle>(
           showSelectedIcon: false,
           segments: [
@@ -234,6 +258,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
           selected: {settings.fileIconStyle},
           onSelectionChanged: (s) => cubit.setFileIconStyle(s.first),
         ),
+        ]),
         const _Heading('Sharing'),
         _ActionRow(
           icon: LucideIcons.wifi,
@@ -262,9 +287,118 @@ class _Heading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // iOS: small grey capitals over the card, in line with its text.
+    if (context.look.groupedLists) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 7),
+        child: Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                letterSpacing: 0.3,
+                color: context.colors.mutedForeground,
+              ),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 8),
       child: Text(label, style: Theme.of(context).textTheme.titleSmall),
+    );
+  }
+}
+
+/// A section's rows: as they are, or for iOS on a rounded card, set apart by
+/// hairlines.
+class _Group extends StatelessWidget {
+  const _Group(this.children);
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!context.look.groupedLists) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: children);
+    }
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: IosStyle.groupedCard(dark), borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (i, child) in children.indexed) ...[
+            if (i > 0) Divider(height: 0.5, thickness: 0.5, indent: 16, color: IosStyle.separator(dark)),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), child: child),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A setting switched on or off: Material's switch, or iOS's in its style.
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    required this.contentPadding,
+    this.subtitle,
+    this.icon,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final EdgeInsetsGeometry contentPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = this.subtitle;
+    final icon = this.icon;
+    if (!context.look.groupedLists) {
+      return SwitchListTile(
+        contentPadding: contentPadding,
+        secondary: icon == null ? null : Icon(icon, size: 17),
+        value: value,
+        onChanged: onChanged,
+        title: Text(title),
+        subtitle: subtitle == null ? null : Text(subtitle),
+      );
+    }
+    final text = Theme.of(context).textTheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return MergeSemantics(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(!value),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18, color: context.colors.primary),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: text.bodyMedium),
+                  if (subtitle != null) Text(subtitle, style: text.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            CupertinoSwitch(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: dark ? IosStyle.greenDark : IosStyle.green,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -286,11 +420,12 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
+    final grouped = context.look.groupedLists;
     return Material(
-      color: Colors.transparent,
+      color: grouped ? IosStyle.groupedCard(Theme.of(context).brightness == Brightness.dark) : Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colors.border),
+        side: grouped ? BorderSide.none : BorderSide(color: colors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

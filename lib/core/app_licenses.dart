@@ -29,6 +29,9 @@ Stream<LicenseEntry> _entries() async* {
   yield const LicenseEntryWithLineBreaks(['Sweet folders (Sweet style)'], _sweetFolders);
   yield const LicenseEntryWithLineBreaks(['Dracula Icons (Dracula style)'], _draculaIcons);
   yield const LicenseEntryWithLineBreaks(['Sweet folders (Sweet style)', 'Dracula Icons (Dracula style)'], gpl3Text);
+  yield const LicenseEntryWithLineBreaks(['Material icons (Android style)'], _materialIcons);
+  yield const LicenseEntryWithLineBreaks(['Material icons (Android style)'], apache2Text);
+  yield const LicenseEntryWithLineBreaks(['CupertinoIcons (iOS style)'], _cupertinoIcons);
 }
 
 const _pythonPptx = '''
@@ -66,6 +69,43 @@ Dracula Icons (folder and place icons of the Dracula style) by Matheus
 Vitor, recoloured from Papirus (https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)
 to the Dracula palette. Source: https://github.com/m4thewz/dracula-icons
 Licensed under the GNU General Public License, version 3.''';
+
+const _materialIcons = '''
+Material icons (the icons of the Android style) by Google, from
+google/material-design-icons (https://github.com/google/material-design-icons),
+licensed under the Apache License, Version 2.0. They were taken from the
+Material Icons font in the Flutter SDK, which also offers it under the Creative
+Commons Attribution 4.0 International licence
+(https://creativecommons.org/licenses/by/4.0/), and redrawn at the size and
+code points of the app's icons (tool/icons/build_style_icon_fonts.py).''';
+
+const _cupertinoIcons = '''
+CupertinoIcons (the icons of the iOS style), from Flutter's cupertino_icons
+package (https://github.com/flutter/packages/tree/main/third_party/packages/cupertino_icons),
+redrawn at the size and code points of the app's icons
+(tool/icons/build_style_icon_fonts.py). They are not Apple's SF Symbols.
+
+The MIT License (MIT)
+
+Copyright (c) 2016 Vladimir Kharlampidi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+''';
 
 const _pdfium = '''
 PDFium (PDF rendering and editing, via pdfrx)

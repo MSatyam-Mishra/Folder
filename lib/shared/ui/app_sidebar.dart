@@ -94,13 +94,15 @@ class AppSidebarItem extends StatelessWidget {
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final fg = selected ? colors.accentForeground : colors.foreground;
+    // Android's selection is a pill.
+    final radius = BorderRadius.circular(context.look.itemRadius);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       child: Material(
         color: selected ? colors.accent : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: radius,
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: radius,
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),

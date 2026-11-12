@@ -515,12 +515,14 @@ class _DragArea extends StatelessWidget {
 }
 
 /// Which window buttons the style draws: Windows 11's, macOS's traffic
-/// lights (left), or Ubuntu's round ones (Sweet, Dracula).
-enum _Buttons { windows, mac, ubuntu }
+/// lights (left; iPadOS's windows have them too), Ubuntu's round ones
+/// (Sweet, Dracula), or Material's (Android: ChromeOS's, round when hovered).
+enum _Buttons { windows, mac, ubuntu, material }
 
 _Buttons _buttonsFor(BuildContext context) => switch (context.look.style) {
-      AppStyle.macos => _Buttons.mac,
+      AppStyle.macos || AppStyle.ios => _Buttons.mac,
       AppStyle.sweet || AppStyle.dracula => _Buttons.ubuntu,
+      AppStyle.android => _Buttons.material,
       _ => _Buttons.windows,
     };
 
@@ -529,6 +531,7 @@ double _buttonsWidth(_Buttons buttons) => switch (buttons) {
       _Buttons.windows => 46.0 * 3,
       _Buttons.mac => 76,
       _Buttons.ubuntu => 24.0 * 3 + 10 * 2 + 16,
+      _Buttons.material => 32.0 * 3 + 4 * 2 + 12,
     };
 
 /// Whether the window is maximized and has the focus, kept up to date.
@@ -693,6 +696,42 @@ class _UbuntuButtons extends StatelessWidget {
   }
 }
 
+/// Material's window buttons, as ChromeOS draws them: plain symbols, a
+/// round tonal shape under the one pointed at, the close one turning red.
+class _MaterialButtons extends StatelessWidget {
+  const _MaterialButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget button(IconData icon, VoidCallback onPressed, {bool close = false}) => _RoundButton(
+          icon: icon,
+          onPressed: onPressed,
+          size: 32,
+          iconSize: 18,
+          fill: Colors.transparent,
+          hover: close ? scheme.errorContainer : scheme.surfaceContainerHighest,
+          glyph: scheme.onSurfaceVariant,
+          hoverGlyph: close ? scheme.onErrorContainer : scheme.onSurface,
+        );
+    return _WindowState(
+      builder: (context, maximized, _) => Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            button(LucideIcons.minus, windowManager.minimize),
+            const SizedBox(width: 4),
+            button(maximized ? LucideIcons.copy : LucideIcons.square, () => _toggleMaximize(maximized)),
+            const SizedBox(width: 4),
+            button(LucideIcons.x, windowManager.close, close: true),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RoundButton extends StatefulWidget {
   const _RoundButton({
     required this.icon,
@@ -700,6 +739,9 @@ class _RoundButton extends StatefulWidget {
     required this.fill,
     required this.hover,
     required this.glyph,
+    this.hoverGlyph,
+    this.size = 24,
+    this.iconSize = 12,
   });
 
   final IconData icon;
@@ -707,6 +749,9 @@ class _RoundButton extends StatefulWidget {
   final Color fill;
   final Color hover;
   final Color glyph;
+  final Color? hoverGlyph;
+  final double size;
+  final double iconSize;
 
   @override
   State<_RoundButton> createState() => _RoundButtonState();
@@ -722,10 +767,14 @@ class _RoundButtonState extends State<_RoundButton> {
         child: GestureDetector(
           onTap: widget.onPressed,
           child: Container(
-            width: 24,
-            height: 24,
+            width: widget.size,
+            height: widget.size,
             decoration: BoxDecoration(shape: BoxShape.circle, color: _hovered ? widget.hover : widget.fill),
-            child: Icon(widget.icon, size: 12, color: widget.glyph),
+            child: Icon(
+              widget.icon,
+              size: widget.iconSize,
+              color: _hovered ? widget.hoverGlyph ?? widget.glyph : widget.glyph,
+            ),
           ),
         ),
       );
@@ -746,6 +795,7 @@ class _WindowButtons extends StatelessWidget {
       _Buttons.windows => const _CaptionButtons(),
       _Buttons.mac => const Center(child: _TrafficLights()),
       _Buttons.ubuntu => const Center(child: _UbuntuButtons()),
+      _Buttons.material => const Center(child: _MaterialButtons()),
     };
   }
 }

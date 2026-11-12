@@ -4,6 +4,7 @@ import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:folders/shared/file_icons/file_icon_catalog.g.dart';
 import 'package:folders/shared/file_icons/file_icon_style.dart';
+import 'package:folders/shared/file_icons/style_file_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -200,6 +201,9 @@ abstract final class FileIcons {
     'qt': 'MOV', 'svgz': 'SVG',
   };
 
+  /// The colour of [kind]'s icons (and of the pages styles draw for it).
+  static Color colorOf(FileKind kind) => Color(_colorFor(kind));
+
   static int _colorFor(FileKind kind) => switch (kind) {
         FileKind.pdf => 0xFFD92D20,
         FileKind.word ||
@@ -289,6 +293,18 @@ class FileIcon extends StatelessWidget {
     final spec = isPackage
         ? FileIcons.forPackage(path, style, dark: dark)
         : FileIcons.forFile(path, style, dark: dark);
+    // Android and iOS draw their own pages; logos (code, apps) stay.
+    final art = this.style == null ? context.look.fileArt : null;
+    if (art != null && !(spec is AssetFileIcon && spec.asset.contains('/programming/'))) {
+      final kind = isPackage ? FileKind.package : FileTypes.kindOf(path);
+      return StyleFileArt(
+        art: art,
+        kind: kind,
+        ext: FileTypes.extensionOf(path),
+        color: FileIcons.colorOf(kind),
+        size: size,
+      );
+    }
     return switch (spec) {
       // icon_2 pages are tinted at ~9% opacity and vanish on dark
       // backgrounds; give them the white page they have in light mode.
@@ -347,7 +363,11 @@ class FolderIcon extends StatelessWidget {
       );
     } else if (folder != null) {
       art = CustomPaint(
-        painter: _FolderPainter(front: folder.$1, back: folder.$2),
+        painter: switch (look.folderArt) {
+          FolderArt.flat => _FolderPainter(front: folder.$1, back: folder.$2),
+          FolderArt.material => MaterialFolderPainter(front: folder.$1, back: folder.$2),
+          FolderArt.files => FilesFolderPainter(front: folder.$1, back: folder.$2),
+        },
         child: place == null
             ? null
             : Align(

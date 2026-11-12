@@ -105,6 +105,10 @@ flutter:
     # see assets/icon_themes/README.md)
     - assets/new_files/
     - assets/fonts/app_icons.ttf
+    # The Android and iOS styles' icons: Material icons (Apache 2.0) and
+    # CupertinoIcons (MIT); tool/icons/build_style_icon_fonts.py
+    - assets/fonts/app_icons_material.ttf
+    - assets/fonts/app_icons_cupertino.ttf
     - assets/icon_themes/sweet/
     - assets/icon_themes/dracula/
     # File and folder icons (lib/shared/file_icons)

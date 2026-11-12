@@ -34,6 +34,17 @@ abstract final class ThemePreferences {
     );
   }
 
+  /// Only the style, before the rest is needed (the icons, at the start);
+  /// the app's own if it can't be read.
+  static Future<AppStyle> loadStyle() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return AppStyle.parse(prefs.getString(_keyStyle));
+    } catch (_) {
+      return AppStyle.standard;
+    }
+  }
+
   static Future<void> save(AppThemeSettings settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyThemeMode, settings.themeMode.name);

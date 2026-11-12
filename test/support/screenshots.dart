@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/icon_strokes.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -13,8 +14,9 @@ import 'package:flutter_test/flutter_test.dart';
 final bool screenshotsEnabled = Platform.environment['SCREENSHOTS'] == '1';
 
 /// Loads every font in the app's FontManifest (Geist, Lucide, Material
-/// icons, …) so screenshots show real text instead of test boxes.
-Future<void> loadAppFonts() async {
+/// icons, …) so screenshots show real text instead of test boxes, and the
+/// app's [icons] (one set per test file: a font can't be swapped later).
+Future<void> loadAppFonts({IconSet icons = IconSet.lucide}) async {
   final manifest = json.decode(
     await rootBundle.loadString('FontManifest.json'),
   ) as List<dynamic>;
@@ -27,7 +29,7 @@ Future<void> loadAppFonts() async {
     }
     await loader.load();
   }
-  await IconStrokes.useLight();
+  await IconStrokes.use(icons);
 }
 
 /// Sets the test window to [logicalSize] at [pixelRatio].

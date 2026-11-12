@@ -1,6 +1,8 @@
 import 'package:folders/core/platform/window_effects.dart';
 import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/app_theme_settings.dart';
+import 'package:folders/core/theme/ios_style.dart';
+import 'package:folders/core/theme/material_style.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -33,7 +35,7 @@ abstract final class AppTheme {
 
   static ShadThemeData shad(AppThemeSettings settings, Brightness brightness) {
     final style = settings.style;
-    var scheme = style.schemeFor(brightness) ?? settings.colorTheme.schemeFor(brightness);
+    var scheme = style.schemeFor(brightness, color: settings.colorTheme) ?? settings.colorTheme.schemeFor(brightness);
     // Lines lighter than whatever they lie on: a solid dark grey comes out as
     // a dark line on glass, which is lighter than it.
     if (style.darkOnly || brightness == Brightness.dark) {
@@ -57,8 +59,18 @@ abstract final class AppTheme {
   }
 
   /// Completes the Material theme [ShadApp] derived from [shad], with the
-  /// extras of [style] ([AppLook]).
+  /// extras of [style] ([AppLook]); Android's and iOS's go further
+  /// ([MaterialStyle], [IosStyle]).
   static ThemeData material(ThemeData base, ShadThemeData shad, {AppStyle style = AppStyle.standard}) {
+    final theme = _material(base, shad, style);
+    return switch (style) {
+      AppStyle.android => MaterialStyle.apply(theme),
+      AppStyle.ios => IosStyle.apply(theme),
+      _ => theme,
+    };
+  }
+
+  static ThemeData _material(ThemeData base, ShadThemeData shad, AppStyle style) {
     final c = shad.colorScheme;
     // Dialogs, sheets, the drawer and menus stay solid over a translucent
     // window.

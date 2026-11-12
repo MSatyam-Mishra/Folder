@@ -1,6 +1,7 @@
 import 'dart:ui' show ColorFilter, ImageFilter;
 
 import 'package:folders/core/platform/window_effects.dart';
+import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,16 +14,20 @@ abstract final class AppGlass {
   static bool isOn(BuildContext context) =>
       (WindowEffects.supported && context.read<ThemeCubit>().state.windowEffect) || isLiquid(context);
 
-  /// Whether Liquid glass is on (Options, on phones): bars, sheets, menus and
-  /// the round button float over the content and let it show through.
-  /// With [listen], the caller rebuilds when it's switched.
+  /// Whether Liquid glass is on (Options, on phones; always in the iOS
+  /// style, on every system; never in the Android style, which is
+  /// Material's): bars, sheets, menus and the round button float over the
+  /// content and let it show through. With [listen], the caller rebuilds
+  /// when it's switched.
   static bool isLiquid(BuildContext context, {bool listen = false}) {
-    if (const {TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS}.contains(defaultTargetPlatform)) {
-      return false;
-    }
     try {
-      final cubit = listen ? context.watch<ThemeCubit>() : context.read<ThemeCubit>();
-      return cubit.state.liquidGlass;
+      final settings = (listen ? context.watch<ThemeCubit>() : context.read<ThemeCubit>()).state;
+      if (settings.style.glass) return true;
+      if (settings.style == AppStyle.android) return false;
+      if (const {TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS}.contains(defaultTargetPlatform)) {
+        return false;
+      }
+      return settings.liquidGlass;
     } on ProviderNotFoundException {
       return false;
     }
