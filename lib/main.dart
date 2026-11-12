@@ -84,9 +84,10 @@ void main(List<String> args) async {
     });
   }
 
-  // A shortcut on a computer: the tool it's for, in the first tab.
+  // A shortcut on a computer: the tool it's for, in the first tab, if this
+  // build has it.
   final shortcutRoute = Desktop.isDesktop ? AppShortcuts.routeIn(args) : null;
-  if (shortcutRoute != null) {
+  if (shortcutRoute != null && (!Tool.isRoute(shortcutRoute) || Tool.fromRoute(shortcutRoute) != null)) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final navigator = ExplorerTabs.instance.active?.navigatorKey.currentState ?? _navigatorKey.currentState;
       navigator?.push(
@@ -99,9 +100,10 @@ void main(List<String> args) async {
   // straight to the viewer or the video downloader.
   final launchItem = await IncomingFiles.takeInitial();
   IncomingFiles.onIncoming.listen((incoming) {
-    // Its notification: back to the screen that's sharing, not a second one.
+    // Its notification or the tool's shortcut: back to the screen that's
+    // sharing, not a second one.
     if (incoming is IncomingRoute &&
-        incoming.route == IncomingRoute.fileServer &&
+        (incoming.route == IncomingRoute.fileServer || incoming.route == Tool.wifiSharing.route) &&
         FileServerScreen.showRunning()) {
       return;
     }
@@ -247,6 +249,9 @@ void _openIncoming(IncomingItem item) {
   final navigator = _navigatorKey.currentState;
   if (navigator == null) return;
   final name = item is IncomingRoute ? item.route : null;
+  // A tool this build doesn't have, from an app drawer entry or a shortcut
+  // made with a build that had it: the app as it is.
+  if (name != null && Tool.isRoute(name) && Tool.fromRoute(name) == null) return;
   var showing = false;
   if (name != null) {
     // Only looks: the first route it's given is the top one.

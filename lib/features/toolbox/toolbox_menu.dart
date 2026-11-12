@@ -1,14 +1,22 @@
+import 'package:folders/core/build_features.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/services/app_shortcuts.dart';
 import 'package:folders/core/theme/app_theme.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folders/features/localsend/screens/localsend_screen.dart';
+import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/network/wifi_sharing.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
 import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/music_player_screen.dart';
 import 'package:folders/features/toolbox/ram_cleaner_screen.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:folders/features/video_player/video_library_screen.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// What the Toolbox holds. An id names the tool's route (`tool/<id>`), its
@@ -19,7 +27,10 @@ enum Tool {
   junkCleaner('memory_cleaner', LucideIcons.eraser, 'Junk cleaner', 'Remove temporary files, caches and other junk'),
   duplicateFinder('duplicate_finder', LucideIcons.copy, 'Duplicate finder', 'Find files with the same contents, and clean them up'),
   videoPlayer('video_player', LucideIcons.film, 'Video player', 'All the videos on this device'),
-  musicPlayer('music_player', LucideIcons.music, 'Music player', 'All your music, one song after another');
+  musicPlayer('music_player', LucideIcons.music, 'Music player', 'All your music, one song after another'),
+  videoDownloader('video_downloader', LucideIcons.cloudDownload, 'Video downloader', 'Save videos and their sound from a link'),
+  wifiSharing('wifi_sharing', LucideIcons.wifi, 'Wi-Fi sharing', 'Open your files from a browser (HTTP) or FTP'),
+  nearbyShare('nearby_share', LucideIcons.radio, 'Nearby share', 'Send and receive with LocalSend');
 
   const Tool(this.id, this.icon, this.title, this.description);
 
@@ -30,28 +41,55 @@ enum Tool {
   final String title;
   final String description;
 
-  /// The tool a shortcut's route asks for.
-  static Tool? fromRoute(String route) {
-    for (final tool in values) {
-      if (route == '$_routePrefix${tool.id}') return tool;
+  /// The tools this build has: the video downloader only where it's built in.
+  static List<Tool> get available => availableIn(videoDownloader: kVideoDownloaderEnabled);
+
+  @visibleForTesting
+  static List<Tool> availableIn({required bool videoDownloader}) => [
+        for (final tool in values)
+          if (tool != Tool.videoDownloader || videoDownloader) tool,
+      ];
+
+  /// The tool a shortcut's route asks for, if this build has it.
+  static Tool? fromRoute(String route, {@visibleForTesting bool videoDownloader = kVideoDownloaderEnabled}) {
+    for (final tool in availableIn(videoDownloader: videoDownloader)) {
+      if (route == tool.route) return tool;
     }
     return null;
   }
+
+  String get route => '$_routePrefix$id';
+
+  /// Whether [route] is a tool's, whether or not this build has the tool.
+  static bool isRoute(String route) => route.startsWith(_routePrefix);
 
   AppShortcut get shortcut => AppShortcut(
         id: 'tool_$id',
         title: title,
         description: description,
         icon: icon,
-        route: '$_routePrefix$id',
+        route: route,
       );
 
+  /// The tool's screen, as a shortcut opens it. Wi-Fi sharing starts at the
+  /// user's own folder there; from the Toolbox see [open].
   Widget get screen => switch (this) {
         ramCleaner => const RamCleanerScreen(),
         junkCleaner => const JunkCleanerScreen(),
         duplicateFinder => const DuplicateFinderScreen(),
         videoPlayer => const VideoLibraryScreen(),
         musicPlayer => const MusicPlayerScreen(),
+        // A build without the downloader never offers it, nor compiles it in.
+        videoDownloader => kVideoDownloaderEnabled ? const VideoDownloaderScreen() : const SizedBox.shrink(),
+        wifiSharing => FileServerScreen(initialFolder: ExplorerPaths.userFolder),
+        nearbyShare => const LocalSendScreen(),
+      };
+
+  /// Opens the tool on [navigator]. Wi-Fi sharing starts at the folder
+  /// [explorer] shows, as from the drawer.
+  Future<void> open(NavigatorState navigator, {FileExplorerBloc? explorer}) => switch (this) {
+        wifiSharing => openWifiSharing(navigator, explorer: explorer),
+        _ => navigator.push(MaterialPageRoute<void>(builder: (_) => screen)),
       };
 }
 
@@ -61,6 +99,13 @@ enum Tool {
 Future<void> showToolboxMenu(BuildContext context) {
   // Over the whole window, but tools open in the tab it was called from.
   final navigator = Navigator.of(context);
+  // Read now: on a phone the drawer this comes from closes meanwhile.
+  FileExplorerBloc? explorer;
+  try {
+    explorer = context.read<FileExplorerBloc>();
+  } on ProviderNotFoundException {
+    explorer = null;
+  }
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -71,16 +116,19 @@ Future<void> showToolboxMenu(BuildContext context) {
     pageBuilder: (menu, _, _) => ToolboxMenu(
       onOpen: (tool) {
         Navigator.pop(menu);
-        navigator.push(MaterialPageRoute(builder: (_) => tool.screen));
+        tool.open(navigator, explorer: explorer);
       },
     ),
   );
 }
 
 class ToolboxMenu extends StatelessWidget {
-  const ToolboxMenu({super.key, required this.onOpen});
+  const ToolboxMenu({super.key, required this.onOpen, @visibleForTesting this.tools});
 
   final ValueChanged<Tool> onOpen;
+
+  /// In place of [Tool.available], for tests.
+  final List<Tool>? tools;
 
   static const _radius = 16.0;
 
@@ -89,6 +137,7 @@ class ToolboxMenu extends StatelessWidget {
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final size = MediaQuery.sizeOf(context);
+    final tools = this.tools ?? Tool.available;
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,9 +162,9 @@ class ToolboxMenu extends StatelessWidget {
               mainAxisSpacing: 4,
               crossAxisSpacing: 4,
             ),
-            itemCount: Tool.values.length,
+            itemCount: tools.length,
             itemBuilder: (_, index) => _ToolTile(
-              tool: Tool.values[index],
+              tool: tools[index],
               autofocus: index == 0,
               onOpen: onOpen,
             ),

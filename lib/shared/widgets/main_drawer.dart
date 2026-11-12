@@ -14,7 +14,7 @@ import 'package:folders/features/category_view/bloc/bloc/screens/category_viewer
 import 'package:folders/features/category_view/file_category_screen.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
-import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/network/wifi_sharing.dart';
 import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
 import 'package:folders/features/tools/screens/app_manager_screen.dart';
 import 'package:folders/features/tools/screens/usb_boot_screen.dart';
@@ -125,7 +125,7 @@ class MainDrawerContent extends StatelessWidget {
               AppSidebarItem(
                 icon: LucideIcons.wrench,
                 label: 'Toolbox',
-                detail: 'Cleaners, duplicates and players',
+                detail: 'Cleaners, players and sharing',
                 onTap: () {
                   dismissDrawer(context);
                   showToolboxMenu(context);
@@ -245,30 +245,12 @@ class MainDrawerContent extends StatelessWidget {
     }
   }
 
-  static Future<void> _openFileServer(BuildContext context) async {
+  static Future<void> _openFileServer(BuildContext context) {
     dismissDrawer(context);
-    final explorer = context.read<FileExplorerBloc>();
-    final current = explorer.state;
-    final folder =
-        current is FileExplorerLoaded &&
-            !ExplorerPaths.isVirtual(current.path)
-        ? current.path
-        : Platform.isAndroid
-        ? ExplorerPaths.androidInternalStorage
-        : (Platform.environment['USERPROFILE'] ??
-              Platform.environment['HOME'] ??
-              Directory.current.path);
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FileServerScreen(initialFolder: folder),
-      ),
+    return openWifiSharing(
+      Navigator.of(context),
+      explorer: context.read<FileExplorerBloc>(),
     );
-    // Show files other devices uploaded.
-    final now = explorer.state;
-    if (!explorer.isClosed && now is FileExplorerLoaded) {
-      explorer.add(LoadDirectory(now.path));
-    }
   }
 }
 

@@ -1,13 +1,20 @@
 import 'dart:io';
 
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/incoming_files.dart';
 import 'package:folders/core/services/toolbox/duplicate_finder.dart';
 import 'package:folders/core/services/toolbox/junk_scanner.dart';
 import 'package:folders/core/services/toolbox/ram_cleaner.dart';
+import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/localsend/screens/localsend_screen.dart';
+import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
 import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/toolbox_menu.dart';
+import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -198,7 +205,7 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('the toolbox lists the five tools', (tester) async {
+    testWidgets('the toolbox lists every tool', (tester) async {
       tester.view.physicalSize = const Size(420, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -210,11 +217,43 @@ void main() {
         'Duplicate finder',
         'Video player',
         'Music player',
+        'Video downloader',
+        'Wi-Fi sharing',
+        'Nearby share',
       ]) {
         expect(find.text(tool), findsOneWidget, reason: tool);
       }
       expect(find.text('Memory cleaner'), findsNothing, reason: 'it is the Junk cleaner now');
       await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a build without the video downloader has no such tool', (tester) async {
+      tester.view.physicalSize = const Size(420, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themedApp(Scaffold(
+        body: ToolboxMenu(onOpen: (_) {}, tools: Tool.availableIn(videoDownloader: false)),
+      )));
+      await settle(tester);
+      expect(find.text('Video downloader'), findsNothing);
+      expect(find.text('Wi-Fi sharing'), findsOneWidget);
+      expect(find.text('Nearby share'), findsOneWidget);
+      expect(Tool.fromRoute('tool/video_downloader', videoDownloader: false), isNull);
+      expect(Tool.fromRoute('tool/video_downloader'), Tool.videoDownloader);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    test("the new tools' routes and screens; the Junk cleaner keeps the Memory cleaner's", () {
+      expect(Tool.fromRoute('tool/memory_cleaner'), Tool.junkCleaner);
+      expect(Tool.junkCleaner.shortcut.id, 'tool_memory_cleaner', reason: 'pinned shortcuts and drawer entries stay');
+      expect(Tool.fromRoute('tool/wifi_sharing'), Tool.wifiSharing);
+      expect(Tool.fromRoute('tool/nearby_share'), Tool.nearbyShare);
+      expect(Tool.isRoute('tool/anything'), isTrue);
+      expect(Tool.isRoute(IncomingRoute.fileServer), isFalse);
+      expect(Tool.nearbyShare.screen, isA<LocalSendScreen>());
+      expect(Tool.videoDownloader.screen, isA<VideoDownloaderScreen>());
+      final sharing = Tool.wifiSharing.screen as FileServerScreen;
+      expect(sharing.initialFolder, ExplorerPaths.userFolder, reason: 'a real folder, never This PC');
     });
 
     Future<void> openMenu(WidgetTester tester) async {
@@ -257,6 +296,40 @@ void main() {
       expect(find.byType(ToolboxMenu), findsNothing);
       expect(find.byType(JunkCleanerScreen), findsOneWidget);
       expect(find.text('Junk cleaner'), findsOneWidget, reason: "the screen's title");
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('Wi-Fi sharing opens at the folder showing, as from the drawer', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final explorer = FileExplorerBloc(watchFolders: false)..add(LoadDirectory(root.path));
+      addTearDown(explorer.close);
+      for (var i = 0; i < 40 && explorer.state is! FileExplorerLoaded; i++) {
+        await settle(tester);
+      }
+      await tester.pumpWidget(themedApp(BlocProvider.value(
+        value: explorer,
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(onPressed: () => showToolboxMenu(context), child: const Text('Toolbox')),
+          ),
+        ),
+      )));
+      await tester.tap(find.text('Toolbox'));
+      await settle(tester);
+      await tester.tap(find.text('Wi-Fi sharing'));
+      await settle(tester);
+      expect(find.byType(ToolboxMenu), findsNothing);
+      expect(tester.widget<FileServerScreen>(find.byType(FileServerScreen)).initialFolder, root.path);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets("Wi-Fi sharing with no folder showing starts at the user's own", (tester) async {
+      await openMenu(tester);
+      await tester.tap(find.text('Wi-Fi sharing'));
+      await settle(tester);
+      expect(tester.widget<FileServerScreen>(find.byType(FileServerScreen)).initialFolder, ExplorerPaths.userFolder);
       await tester.pumpWidget(const SizedBox());
     });
 

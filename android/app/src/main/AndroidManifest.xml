@@ -249,6 +249,51 @@
             <meta-data android:name="explorer.route" android:value="tool/music_player"/>
         </activity-alias>
 
+        <!-- A build without the video downloader keeps this entry off: its
+             Toolbox doesn't offer the tool, so nothing turns it on, and if an
+             earlier build did, the app ignores the route and just opens. -->
+        <activity-alias
+            android:name=".tool_video_downloader"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_tool_video_downloader"
+            android:label="Video downloader"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="explorer.route" android:value="tool/video_downloader"/>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".tool_wifi_sharing"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_tool_wifi_sharing"
+            android:label="Wi-Fi sharing"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="explorer.route" android:value="tool/wifi_sharing"/>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".tool_nearby_share"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_tool_nearby_share"
+            android:label="Nearby share"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="explorer.route" android:value="tool/nearby_share"/>
+        </activity-alias>
+
         <!-- "Share → Download video": links shared from browsers and video apps.
              Disabled in builds without the video downloader (build.gradle.kts). -->
         <activity-alias
