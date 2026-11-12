@@ -63,6 +63,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
     // iOS: a large title, and rows on rounded cards.
     final grouped = context.look.groupedLists;
 
+    // An icon beside each segment's label only where there's room for both:
+    // on a phone it squeezes the words onto two lines ("Galler y").
+    return LayoutBuilder(builder: (context, box) {
+    final segmentIcons = !grouped && box.maxWidth >= 440;
     return CompactText(by: 2, onPhones: true, child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -79,10 +83,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
           style: _compactSegments,
           showSelectedIcon: false,
           segments: [
-            ButtonSegment(value: ViewMode.list, icon: grouped ? null : const Icon(LucideIcons.list, size: 15), label: Text('List')),
-            ButtonSegment(value: ViewMode.grid, icon: grouped ? null : const Icon(LucideIcons.layoutGrid, size: 15), label: Text('Grid')),
-            ButtonSegment(value: ViewMode.compact, icon: grouped ? null : const Icon(LucideIcons.rows3, size: 15), label: Text('Dense')),
-            ButtonSegment(value: ViewMode.gallery, icon: grouped ? null : const Icon(LucideIcons.images, size: 15), label: Text('Gallery')),
+            ButtonSegment(value: ViewMode.list, icon: segmentIcons ? const Icon(LucideIcons.list, size: 15) : null, label: Text('List')),
+            ButtonSegment(value: ViewMode.grid, icon: segmentIcons ? const Icon(LucideIcons.layoutGrid, size: 15) : null, label: Text('Grid')),
+            ButtonSegment(value: ViewMode.compact, icon: segmentIcons ? const Icon(LucideIcons.rows3, size: 15) : null, label: Text('Dense')),
+            ButtonSegment(value: ViewMode.gallery, icon: segmentIcons ? const Icon(LucideIcons.images, size: 15) : null, label: Text('Gallery')),
           ],
           selected: {fileState.viewMode},
           onSelectionChanged: (s) => onViewModeChanged(s.first),
@@ -137,10 +141,10 @@ class ExplorerOptionsSheet extends StatelessWidget {
                 style: _compactSegments,
                 showSelectedIcon: false,
                 segments: [
-                  ButtonSegment(value: SortOption.name, icon: grouped ? null : const Icon(LucideIcons.arrowDownAZ, size: 15), label: Text('Name')),
-                  ButtonSegment(value: SortOption.date, icon: grouped ? null : const Icon(LucideIcons.calendarClock, size: 15), label: Text('Date')),
-                  ButtonSegment(value: SortOption.size, icon: grouped ? null : const Icon(LucideIcons.ruler, size: 15), label: Text('Size')),
-                  ButtonSegment(value: SortOption.type, icon: grouped ? null : const Icon(LucideIcons.shapes, size: 15), label: Text('Type')),
+                  ButtonSegment(value: SortOption.name, icon: segmentIcons ? const Icon(LucideIcons.arrowDownAZ, size: 15) : null, label: Text('Name')),
+                  ButtonSegment(value: SortOption.date, icon: segmentIcons ? const Icon(LucideIcons.calendarClock, size: 15) : null, label: Text('Date')),
+                  ButtonSegment(value: SortOption.size, icon: segmentIcons ? const Icon(LucideIcons.ruler, size: 15) : null, label: Text('Size')),
+                  ButtonSegment(value: SortOption.type, icon: segmentIcons ? const Icon(LucideIcons.shapes, size: 15) : null, label: Text('Type')),
                 ],
                 selected: {fileState.sortOption},
                 onSelectionChanged: (s) =>
@@ -186,7 +190,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
                   for (final backdrop in WindowBackdrop.available)
                     ButtonSegment(
                       value: backdrop,
-                      icon: grouped ? null : Icon(backdrop.icon, size: 15),
+                      icon: segmentIcons ? Icon(backdrop.icon, size: 15) : null,
                       label: Text(backdrop.label),
                     ),
                 ],
@@ -271,6 +275,7 @@ class ExplorerOptionsSheet extends StatelessWidget {
         ),
       ],
     ));
+    });
   }
 }
 
