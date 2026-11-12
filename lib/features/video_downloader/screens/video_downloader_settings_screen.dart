@@ -312,7 +312,11 @@ class _VideoDownloaderSettingsScreenState
         ),
       ];
 
-  List<Widget> _defaultTiles() => [
+  /// What a new download gets: the options for video, or for audio only,
+  /// whichever is chosen (each kind uses only its own).
+  List<Widget> _defaultTiles() {
+    final audio = _s.defaultKind == DownloadKind.audio;
+    return [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: SegmentedButton<DownloadKind>(
@@ -337,6 +341,16 @@ class _VideoDownloaderSettingsScreenState
             onSelectionChanged: (v) => _set(_s.copyWith(defaultKind: v.first)),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Text(
+            audio
+                ? 'New downloads save the sound only. Each download can still be changed.'
+                : 'New downloads save the video with its sound. Each download can still be changed.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+        if (!audio)
         _dropdown<VideoQuality>(
           icon: LucideIcons.monitor,
           title: 'Video quality',
@@ -344,6 +358,7 @@ class _VideoDownloaderSettingsScreenState
           items: {for (final q in VideoQuality.values) q: q.label},
           onChanged: (v) => _set(_s.copyWith(defaultQuality: v)),
         ),
+        if (audio) ...[
         _dropdown<AudioFormat>(
           icon: LucideIcons.music,
           title: 'Audio format',
@@ -369,6 +384,8 @@ class _VideoDownloaderSettingsScreenState
               ),
             ),
           ),
+        ],
+        if (!audio) ...[
         _dropdown<VideoContainer>(
           icon: LucideIcons.clapperboard,
           title: 'Video file type',
@@ -385,7 +402,9 @@ class _VideoDownloaderSettingsScreenState
           value: _s.preferCompatible,
           onChanged: (v) => _set(_s.copyWith(preferCompatible: v)),
         ),
+        ],
       ];
+  }
 
   List<Widget> _fileTiles(BuildContext context) => [
         Padding(

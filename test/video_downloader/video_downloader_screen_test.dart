@@ -387,7 +387,14 @@ void main() {
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Python and FFmpeg, 120 MB'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Remove'));
+    // Into the middle of the screen: at the top it would be under the
+    // floating top bar.
+    final remove = find.widgetWithText(OutlinedButton, 'Remove');
+    await tester.ensureVisible(remove);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(Scrollable).first, Offset(0, 400 - tester.getCenter(remove).dy));
+    await tester.pumpAndSettle();
+    await tester.tap(remove);
     await tester.pumpAndSettle();
     expect(find.text('Remove the video engine?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
