@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'cookie_store.dart';
 import 'desktop_tools.dart';
 import 'downloader_backend.dart';
 import 'ytdlp_args.dart';
@@ -37,9 +38,17 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
   bool _cancelSetup = false;
   String? _versionCache;
   DateTime? _versionStamp;
+  int _maxConcurrent = 2;
 
   @override
-  int get maxConcurrent => 2;
+  int get maxConcurrent => _maxConcurrent;
+
+  @override
+  Future<void> configure({required int maxConcurrent, required bool notifications}) async {
+    _maxConcurrent = maxConcurrent.clamp(1, 5);
+    // More may run now; fewer: the running ones finish first.
+    _pump();
+  }
 
   Future<YtDlpInstaller> _ytDlp() async {
     if (_installer != null) return _installer!;
@@ -217,12 +226,15 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
       downloads = await getDownloadsDirectory();
     } catch (_) {}
     downloads ??= await getApplicationDocumentsDirectory();
-    final temp = _tempOverride ?? await getTemporaryDirectory();
     return BackendPaths(
       defaultOutputDir: p.join(downloads.path, 'Folders Videos'),
-      workRoot: p.join(temp.path, 'explorer_video_work'),
+      workRoot: await _workRoot(),
     );
   }
+
+  /// Parent of the jobs' folders for partial files.
+  Future<String> _workRoot() async =>
+      p.join((_tempOverride ?? await getTemporaryDirectory()).path, 'explorer_video_work');
 
   @override
   Future<bool> canWrite(String dir) async {
@@ -240,19 +252,46 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
 
   static const _env = {'PYTHONIOENCODING': 'utf-8', 'PYTHONUTF8': '1'};
 
+  /// yt-dlp's cache (YouTube's player code and the like), in the app's own
+  /// folder so clearing it touches nothing else.
+  Future<Directory> _cacheDir() async =>
+      Directory(p.join((await _ytDlp()).directory.path, 'cache'));
+
   Future<List<String>> _commonArgs() async {
     final tools = await _findTools();
     return [
+      '--cache-dir', (await _cacheDir()).path,
       if (tools.ffmpeg != null) ...['--ffmpeg-location', tools.ffmpeg!],
       if (tools.jsRuntime != null) ...['--js-runtimes', tools.jsRuntime!],
     ];
   }
 
   @override
-  Future<String> fetchInfoJson(String url, {required String requestId}) async {
+  Future<String> fetchInfoJson(
+    String url, {
+    required String requestId,
+    List<String>? args,
+    String? cookieFile,
+  }) async {
     final installer = await _ytDlp();
-    final args = [...YtDlpArgs.info(), ...await _commonArgs(), '--', url];
-    final process = await Process.start(installer.binary.path, args, environment: _env);
+    final cookies = await CookieStore.runCopy(cookieFile, requestId);
+    final Process process;
+    try {
+      process = await Process.start(
+        installer.binary.path,
+        [
+          ...args ?? YtDlpArgs.info(),
+          ...await _commonArgs(),
+          if (cookies != null) ...['--cookies', cookies],
+          '--',
+          url,
+        ],
+        environment: _env,
+      );
+    } catch (_) {
+      await CookieStore.deleteRunCopy(cookies);
+      rethrow;
+    }
     _fetches[requestId] = process;
     try {
       final out = process.stdout.transform(const Utf8Decoder(allowMalformed: true)).join();
@@ -269,6 +308,7 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
       return stdout;
     } finally {
       _fetches.remove(requestId);
+      await CookieStore.deleteRunCopy(cookies);
     }
   }
 
@@ -353,6 +393,7 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
 
   Future<void> _run(_DesktopJob job) async {
     final spec = job.spec;
+    String? cookies;
     try {
       final installer = await _ytDlp();
       if (!installer.isInstalled) await prepare();
@@ -361,7 +402,14 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
       }
       await Directory(spec.outputDir).create(recursive: true);
       await Directory(spec.workDir).create(recursive: true);
-      final args = [...spec.args, ...await _commonArgs(), '--', spec.url];
+      cookies = await CookieStore.runCopy(spec.cookieFile, 'job-${spec.id}');
+      final args = [
+        ...spec.args,
+        ...await _commonArgs(),
+        if (cookies != null) ...['--cookies', cookies],
+        '--',
+        spec.url,
+      ];
       if (job.cancelRequested) throw const DownloaderException('Cancelled', cancelled: true);
       final process = await Process.start(installer.binary.path, args,
           workingDirectory: spec.workDir, environment: _env);
@@ -409,6 +457,7 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
     } finally {
       job.process = null;
       job.finishedAt = DateTime.now();
+      await CookieStore.deleteRunCopy(cookies);
     }
     if (job.removed || job.status == JobStatus.done) {
       // Nothing to resume.
@@ -443,6 +492,74 @@ class DesktopDownloaderBackend extends VideoDownloaderBackend {
       process.kill(ProcessSignal.sigkill);
       return -1;
     }));
+  }
+
+  @override
+  Future<int> clearCache({
+    required Set<String> keepWorkDirs,
+    Set<String> outputDirs = const {},
+  }) async {
+    var freed = 0;
+    final keep = {for (final d in keepWorkDirs) p.normalize(d)};
+    for (final job in _jobs.values) {
+      if (job.isActive) keep.add(p.normalize(job.spec.workDir));
+    }
+    // Partial downloads of jobs that aren't running or waiting.
+    final work = Directory(await _workRoot());
+    if (await work.exists()) {
+      await for (final entity in work.list(followLinks: false)) {
+        if (keep.contains(p.normalize(entity.path))) continue;
+        freed += await _delete(entity);
+      }
+    }
+    // yt-dlp's own cache: --rm-cache-dir, then whatever is left.
+    final cache = await _cacheDir();
+    if (await cache.exists()) {
+      final before = await _size(cache);
+      final installer = await _ytDlp();
+      if (installer.isInstalled) {
+        try {
+          await Process.run(
+            installer.binary.path,
+            ['--cache-dir', cache.path, '--rm-cache-dir'],
+            environment: _env,
+          ).timeout(const Duration(seconds: 30));
+        } catch (_) {}
+      }
+      if (await cache.exists()) await _delete(cache);
+      freed += before;
+    }
+    return freed;
+  }
+
+  /// Bytes in [entity], not following links.
+  static Future<int> _size(FileSystemEntity entity) async {
+    try {
+      if (entity is File) return await entity.length();
+      if (entity is! Directory) return 0;
+      var total = 0;
+      await for (final child in entity.list(recursive: true, followLinks: false)) {
+        if (child is File) {
+          try {
+            total += await child.length();
+          } catch (_) {}
+        }
+      }
+      return total;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Deletes [entity]; returns the bytes it held, or 0 if it stayed.
+  static Future<int> _delete(FileSystemEntity entity) async {
+    final size = await _size(entity);
+    try {
+      await entity.delete(recursive: true);
+      return size;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> _deleteDir(String path) async {
@@ -497,6 +614,7 @@ class _DesktopJob {
         filePath: tracker.filePath,
         error: error,
         log: status == JobStatus.failed ? tracker.log.join('\n') : null,
+        output: isActive ? null : tracker.output.join('\n'),
         finishedAt: finishedAt,
       );
 }

@@ -1,12 +1,17 @@
 package com.example.folders
 
+import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import com.yausername.youtubedl_android.YoutubeDL
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
@@ -46,7 +51,7 @@ class VideoDownloaderNative(activity: Activity, messenger: BinaryMessenger) :
                         "engineInstalled" to VideoEngineInstaller.isInstalled(context),
                         "engineDownloadBytes" to sizes?.first,
                         "engineDiskBytes" to sizes?.second,
-                        "maxConcurrent" to VideoDownloadJobs.MAX_CONCURRENT,
+                        "maxConcurrent" to VideoDownloadJobs.maxConcurrent,
                         "notificationsEnabled" to notificationsEnabled(),
                     )
                 }
@@ -84,7 +89,35 @@ class VideoDownloaderNative(activity: Activity, messenger: BinaryMessenger) :
                 "fetchInfo" -> {
                     val url = call.argument<String>("url")!!
                     val requestId = call.argument<String>("requestId")!!
-                    background(result) { VideoDownloadEngine.fetchInfo(context, url, requestId) }
+                    val args = call.argument<List<String>>("args")
+                    val cookieFile = call.argument<String>("cookieFile")
+                    background(result) {
+                        VideoDownloadEngine.fetchInfo(context, url, requestId, args, cookieFile)
+                    }
+                }
+                "configure" -> {
+                    VideoDownloadJobs.configure(
+                        context,
+                        call.argument<Int>("maxConcurrent") ?: VideoDownloadJobs.DEFAULT_CONCURRENT,
+                        call.argument<Boolean>("notifications") ?: true,
+                    )
+                    result.success(null)
+                }
+                "clearCache" -> {
+                    val keep = call.argument<List<String>>("keep") ?: emptyList()
+                    val outputDirs = call.argument<List<String>>("outputDirs") ?: emptyList()
+                    background(result) { VideoDownloadEngine.clearCache(context, keep, outputDirs) }
+                }
+                "permissions" -> result.success(
+                    mapOf(
+                        "notifications" to notificationsEnabled(),
+                        "storage" to storageAccess(),
+                        "sdk" to Build.VERSION.SDK_INT,
+                    )
+                )
+                "openNotificationSettings" -> {
+                    openNotificationSettings()
+                    result.success(null)
                 }
                 "cancelFetch" -> {
                     call.argument<String>("requestId")?.let {
@@ -143,6 +176,33 @@ class VideoDownloaderNative(activity: Activity, messenger: BinaryMessenger) :
 
     override fun onJobRemoved(id: String) {
         main.post { sink?.success(mapOf("event" to "removed", "id" to id)) }
+    }
+
+    /** Files can be saved in any folder: "All files access" from Android 11. */
+    private fun storageAccess(): Boolean = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> Environment.isExternalStorageManager()
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
+            context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+                PackageManager.PERMISSION_GRANTED
+        else -> true
+    }
+
+    private fun openNotificationSettings() {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
     }
 
     private fun notificationsEnabled(): Boolean {

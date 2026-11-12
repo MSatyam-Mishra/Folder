@@ -33,6 +33,26 @@ enum AudioFormat {
       values.firstWhere((v) => v.name == name, orElse: () => AudioFormat.m4a);
 }
 
+/// Bitrate of audio-only downloads that FFmpeg converts (`--audio-quality`).
+/// [best] keeps the best the site offers, without converting an M4A stream.
+enum AudioQuality {
+  best(null),
+  k320(320),
+  k256(256),
+  k192(192),
+  k160(160),
+  k128(128);
+
+  const AudioQuality(this.kbps);
+
+  final int? kbps;
+
+  String get label => kbps == null ? 'Best' : '$kbps kbps';
+
+  static AudioQuality fromName(String? name) =>
+      values.firstWhere((v) => v.name == name, orElse: () => AudioQuality.best);
+}
+
 /// Container for merged video+audio.
 enum VideoContainer {
   auto('Auto (MP4, else MKV)'),
@@ -334,6 +354,7 @@ class DownloadJob {
     this.filePath,
     this.error,
     this.log,
+    this.output,
     this.finishedAt,
   });
 
@@ -368,6 +389,10 @@ class DownloadJob {
   final String? filePath;
   final String? error;
   final String? log;
+
+  /// What yt-dlp printed, each line with the time it came (once the job has
+  /// ended), for the downloader's log.
+  final String? output;
   final DateTime? finishedAt;
 
   bool get isActive => status == JobStatus.queued || status == JobStatus.running;
@@ -407,6 +432,7 @@ class DownloadJob {
       filePath: _str(m['filePath']),
       error: _str(m['error']),
       log: _str(m['log']),
+      output: _str(m['output']),
       finishedAt: _date(m['finishedAt']),
     );
   }
@@ -431,6 +457,7 @@ class DownloadJob {
         'filePath': filePath,
         'error': error,
         'log': log,
+        'output': output,
         'finishedAt': finishedAt?.millisecondsSinceEpoch,
       };
 }
@@ -446,6 +473,7 @@ class JobSpec {
     this.title,
     this.thumbnail,
     this.meta = const {},
+    this.cookieFile,
   });
 
   final String id;
@@ -459,10 +487,16 @@ class JobSpec {
   final String? thumbnail;
   final Map<String, dynamic> meta;
 
+  /// The cookies to send (Netscape format), when the user has some. The
+  /// backend gives each run its own copy, as yt-dlp writes the file back
+  /// when it ends.
+  final String? cookieFile;
+
   Map<String, Object?> toMap() => {
         'id': id,
         'url': url,
         'args': args,
+        'cookieFile': cookieFile,
         'outputDir': outputDir,
         'workDir': workDir,
         'title': title,

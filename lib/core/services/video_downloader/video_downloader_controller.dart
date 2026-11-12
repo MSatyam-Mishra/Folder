@@ -6,11 +6,15 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'cookie_store.dart';
 import 'downloader_backend.dart';
+import 'downloader_log.dart';
 import 'downloader_settings.dart';
+import 'netscape_cookies.dart';
 import 'ytdlp_args.dart';
 import 'ytdlp_models.dart';
 import 'ytdlp_output.dart';
@@ -21,12 +25,21 @@ enum EngineState { idle, preparing, ready, failed, unsupported }
 /// and the yt-dlp engine. One instance for the app's lifetime, so screens
 /// can come and go while downloads run.
 class VideoDownloaderController extends ChangeNotifier {
-  VideoDownloaderController(this.backend);
+  /// [dataDirectory] gives the folder for cookies and the log; without it
+  /// (tests) they're kept in memory only.
+  VideoDownloaderController(this.backend, {Future<Directory?> Function()? dataDirectory})
+      : _dataDirectory = dataDirectory;
 
   static VideoDownloaderController? _instance;
 
-  static VideoDownloaderController get instance =>
-      _instance ??= VideoDownloaderController(VideoDownloaderBackend.forPlatform());
+  static VideoDownloaderController get instance => _instance ??= VideoDownloaderController(
+        VideoDownloaderBackend.forPlatform(),
+        dataDirectory: appDataDirectory,
+      );
+
+  /// The downloader's folder in app-private storage.
+  static Future<Directory?> appDataDirectory() async =>
+      Directory(p.join((await getApplicationSupportDirectory()).path, 'video_downloader'));
 
   @visibleForTesting
   static set instance(VideoDownloaderController value) => _instance = value;
@@ -39,6 +52,13 @@ class VideoDownloaderController extends ChangeNotifier {
   static const _maxHistory = 500;
 
   final VideoDownloaderBackend backend;
+  final Future<Directory?> Function()? _dataDirectory;
+
+  /// Imported cookies and site sign-ins, passed to yt-dlp.
+  final cookies = CookieStore();
+
+  /// What the downloader did; cookie values are hidden.
+  late final log = DownloaderLog(redact: cookies.redact);
   SharedPreferences? _prefs;
   StreamSubscription<BackendEvent>? _events;
   Future<void>? _starting;
@@ -118,6 +138,14 @@ class VideoDownloaderController extends ChangeNotifier {
     rightsAccepted = prefs.getBool(_kRights) ?? false;
     final last = prefs.getInt(_kLastUpdate);
     lastUpdateCheck = last == null ? null : DateTime.fromMillisecondsSinceEpoch(last);
+    Directory? data;
+    try {
+      data = await _dataDirectory?.call();
+    } catch (e) {
+      debugPrint('Video downloader: no app storage ($e)');
+    }
+    await cookies.open(data == null ? null : Directory(p.join(data.path, 'cookies')));
+    await log.open(data == null ? null : File(p.join(data.path, 'logs', 'downloader_log.json')));
     if (!isSupported) {
       engineState = EngineState.unsupported;
       notifyListeners();
@@ -135,12 +163,26 @@ class VideoDownloaderController extends ChangeNotifier {
         _jobs[job.id] = job;
       }
       for (final job in _jobs.values.toList()) {
+        _logJob(job);
         if (job.status == JobStatus.done) unawaited(_complete(job));
       }
+      await _configure();
     } catch (e) {
       engineError = '$e';
     }
     notifyListeners();
+  }
+
+  /// Tells the backend how many jobs may run and whether to notify.
+  Future<void> _configure() async {
+    try {
+      await backend.configure(
+        maxConcurrent: settings.maxConcurrent,
+        notifications: settings.notifications,
+      );
+    } catch (e) {
+      debugPrint('Video downloader: settings not applied ($e)');
+    }
   }
 
   /// Sets up yt-dlp if needed (the first time: unpack or download it).
@@ -169,6 +211,7 @@ class VideoDownloaderController extends ChangeNotifier {
   /// before the next download.
   Future<void> removeEngine() async {
     await backend.removeEngine();
+    log.add('Removed the video engine', category: LogCategory.engine);
     _engineAllowed = false;
     engineState = EngineState.idle;
     engineError = null;
@@ -197,6 +240,7 @@ class VideoDownloaderController extends ChangeNotifier {
       backendStatus = await backend.status();
       engineState = EngineState.ready;
       engineMessage = null;
+      if (firstTime) log.add('The video engine is set up', category: LogCategory.engine);
       if (firstTime && !Platform.isAndroid) {
         // Just downloaded the latest release.
         await _setLastUpdateCheck(DateTime.now());
@@ -210,6 +254,14 @@ class VideoDownloaderController extends ChangeNotifier {
       if (cancelled) _engineAllowed = false;
       engineState = cancelled ? EngineState.idle : EngineState.failed;
       engineError = cancelled ? null : (e is DownloaderException ? e.message : '$e');
+      if (!cancelled) {
+        log.add(
+          "The video engine couldn't start",
+          level: LogLevel.error,
+          category: LogCategory.engine,
+          details: engineError,
+        );
+      }
       engineMessage = null;
       engineProgress = null;
       notifyListeners();
@@ -232,14 +284,42 @@ class VideoDownloaderController extends ChangeNotifier {
     final id = 'info-${DateTime.now().microsecondsSinceEpoch}';
     _fetchId = id;
     try {
-      final json = await backend.fetchInfoJson(url, requestId: id);
-      return await _parseInfo(json, url);
+      final json = await backend.fetchInfoJson(
+        url,
+        requestId: id,
+        args: YtDlpArgs.info(settings),
+        cookieFile: cookies.cookieFilePath,
+      );
+      final info = await _parseInfo(json, url);
+      log.add(
+        '${info.isPlaylist ? 'Read a playlist' : 'Read a link'}: ${info.title ?? url}',
+        category: LogCategory.link,
+        details: [
+          'Link: $url',
+          if (info.extractor != null) 'Site: ${info.extractor}',
+          info.isPlaylist ? '${info.entries.length} items' : '${info.formats.length} formats',
+          if (cookies.hasCookies) 'Sent the saved cookies',
+        ].join('\n'),
+      );
+      return info;
     } on FormatException catch (e) {
-      throw DownloaderException("yt-dlp's answer couldn't be read (${e.message}).");
+      final message = "yt-dlp's answer couldn't be read (${e.message}).";
+      _logFetchError(url, message);
+      throw DownloaderException(message);
+    } on DownloaderException catch (e) {
+      if (!e.cancelled) _logFetchError(url, e.message);
+      rethrow;
     } finally {
       if (_fetchId == id) _fetchId = null;
     }
   }
+
+  void _logFetchError(String url, String message) => log.add(
+        "Couldn't read a link",
+        level: LogLevel.error,
+        category: LogCategory.link,
+        details: 'Link: $url\nError: $message',
+      );
 
   /// Large answers (long playlists, YouTube's ~1 MB of formats) are parsed
   /// in an isolate so the UI doesn't stutter. Static, so the isolate's
@@ -315,7 +395,7 @@ class VideoDownloaderController extends ChangeNotifier {
 
   Future<void> _beforeEnqueue() async {
     await ensureReady();
-    await _askNotificationPermission();
+    if (settings.notifications) await _askNotificationPermission();
     if (!await backend.canWrite(outputDir)) {
       throw DownloaderException(
         "Folders can't save files in $outputDir. Choose another folder in "
@@ -362,6 +442,7 @@ class VideoDownloaderController extends ChangeNotifier {
         'kind': audio ? 'audio' : 'video',
         'label': options.label,
       }..removeWhere((_, v) => v == null),
+      cookieFile: cookies.cookieFilePath,
     );
     await backend.enqueue(spec);
   }
@@ -395,6 +476,7 @@ class VideoDownloaderController extends ChangeNotifier {
     switch (event) {
       case JobChanged(:final job):
         _jobs[job.id] = job;
+        _logJob(job);
         if (job.status == JobStatus.done) unawaited(_complete(job));
       case JobRemoved(:final id):
         _jobs.remove(id);
@@ -402,6 +484,37 @@ class VideoDownloaderController extends ChangeNotifier {
         return; // [_prepare] gets it through prepare's onProgress.
     }
     notifyListeners();
+  }
+
+  /// Logs a job that has ended, once.
+  void _logJob(DownloadJob job) {
+    if (job.isActive) return;
+    final ref = 'job:${job.id}:${job.finishedAt?.millisecondsSinceEpoch ?? 0}';
+    if (log.hasRef(ref)) return;
+    final title = job.displayTitle;
+    final (level, head) = switch (job.status) {
+      JobStatus.done => (LogLevel.info, 'Downloaded: $title'),
+      JobStatus.failed => (LogLevel.error, 'Download failed: $title'),
+      _ => (LogLevel.warning, 'Download cancelled: $title'),
+    };
+    final output = job.output ?? job.log;
+    log.add(
+      head,
+      level: level,
+      category: LogCategory.download,
+      ref: ref,
+      time: job.finishedAt,
+      details: [
+        'Link: ${job.url}',
+        if (job.meta['label'] != null) 'Options: ${job.meta['label']}',
+        if (job.filePath != null)
+          'File: ${job.filePath}'
+        else if (job.outputDir != null)
+          'Folder: ${job.outputDir}',
+        if (job.error != null) 'Error: ${job.error}',
+        if (output != null && output.trim().isNotEmpty) ...['', 'yt-dlp:', output.trimRight()],
+      ].join('\n'),
+    );
   }
 
   /// Moves a finished job into the history.
@@ -474,9 +587,15 @@ class VideoDownloaderController extends ChangeNotifier {
   }
 
   Future<void> updateSettings(DownloaderSettings value) async {
+    final old = settings;
     settings = value;
     notifyListeners();
     await _prefs?.setString(_kSettings, jsonEncode(value.toJson()));
+    if (isStarted &&
+        isSupported &&
+        (old.maxConcurrent != value.maxConcurrent || old.notifications != value.notifications)) {
+      await _configure();
+    }
   }
 
   Future<void> acceptRights() async {
@@ -503,7 +622,21 @@ class VideoDownloaderController extends ChangeNotifier {
       final result = await backend.update();
       if (result.version != null) ytDlpVersion = result.version;
       await _setLastUpdateCheck(DateTime.now());
+      log.add(
+        result.updated
+            ? 'Updated yt-dlp to ${result.version}'
+            : 'yt-dlp is up to date (${result.version ?? 'unknown version'})',
+        category: LogCategory.engine,
+      );
       return result;
+    } catch (e) {
+      log.add(
+        "yt-dlp couldn't be updated",
+        level: LogLevel.error,
+        category: LogCategory.engine,
+        details: '$e',
+      );
+      rethrow;
     } finally {
       updating = false;
       _updateRun = null;
@@ -528,6 +661,147 @@ class VideoDownloaderController extends ChangeNotifier {
   Future<void> _setLastUpdateCheck(DateTime time) async {
     lastUpdateCheck = time;
     await _prefs?.setInt(_kLastUpdate, time.millisecondsSinceEpoch);
+  }
+
+  // Maintenance -----------------------------------------------------------
+
+  /// Deletes partial downloads of jobs that aren't running or waiting, and
+  /// yt-dlp's cache. Finished downloads stay. Returns the bytes freed.
+  Future<int> clearCache() async {
+    await start();
+    var freed = 0;
+    if (isSupported) {
+      final keep = {
+        for (final j in _jobs.values)
+          if (j.isActive && j.workDir != null) j.workDir!,
+      };
+      freed = await backend.clearCache(
+        keepWorkDirs: keep,
+        outputDirs: {
+          if (outputDir.isNotEmpty) outputDir,
+          ?backendPaths?.defaultOutputDir,
+        },
+      );
+    }
+    log.add('Cleared the cache: ${formatBytes(freed)} freed', category: LogCategory.maintenance);
+    return freed;
+  }
+
+  /// "12 MB".
+  static String formatBytes(int bytes) {
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var v = bytes.toDouble();
+    var unit = 0;
+    while (v >= 1000 && unit < units.length - 1) {
+      v /= 1000;
+      unit++;
+    }
+    return unit == 0 ? '$bytes B' : '${v.toStringAsFixed(v >= 10 ? 0 : 1)} ${units[unit]}';
+  }
+
+  // Permissions (Android) ---------------------------------------------------
+
+  Future<DownloaderPermissions?> permissions() async {
+    try {
+      return await backend.permissions();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Asks for access to every folder: Android 11 and newer open the "All
+  /// files access" page.
+  Future<void> requestStorageAccess() async {
+    final state = await permissions();
+    if (state == null || state.storage) return;
+    try {
+      if (state.sdk >= 30) {
+        await Permission.manageExternalStorage.request();
+      } else if (!(await Permission.storage.request()).isGranted) {
+        await openAppSettings();
+      }
+    } catch (_) {}
+  }
+
+  /// Asks to show notifications (Android 13 and newer), else opens the
+  /// app's notification settings.
+  Future<void> allowNotifications() async {
+    try {
+      final status = await Permission.notification.request();
+      if (status.isGranted && ((await permissions())?.notifications ?? true)) return;
+    } catch (_) {}
+    await openNotificationSettings();
+  }
+
+  Future<void> openNotificationSettings() async {
+    try {
+      await backend.openNotificationSettings();
+    } catch (_) {}
+  }
+
+  // Cookies -----------------------------------------------------------------
+
+  /// Imports a cookies.txt file. Throws [CookieFormatException].
+  Future<ImportResult> importCookies(File file) async {
+    await start();
+    final result = await cookies.importFile(file);
+    log.add(
+      'Imported cookies from ${p.basename(file.path)}',
+      category: LogCategory.cookies,
+      details: [
+        result.summary,
+        if (result.invalidLines > 0) '${result.invalidLines} lines skipped (not cookies)',
+        if (result.expired > 0) '${result.expired} expired',
+      ].join('\n'),
+    );
+    return result;
+  }
+
+  Future<void> removeImportedCookies() async {
+    await cookies.removeImported();
+    log.add('Removed the imported cookies', category: LogCategory.cookies);
+  }
+
+  /// Keeps the cookies a sign-in left for [site]; returns how many.
+  Future<int> saveSignIn(CookieSite site, List<NetscapeCookie> found) async {
+    await start();
+    final count = await cookies.setSiteCookies(site, found, source: CookieSource.login);
+    log.add(
+      count == 0
+          ? 'No cookies found after signing in to ${site.name}'
+          : 'Saved the cookies of signing in to ${site.name} ($count)',
+      level: count == 0 ? LogLevel.warning : LogLevel.info,
+      category: LogCategory.cookies,
+      details: count == 0 ? null : cookies.status(site).label,
+    );
+    return count;
+  }
+
+  /// Keeps cookies the user pasted for [site]. Throws [CookieFormatException].
+  Future<int> pasteCookies(CookieSite site, String text) async {
+    await start();
+    final count = await cookies.paste(site, text);
+    log.add(
+      'Saved pasted cookies for ${site.name} ($count)',
+      category: LogCategory.cookies,
+      details: cookies.status(site).label,
+    );
+    return count;
+  }
+
+  Future<void> signOut(CookieSite site) async {
+    await cookies.signOut(site);
+    log.add('Signed out of ${site.name}', category: LogCategory.cookies);
+  }
+
+  Future<void> addCookieSite(CookieSite site) async {
+    await start();
+    await cookies.addSite(site);
+  }
+
+  Future<void> removeCookieSite(CookieSite site) async {
+    await cookies.removeSite(site);
+    log.add('Removed ${site.name} and its cookies', category: LogCategory.cookies);
   }
 
   /// Android 13+: ask once to show download progress notifications.
@@ -556,6 +830,9 @@ class VideoDownloaderController extends ChangeNotifier {
   void dispose() {
     _events?.cancel();
     _completed.close();
+    unawaited(log.save());
+    log.dispose();
+    cookies.dispose();
     super.dispose();
   }
 }

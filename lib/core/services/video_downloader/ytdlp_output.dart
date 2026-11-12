@@ -132,7 +132,12 @@ abstract final class YtDlpOutputParser {
 /// Follows a running download from yt-dlp's output lines and keeps the
 /// job's state. Mirrors VideoDownloadJobs.kt (used on Android).
 class JobProgressTracker {
-  JobProgressTracker();
+  JobProgressTracker({DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+
+  /// Most lines kept in [output].
+  static const maxOutput = 300;
+
+  final DateTime Function() _clock;
 
   double? percent;
   int? downloaded;
@@ -147,6 +152,20 @@ class JobProgressTracker {
   String? thumbnail;
   final errors = <String>[];
   final log = <String>[];
+
+  /// What yt-dlp printed, readable and time-stamped ("14:03:22 …"), for
+  /// the downloader's log: progress lines only when a stream starts or
+  /// ends.
+  final output = <String>[];
+  final _finishedFormats = <String>{};
+
+  void _out(String text) {
+    final t = _clock();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final line = text.length > 500 ? text.substring(0, 500) : text;
+    output.add('${two(t.hour)}:${two(t.minute)}:${two(t.second)} $line');
+    if (output.length > maxOutput) output.removeAt(0);
+  }
 
   /// Applies one line. Returns true when the change is worth showing right
   /// away (a new stage, title or thumbnail) rather than with the next
@@ -163,18 +182,21 @@ class JobProgressTracker {
       final name = f.length > 1 ? f[1].trim() : null;
       if (f.first == 'started' && name != null && name.isNotEmpty && name != 'NA') {
         stage = 'pp:$name';
+        _out('[postprocess] $name');
         return true;
       }
       return false;
     }
     if (line.startsWith(YtDlpArgs.fileMarker)) {
       filePath = line.substring(YtDlpArgs.fileMarker.length).trim();
+      _out('[saved] $filePath');
       return false;
     }
     if (line.startsWith(YtDlpArgs.titleMarker)) {
       final t = line.substring(YtDlpArgs.titleMarker.length).trim();
       if (t.isEmpty || t == 'NA') return false;
       title = t;
+      _out('[title] $t');
       return true;
     }
     if (line.startsWith(YtDlpArgs.thumbnailMarker)) {
@@ -184,6 +206,7 @@ class JobProgressTracker {
       return true;
     }
     if (line.startsWith('ERROR:')) errors.add(line.substring(6).trim());
+    _out(line);
     log.add(line.length > 500 ? line.substring(0, 500) : line);
     if (log.length > 40) log.removeAt(0);
     return false;
@@ -198,6 +221,7 @@ class JobProgressTracker {
     if (format.isNotEmpty && format != 'NA' && format != formatId) {
       formatId = format;
       part++;
+      _out('[download] Format $format');
     }
     final fragment = n(7);
     final fragments = n(8);
@@ -208,6 +232,9 @@ class JobProgressTracker {
     stage = 'download';
     if (f.first == 'finished') {
       percent = 100;
+      if (_finishedFormats.add(formatId ?? '')) {
+        _out('[download] Done${done == null ? '' : ', $done bytes'}');
+      }
     } else if (done != null && total != null) {
       percent = (done * 100 / total!).clamp(0, 100).toDouble();
     } else if (fragment != null && fragments != null && fragments > 0) {

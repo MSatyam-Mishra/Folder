@@ -87,6 +87,25 @@ class BackendPaths {
   final String workRoot;
 }
 
+/// Android: what the downloader may do.
+class DownloaderPermissions {
+  const DownloaderPermissions({
+    required this.notifications,
+    required this.storage,
+    required this.sdk,
+  });
+
+  /// Notifications are allowed.
+  final bool notifications;
+
+  /// Files can be saved in any folder ("All files access" from Android 11,
+  /// the storage permission before).
+  final bool storage;
+
+  /// Android's API level.
+  final int sdk;
+}
+
 /// Result of a yt-dlp update.
 class UpdateResult {
   const UpdateResult({required this.updated, required this.version});
@@ -139,6 +158,26 @@ abstract class VideoDownloaderBackend {
   /// Most jobs that run at once.
   int get maxConcurrent => 2;
 
+  /// Applies the settings the platform's queue uses: how many jobs run at
+  /// once, and (Android) whether downloads show in the notification shade.
+  Future<void> configure({required int maxConcurrent, required bool notifications}) async {}
+
+  /// Deletes the downloader's temporary files: partial downloads of jobs
+  /// whose folder isn't in [keepWorkDirs] (Android also looks in each of
+  /// [outputDirs]' hidden work folder) and yt-dlp's cache. Finished
+  /// downloads aren't touched. Returns the bytes freed.
+  Future<int> clearCache({
+    required Set<String> keepWorkDirs,
+    Set<String> outputDirs = const {},
+  }) async =>
+      0;
+
+  /// Android: notifications and storage access; null elsewhere.
+  Future<DownloaderPermissions?> permissions() async => null;
+
+  /// Android: the app's notification settings.
+  Future<void> openNotificationSettings() async {}
+
   Future<BackendStatus> status();
 
   /// Sets yt-dlp up; slow the first time, which downloads the [EngineInfo]
@@ -163,8 +202,14 @@ abstract class VideoDownloaderBackend {
   /// Whether files can be written to [dir].
   Future<bool> canWrite(String dir);
 
-  /// `yt-dlp -J` output for [url]; cancel with [cancelFetch].
-  Future<String> fetchInfoJson(String url, {required String requestId});
+  /// `yt-dlp -J` output for [url], with [args] (`YtDlpArgs.info`) and the
+  /// cookies in [cookieFile]; cancel with [cancelFetch].
+  Future<String> fetchInfoJson(
+    String url, {
+    required String requestId,
+    List<String>? args,
+    String? cookieFile,
+  });
 
   Future<void> cancelFetch(String requestId);
 
@@ -224,7 +269,13 @@ class UnsupportedDownloaderBackend extends VideoDownloaderBackend {
   Future<bool> canWrite(String dir) async => false;
 
   @override
-  Future<String> fetchInfoJson(String url, {required String requestId}) async => _fail();
+  Future<String> fetchInfoJson(
+    String url, {
+    required String requestId,
+    List<String>? args,
+    String? cookieFile,
+  }) async =>
+      _fail();
 
   @override
   Future<void> cancelFetch(String requestId) async {}

@@ -132,6 +132,9 @@ class _VideoDownloaderScreenState extends State<VideoDownloaderScreen> {
 
   void _onCompleted(HistoryEntry entry) {
     if (!mounted) return;
+    // Computers have no notification for it: the setting is about this
+    // message there. Android's is in the shade, and this one stays.
+    if (!Platform.isAndroid && !_controller.settings.notifications) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Downloaded “${entry.title}”', maxLines: 2, overflow: TextOverflow.ellipsis),
       action: SnackBarAction(

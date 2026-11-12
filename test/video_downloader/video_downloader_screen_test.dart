@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:folders/core/services/video_downloader/cookie_store.dart';
 import 'package:folders/core/services/video_downloader/downloader_backend.dart';
+import 'package:folders/core/services/video_downloader/downloader_log.dart';
+import 'package:folders/core/services/video_downloader/downloader_settings.dart';
 import 'package:folders/core/services/video_downloader/video_downloader_controller.dart';
 import 'package:folders/core/services/video_downloader/ytdlp_models.dart';
+import 'package:folders/features/video_downloader/screens/downloader_logs_screen.dart';
 import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:folders/features/video_downloader/screens/video_downloader_settings_screen.dart';
 import 'package:folders/features/video_downloader/widgets/history_list.dart';
@@ -97,6 +101,16 @@ class FakeBackend extends VideoDownloaderBackend {
   /// For each fetch, whether an update was running.
   final fetchedDuringUpdate = <bool>[];
 
+  /// The yt-dlp options of each fetch.
+  final fetchArgs = <List<String>?>[];
+
+  /// Each configure call: how many at once, notifications.
+  final configured = <(int, bool)>[];
+
+  @override
+  Future<void> configure({required int maxConcurrent, required bool notifications}) async =>
+      configured.add((maxConcurrent, notifications));
+
   @override
   Future<UpdateResult> update() async {
     updateRunning = true;
@@ -113,8 +127,14 @@ class FakeBackend extends VideoDownloaderBackend {
   Future<bool> canWrite(String dir) async => true;
 
   @override
-  Future<String> fetchInfoJson(String url, {required String requestId}) async {
+  Future<String> fetchInfoJson(
+    String url, {
+    required String requestId,
+    List<String>? args,
+    String? cookieFile,
+  }) async {
     fetchedDuringUpdate.add(updateRunning);
+    fetchArgs.add(args);
     return url.contains('/pl') ? _playlist : _info;
   }
 
@@ -553,6 +573,107 @@ void main() {
     expect(find.text('Download the video engine to start'), findsNothing);
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isMacOS);
+
+  test('settings reach the backend and yt-dlp', () async {
+    final controller = VideoDownloaderController.instance;
+    await controller.start();
+    expect(backend.configured.last, (2, true));
+    await controller.updateSettings(controller.settings.copyWith(maxConcurrent: 4, notifications: false));
+    expect(backend.configured.last, (4, false));
+    await controller.updateSettings(controller.settings.copyWith(autoUpdate: false));
+    expect(backend.configured, hasLength(2), reason: 'nothing the backend uses changed');
+
+    await controller.updateSettings(controller.settings.copyWith(userAgent: UserAgentPreset.firefox));
+    await controller.fetchInfo('https://example.com/watch/abc');
+    expect(backend.fetchArgs.last, containsAllInOrder(['--user-agent', UserAgentPreset.firefox.value!]));
+    expect(controller.log.entries.last.title, 'Read a link: Test clip');
+  });
+
+  test('ended jobs are logged once, without cookie values', () async {
+    final controller = VideoDownloaderController.instance;
+    await controller.start();
+    await controller.pasteCookies(CookieSite.youtube, 'SAPISID=very-secret-value');
+    final failed = DownloadJob(
+      id: 'j1',
+      url: 'https://example.com/watch/abc',
+      title: 'Test clip',
+      status: JobStatus.failed,
+      createdAt: DateTime.now(),
+      finishedAt: DateTime(2026, 11, 12, 10),
+      error: 'Sign in to confirm your age',
+      output: '10:00:00 [debug] cookie header very-secret-value\n10:00:01 ERROR: Sign in to confirm your age',
+    );
+    backend.emit(failed);
+    backend.emit(failed);
+    await pumpEventQueue();
+    final entries = controller.log.entries.where((e) => e.category == LogCategory.download).toList();
+    expect(entries, hasLength(1));
+    expect(entries.single.level, LogLevel.error);
+    expect(entries.single.title, 'Download failed: Test clip');
+    expect(entries.single.details, contains('ERROR: Sign in to confirm your age'));
+    expect(controller.log.toText(), isNot(contains('very-secret-value')));
+  });
+
+  testWidgets('settings: paste cookies for a site, then sign out', (tester) async {
+    final controller = VideoDownloaderController.instance;
+    await controller.start();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(VideoDownloaderSettingsScreen(controller: controller)));
+    await tester.pumpAndSettle();
+    final list = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('YouTube'), 300, scrollable: list);
+    // It ends at the top, under the floating top bar: bring it down.
+    await tester.drag(list, const Offset(0, 250));
+    await tester.pumpAndSettle();
+    expect(find.text('Not imported'), findsOneWidget);
+    expect(find.text('Login required'), findsNWidgets(2), reason: 'YouTube and Bilibili');
+
+    await tester.tap(find.byTooltip('YouTube'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Paste cookies'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'not cookies');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining("These aren't cookies"), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'Cookie: SAPISID=abcdef123; SID=xyz789');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Signed in · 2 cookies'), findsOneWidget);
+    expect(controller.cookies.status(CookieSite.youtube).state, SiteState.signedIn);
+
+    await tester.tap(find.byTooltip('YouTube'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    expect(find.text('Login required'), findsNWidgets(2));
+    expect(controller.log.toText(), isNot(contains('abcdef123')));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('logs: grouped by day, an entry opens to its details', (tester) async {
+    final log = DownloaderLog();
+    final now = DateTime.now();
+    log.add('Downloaded: Test clip', details: 'Link: https://example.com/watch/abc', time: now);
+    log.add('Updated yt-dlp to 2026.08.19', category: LogCategory.engine,
+        time: now.subtract(const Duration(days: 1)));
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(DownloaderLogsScreen(log: log)));
+    await tester.pumpAndSettle();
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    expect(find.text('Link: https://example.com/watch/abc'), findsNothing);
+    await tester.tap(find.text('Downloaded: Test clip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Link: https://example.com/watch/abc'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('settings screen builds', (tester) async {
     final controller = VideoDownloaderController.instance;

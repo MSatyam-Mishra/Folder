@@ -90,16 +90,83 @@ object VideoDownloadEngine {
         false
     }
 
-    /** `yt-dlp -J --flat-playlist`: the JSON for a video or a playlist. */
+    /**
+     * `yt-dlp -J --flat-playlist`: the JSON for a video or a playlist. [args]
+     * come from Dart (ytdlp_args.dart: the User-Agent too); [cookieFile] is
+     * the downloader's cookies.txt.
+     */
     @Throws(Exception::class)
-    fun fetchInfo(context: Context, url: String, requestId: String): String {
+    fun fetchInfo(
+        context: Context,
+        url: String,
+        requestId: String,
+        args: List<String>? = null,
+        cookieFile: String? = null,
+    ): String {
         ensureReady(context)
         val request = YoutubeDLRequest(url)
             .addOption("--cache-dir", cacheDir(context).absolutePath)
-            .addOption("--dump-single-json")
-            .addOption("--flat-playlist")
-            .addOption("--no-update")
-        return YoutubeDL.getInstance().execute(request, requestId, null).out
+        if (args != null) {
+            request.addCommands(args + "--")
+        } else {
+            request.addOption("--dump-single-json")
+                .addOption("--flat-playlist")
+                .addOption("--no-update")
+        }
+        val cookies = runCookies(cookieFile, requestId)
+        try {
+            cookies?.let { request.addOption("--cookies", it.absolutePath) }
+            return YoutubeDL.getInstance().execute(request, requestId, null).out
+        } finally {
+            cookies?.delete()
+        }
+    }
+
+    /**
+     * A copy of the downloader's cookies.txt for one run: yt-dlp writes the
+     * file back when it ends, so runs mustn't share one. Null when there are
+     * no cookies. The caller deletes it once the run is over.
+     */
+    fun runCookies(cookieFile: String?, runId: String): File? {
+        if (cookieFile == null) return null
+        val source = File(cookieFile)
+        if (!source.isFile) return null
+        val dir = File(source.parentFile, "run").apply { mkdirs() }
+        val copy = File(dir, runId.replace(Regex("[^A-Za-z0-9_.-]"), "_") + ".txt")
+        source.copyTo(copy, overwrite = true)
+        return copy
+    }
+
+    /**
+     * Deletes partial downloads of jobs that aren't running or waiting (in
+     * [workRoot] and each of [outputDirs]' hidden work folder, but none in
+     * [keep]) and yt-dlp's cache. Finished downloads stay. Returns the bytes
+     * freed.
+     */
+    fun clearCache(context: Context, keep: Collection<String>, outputDirs: Collection<String>): Long {
+        val active = VideoDownloadJobs.activeWorkDirs() + keep.map { File(it).absolutePath }
+        var freed = 0L
+        val roots = listOf(workRoot(context)) + outputDirs.map { File(it, ".explorer-tmp") }
+        for (root in roots.distinctBy { it.absolutePath }) {
+            root.listFiles()?.forEach { child ->
+                if (child.name == ".nomedia" || child.absolutePath in active) return@forEach
+                freed += deleteCounting(child)
+            }
+            val rest = root.listFiles()?.filter { it.name != ".nomedia" }
+            if (rest != null && rest.isEmpty() && root.name == ".explorer-tmp") root.deleteRecursively()
+        }
+        val cache = cacheDir(context)
+        if (cache.exists()) freed += deleteCounting(cache)
+        return freed
+    }
+
+    private fun sizeOf(file: File): Long =
+        if (file.isDirectory) file.listFiles()?.sumOf { sizeOf(it) } ?: 0L else file.length()
+
+    private fun deleteCounting(file: File): Long {
+        val size = sizeOf(file)
+        file.deleteRecursively()
+        return if (file.exists()) 0L else size
     }
 
     /** yt-dlp's version, e.g. "2025.11.12". Cached until the binary changes. */

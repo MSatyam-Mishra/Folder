@@ -29,6 +29,8 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
         private const val EXTRA_ID = "id"
         private const val CHANNEL_PROGRESS = "video_downloads"
         private const val CHANNEL_DONE = "video_downloads_done"
+        /** With the downloader's notifications off: Android still wants one while the service runs. */
+        private const val CHANNEL_QUIET = "video_downloads_quiet"
         private const val NOTIFICATION_ID = 0x7D0001
         private const val DONE_ID_BASE = 0x7D1000
 
@@ -53,6 +55,7 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
 
         fun notifyFinished(context: Context, job: VideoDownloadJobs.Job) {
             if (job.status != "done" && job.status != "failed") return
+            if (!VideoDownloadJobs.notificationsEnabled) return
             val manager = context.getSystemService(NotificationManager::class.java) ?: return
             createChannels(context, manager)
             val title = job.title ?: job.url
@@ -82,6 +85,13 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
                     NotificationChannel(
                         CHANNEL_DONE, "Finished video downloads", NotificationManager.IMPORTANCE_DEFAULT,
                     )
+                )
+            }
+            if (manager.getNotificationChannel(CHANNEL_QUIET) == null) {
+                manager.createNotificationChannel(
+                    NotificationChannel(
+                        CHANNEL_QUIET, "Video downloads (notifications off)", NotificationManager.IMPORTANCE_MIN,
+                    ).apply { setShowBadge(false) }
                 )
             }
         }
@@ -177,6 +187,8 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
                     return@postDelayed
                 }
                 lastUpdate = SystemClock.elapsedRealtime()
+                // Notifications off: the quiet one posted at the start stays as it is.
+                if (!VideoDownloadJobs.notificationsEnabled) return@postDelayed
                 getSystemService(NotificationManager::class.java)
                     ?.notify(NOTIFICATION_ID, buildProgressNotification())
             }, wait)
@@ -185,7 +197,8 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
 
     private fun startInForeground() {
         stopped = false
-        val notification = buildProgressNotification()
+        val notification =
+            if (VideoDownloadJobs.notificationsEnabled) buildProgressNotification() else buildQuietNotification()
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
@@ -208,6 +221,26 @@ class VideoDownloadService : Service(), VideoDownloadJobs.Listener {
         }
         // Not stopped if a newer start request (a new download) came in.
         stopSelf(lastStartId)
+    }
+
+    /**
+     * The downloader's notifications are off, but a foreground service must
+     * show one: the least visible Android allows, shown only after a few
+     * seconds (Android 12+) and never updated.
+     */
+    private fun buildQuietNotification(): Notification {
+        val builder = builder(this, CHANNEL_QUIET)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentTitle("Downloading videos")
+            .setContentIntent(openAppIntent(this))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_DEFERRED)
+        }
+        @Suppress("DEPRECATION")
+        builder.setPriority(Notification.PRIORITY_MIN)
+        return builder.build()
     }
 
     private fun buildProgressNotification(): Notification {

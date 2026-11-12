@@ -25,11 +25,20 @@ abstract final class YtDlpArgs {
       '%(progress.status)s|%(progress.postprocessor)s';
 
   /// Info for a link: one JSON document; playlists are listed, not resolved.
-  static List<String> info() => const [
+  /// Cookies aren't here: the backend adds `--cookies` with its own copy of
+  /// the file.
+  static List<String> info([DownloaderSettings settings = const DownloaderSettings()]) => [
         '--dump-single-json',
         '--flat-playlist',
         '--no-update',
+        ...network(settings),
       ];
+
+  /// Options every request gets: the User-Agent, when one is chosen.
+  static List<String> network(DownloaderSettings settings) {
+    final agent = settings.effectiveUserAgent;
+    return [if (agent != null) ...['--user-agent', agent]];
+  }
 
   /// Options for downloading one item (the URL is added by the backend,
   /// after `--`).
@@ -56,6 +65,7 @@ abstract final class YtDlpArgs {
       '--paths', 'home:$outputDir',
       if (workDir != null) ...['--paths', 'temp:$workDir'],
       '--output', settings.effectiveTemplate,
+      ...network(settings),
     ];
 
     final audio = options.kind == DownloadKind.audio ||
@@ -66,7 +76,7 @@ abstract final class YtDlpArgs {
       case DownloadKind.video:
         args.addAll(_videoSelection(options.quality, settings, hasFfmpeg));
       case DownloadKind.audio:
-        args.addAll(_audioSelection(options.audioFormat, hasFfmpeg));
+        args.addAll(_audioSelection(options.audioFormat, settings.audioQuality, hasFfmpeg));
       case DownloadKind.format:
         final f = options.format;
         if (f == null) {
@@ -132,19 +142,35 @@ abstract final class YtDlpArgs {
         VideoContainer.mkv => ['--merge-output-format', 'mkv'],
       };
 
-  static List<String> _audioSelection(AudioFormat format, bool hasFfmpeg) {
+  static List<String> _audioSelection(
+    AudioFormat format,
+    AudioQuality quality,
+    bool hasFfmpeg,
+  ) {
+    final kbps = quality.kbps;
     if (!hasFfmpeg) {
-      // No conversion possible: take an M4A stream as is when there is one.
-      return ['--format', 'bestaudio[ext=m4a]/bestaudio/best'];
+      // No conversion possible: take an M4A stream as is when there is one,
+      // no richer than the bitrate asked for when there's a choice.
+      return [
+        '--format',
+        kbps == null
+            ? 'bestaudio[ext=m4a]/bestaudio/best'
+            : 'bestaudio[ext=m4a][abr<=$kbps]/bestaudio[ext=m4a]/'
+                'bestaudio[abr<=$kbps]/bestaudio/best',
+      ];
     }
+    // "0" is the best variable bitrate; "192K" a fixed one.
+    final audioQuality = kbps == null ? '0' : '${kbps}K';
     return switch (format) {
       AudioFormat.m4a => [
-          '--format', 'bestaudio[ext=m4a]/bestaudio/best',
-          '--extract-audio', '--audio-format', 'm4a', '--audio-quality', '0',
+          // An M4A stream is kept as it is (yt-dlp doesn't convert M4A to
+          // M4A), so a chosen bitrate takes the best stream and converts it.
+          '--format', kbps == null ? 'bestaudio[ext=m4a]/bestaudio/best' : 'bestaudio/best',
+          '--extract-audio', '--audio-format', 'm4a', '--audio-quality', audioQuality,
         ],
       AudioFormat.mp3 => [
           '--format', 'bestaudio/best',
-          '--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0',
+          '--extract-audio', '--audio-format', 'mp3', '--audio-quality', audioQuality,
         ],
     };
   }

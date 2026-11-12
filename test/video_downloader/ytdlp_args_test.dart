@@ -141,6 +141,71 @@ void main() {
     expect(DownloaderSettings.fromJson(const {}).toJson(), settings.toJson());
   });
 
+  test('audio quality: a fixed bitrate converts, Best keeps the stream', () {
+    final m4a = build(const DownloadOptions(kind: DownloadKind.audio),
+        s: settings.copyWith(audioQuality: AudioQuality.k192));
+    expect(_value(m4a, '--audio-quality'), '192K');
+    expect(_value(m4a, '--format'), 'bestaudio/best',
+        reason: 'an M4A stream would be kept as it is, without the bitrate');
+    final mp3 = build(const DownloadOptions(kind: DownloadKind.audio, audioFormat: AudioFormat.mp3),
+        s: settings.copyWith(audioQuality: AudioQuality.k320));
+    expect(_value(mp3, '--audio-quality'), '320K');
+    final best = build(const DownloadOptions(kind: DownloadKind.audio));
+    expect(_value(best, '--audio-quality'), '0');
+    final noFfmpeg = build(const DownloadOptions(kind: DownloadKind.audio),
+        s: settings.copyWith(audioQuality: AudioQuality.k128), ffmpeg: false);
+    expect(_value(noFfmpeg, '--format'),
+        'bestaudio[ext=m4a][abr<=128]/bestaudio[ext=m4a]/bestaudio[abr<=128]/bestaudio/best');
+    expect(noFfmpeg, isNot(contains('--audio-quality')));
+    final video = build(const DownloadOptions(), s: settings.copyWith(audioQuality: AudioQuality.k128));
+    expect(video, isNot(contains('--audio-quality')));
+  });
+
+  test('user agent: none by default, presets, custom without line breaks', () {
+    expect(build(const DownloadOptions()), isNot(contains('--user-agent')));
+    expect(YtDlpArgs.info(), isNot(contains('--user-agent')));
+    final chrome = settings.copyWith(userAgent: UserAgentPreset.chromeDesktop);
+    expect(_value(build(const DownloadOptions(), s: chrome), '--user-agent'),
+        UserAgentPreset.chromeDesktop.value);
+    expect(_value(YtDlpArgs.info(chrome), '--user-agent'), UserAgentPreset.chromeDesktop.value);
+    expect(YtDlpArgs.info(chrome).take(3), ['--dump-single-json', '--flat-playlist', '--no-update']);
+    final custom = settings.copyWith(userAgent: UserAgentPreset.custom, customUserAgent: ' My\nAgent/1.0 ');
+    expect(_value(YtDlpArgs.info(custom), '--user-agent'), 'My Agent/1.0');
+    final empty = settings.copyWith(userAgent: UserAgentPreset.custom, customUserAgent: '  ');
+    expect(YtDlpArgs.info(empty), isNot(contains('--user-agent')));
+  });
+
+  test('new settings round trip; older saved settings get the defaults', () {
+    final s = settings.copyWith(
+      maxConcurrent: 4,
+      notifications: false,
+      audioQuality: AudioQuality.k256,
+      userAgent: UserAgentPreset.custom,
+      customUserAgent: 'Agent/2',
+    );
+    final back = DownloaderSettings.fromJson(s.toJson());
+    expect(back.toJson(), s.toJson());
+    expect(back.maxConcurrent, 4);
+
+    // Saved by v1.0.11: none of the new keys.
+    final old = DownloaderSettings.fromJson(const {
+      'outputDir': null,
+      'defaultKind': 'audio',
+      'audioFormat': 'mp3',
+      'autoUpdate': false,
+    });
+    expect(old.defaultKind, DownloadKind.audio);
+    expect(old.maxConcurrent, 2);
+    expect(old.notifications, isTrue);
+    expect(old.audioQuality, AudioQuality.best);
+    expect(old.userAgent, UserAgentPreset.system);
+    expect(old.effectiveUserAgent, isNull);
+
+    expect(DownloaderSettings.fromJson(const {'maxConcurrent': 99}).maxConcurrent, 5);
+    expect(DownloaderSettings.fromJson(const {'maxConcurrent': 0}).maxConcurrent, 1);
+    expect(settings.copyWith(maxConcurrent: 9).maxConcurrent, 5);
+  });
+
   test('playlist folder names are safe', () {
     expect(VideoDownloaderController.safeFileName('a/b:c*?"<>|d'), 'a_b_c______d');
     expect(VideoDownloaderController.safeFileName('  ..Trailing dots.. '), 'Trailing dots');

@@ -10,20 +10,27 @@ import com.yausername.youtubedl_android.YoutubeDLRequest
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.CopyOnWriteArraySet
 
 /**
- * The download queue: runs yt-dlp for each job, at most [MAX_CONCURRENT] at
- * a time, and keeps every job's state for as long as the process lives so
- * a new Flutter engine (activity recreated, app reopened) can re-attach.
+ * The download queue: runs yt-dlp for each job, at most [maxConcurrent] at
+ * a time (a downloader setting), and keeps every job's state for as long as
+ * the process lives so a new Flutter engine (activity recreated, app
+ * reopened) can re-attach.
  *
  * Dart builds the yt-dlp arguments; this only runs them and reads the
  * machine-readable lines they print (see ytdlp_args.dart — the markers here
  * must match).
  */
 object VideoDownloadJobs {
-    const val MAX_CONCURRENT = 2
+    const val DEFAULT_CONCURRENT = 2
     private const val KEY_FINISHED = "finished_jobs"
+    private const val KEY_CONCURRENT = "max_concurrent"
+    private const val KEY_NOTIFICATIONS = "notifications"
+    private const val MAX_OUTPUT = 300
     private const val MARK_PROGRESS = "__EXPL_P__"
     private const val MARK_POSTPROCESS = "__EXPL_PP__"
     private const val MARK_FILE = "__EXPL_FILE__"
@@ -46,6 +53,8 @@ object VideoDownloadJobs {
         val workDir: String,
         val meta: String?,
         val createdAt: Long,
+        /** The downloader's cookies.txt; each run gets its own copy. */
+        val cookieFile: String?,
     ) {
         @Volatile var status = "queued"
         @Volatile var cancelRequested = false
@@ -65,6 +74,9 @@ object VideoDownloadJobs {
         var finishedAt: Long? = null
         val errors = ArrayList<String>()
         val log = ArrayDeque<String>()
+        /** What yt-dlp printed, time-stamped, for the downloader's log. */
+        val output = ArrayDeque<String>()
+        val finishedFormats = HashSet<String>()
         var lastEmit = 0L
 
         fun resetForRun() {
@@ -83,6 +95,8 @@ object VideoDownloadJobs {
             finishedAt = null
             errors.clear()
             log.clear()
+            output.clear()
+            finishedFormats.clear()
         }
 
         fun snapshot(): Map<String, Any?> = mapOf(
@@ -104,6 +118,7 @@ object VideoDownloadJobs {
             "filePath" to filePath,
             "error" to error,
             "log" to if (status == "failed") log.joinToString("\n") else null,
+            "output" to if (status == "queued" || status == "running") null else output.joinToString("\n"),
             "createdAt" to createdAt,
             "finishedAt" to finishedAt,
         )
@@ -115,6 +130,14 @@ object VideoDownloadJobs {
     @Volatile private var appContext: Context? = null
     private var swept = false
 
+    /** Most jobs that run at once (the downloader setting, 1 to 5). */
+    @Volatile var maxConcurrent = DEFAULT_CONCURRENT
+        private set
+
+    /** Whether downloads show in the notification shade. */
+    @Volatile var notificationsEnabled = true
+        private set
+
     fun init(context: Context) {
         val app = context.applicationContext
         appContext = app
@@ -122,6 +145,9 @@ object VideoDownloadJobs {
             if (swept) return
             swept = true
         }
+        val prefs = app.getSharedPreferences(VideoDownloadEngine.PREFS, Context.MODE_PRIVATE)
+        maxConcurrent = prefs.getInt(KEY_CONCURRENT, DEFAULT_CONCURRENT).coerceIn(1, 5)
+        notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS, true)
         // Partial downloads left by a previous process (killed mid-download).
         Thread {
             val cutoff = System.currentTimeMillis() - 2 * 24 * 3600 * 1000L
@@ -144,6 +170,26 @@ object VideoDownloadJobs {
             }
         }.start()
     }
+
+    /** Applies the downloader's settings; kept for the next process too. */
+    fun configure(context: Context, concurrent: Int, notifications: Boolean) {
+        init(context)
+        maxConcurrent = concurrent.coerceIn(1, 5)
+        val changed = notificationsEnabled != notifications
+        notificationsEnabled = notifications
+        context.applicationContext.getSharedPreferences(VideoDownloadEngine.PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_CONCURRENT, maxConcurrent)
+            .putBoolean(KEY_NOTIFICATIONS, notifications)
+            .apply()
+        // More may run now; with fewer, the running ones finish first.
+        schedule()
+        if (changed && hasActive()) VideoDownloadService.start(context)
+    }
+
+    /** The work folders of jobs that are running or waiting. */
+    @Synchronized
+    fun activeWorkDirs(): Set<String> = activeJobs().map { File(it.workDir).absolutePath }.toSet()
 
     fun addListener(listener: Listener) = listeners.add(listener)
 
@@ -172,6 +218,7 @@ object VideoDownloadJobs {
             workDir = spec["workDir"] as String,
             meta = spec["meta"] as String?,
             createdAt = System.currentTimeMillis(),
+            cookieFile = spec["cookieFile"] as String?,
         )
         synchronized(this) {
             if (jobs.containsKey(id)) return
@@ -269,7 +316,7 @@ object VideoDownloadJobs {
         synchronized(this) {
             var running = jobs.values.count { it.status == "running" }
             for (job in jobs.values) {
-                if (running >= MAX_CONCURRENT) break
+                if (running >= maxConcurrent) break
                 if (job.status == "queued" && !job.cancelRequested) {
                     job.status = "running"
                     job.attempt++
@@ -285,14 +332,17 @@ object VideoDownloadJobs {
     }
 
     private fun run(context: Context, job: Job) {
+        var cookies: File? = null
         try {
             VideoDownloadEngine.ensureReady(context)
             File(job.outputDir).mkdirs()
             prepareWorkDir(File(job.workDir))
+            val pid = "job-${job.id}-${job.attempt}"
             val request = YoutubeDLRequest(job.url)
                 .addOption("--cache-dir", VideoDownloadEngine.cacheDir(context).absolutePath)
-                .addCommands(job.args + "--")
-            val pid = "job-${job.id}-${job.attempt}"
+            cookies = VideoDownloadEngine.runCookies(job.cookieFile, pid)
+            cookies?.let { request.addOption("--cookies", it.absolutePath) }
+            request.addCommands(job.args + "--")
             job.processId = pid
             if (job.cancelRequested) throw YoutubeDL.CanceledException()
             // stderr merged into stdout: post-processing lines and errors
@@ -323,6 +373,7 @@ object VideoDownloadJobs {
         } finally {
             job.processId = null
             job.finishedAt = System.currentTimeMillis()
+            cookies?.delete()
         }
         if (job.removed) {
             deleteWorkDir(job.workDir)
@@ -353,12 +404,20 @@ object VideoDownloadJobs {
                     val name = fields.getOrNull(1)
                     if (fields.getOrNull(0) == "started" && name != null && name != "NA") {
                         job.stage = "pp:$name"
+                        addOutput(job, "[postprocess] $name")
                         force = true
                     }
                 }
-                line.startsWith(MARK_FILE) -> job.filePath = line.substring(MARK_FILE.length).trim()
+                line.startsWith(MARK_FILE) -> {
+                    job.filePath = line.substring(MARK_FILE.length).trim()
+                    addOutput(job, "[saved] ${job.filePath}")
+                }
                 line.startsWith(MARK_TITLE) -> line.substring(MARK_TITLE.length).trim()
-                    .takeIf { it.isNotEmpty() && it != "NA" }?.let { job.title = it; force = true }
+                    .takeIf { it.isNotEmpty() && it != "NA" }?.let {
+                        job.title = it
+                        addOutput(job, "[title] $it")
+                        force = true
+                    }
                 line.startsWith(MARK_THUMB) -> line.substring(MARK_THUMB.length).trim()
                     .takeIf { it.startsWith("http") }?.let { job.thumbnail = it; force = true }
                 line.startsWith("ERROR:") -> {
@@ -374,6 +433,17 @@ object VideoDownloadJobs {
     private fun addLog(job: Job, line: String) {
         job.log.addLast(line.take(500))
         while (job.log.size > 40) job.log.removeFirst()
+        addOutput(job, line)
+    }
+
+    private val clock = object : ThreadLocal<SimpleDateFormat>() {
+        override fun initialValue() = SimpleDateFormat("HH:mm:ss", Locale.US)
+    }
+
+    /** A line for the downloader's log ("14:03:22 …"); mirrors ytdlp_output.dart. */
+    private fun addOutput(job: Job, text: String) {
+        job.output.addLast("${clock.get()!!.format(Date())} ${text.take(500)}")
+        while (job.output.size > MAX_OUTPUT) job.output.removeFirst()
     }
 
     private fun applyProgress(job: Job, data: String) {
@@ -385,6 +455,7 @@ object VideoDownloadJobs {
         if (format != null && format != job.formatId) {
             job.formatId = format
             job.part++
+            addOutput(job, "[download] Format $format")
         }
         val fragIndex = num(7)
         val fragCount = num(8)
@@ -393,6 +464,9 @@ object VideoDownloadJobs {
         job.speed = num(4)
         job.eta = num(5)?.toInt()
         job.stage = "download"
+        if (f.getOrNull(0) == "finished" && job.finishedFormats.add(job.formatId ?: "")) {
+            addOutput(job, "[download] Done" + (downloaded?.let { ", $it bytes" } ?: ""))
+        }
         job.percent = when {
             f.getOrNull(0) == "finished" -> 100.0
             downloaded != null && total != null -> (downloaded * 100.0 / total).coerceIn(0.0, 100.0)
@@ -421,7 +495,8 @@ object VideoDownloadJobs {
         val prefs = context.getSharedPreferences(VideoDownloadEngine.PREFS, Context.MODE_PRIVATE)
         val list = JSONArray(prefs.getString(KEY_FINISHED, "[]"))
         val obj = JSONObject()
-        for ((k, v) in job.snapshot()) if (v != null) obj.put(k, v)
+        // The output can be long: its end is enough for the log.
+        for ((k, v) in job.snapshot()) if (v != null) obj.put(k, if (k == "output") (v as String).takeLast(32_000) else v)
         list.put(obj)
         prefs.edit().putString(KEY_FINISHED, list.toString()).apply()
     }

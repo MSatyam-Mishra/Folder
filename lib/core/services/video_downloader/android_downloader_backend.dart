@@ -111,8 +111,51 @@ class AndroidDownloaderBackend extends VideoDownloaderBackend {
       await _call<bool>('canWrite', {'path': dir}) ?? false;
 
   @override
-  Future<String> fetchInfoJson(String url, {required String requestId}) async =>
-      await _call<String>('fetchInfo', {'url': url, 'requestId': requestId}) ?? '';
+  Future<String> fetchInfoJson(
+    String url, {
+    required String requestId,
+    List<String>? args,
+    String? cookieFile,
+  }) async =>
+      await _call<String>('fetchInfo', {
+        'url': url,
+        'requestId': requestId,
+        'args': ?args,
+        'cookieFile': ?cookieFile,
+      }) ??
+      '';
+
+  @override
+  Future<void> configure({required int maxConcurrent, required bool notifications}) =>
+      _call<void>('configure', {
+        'maxConcurrent': maxConcurrent,
+        'notifications': notifications,
+      });
+
+  @override
+  Future<int> clearCache({
+    required Set<String> keepWorkDirs,
+    Set<String> outputDirs = const {},
+  }) async =>
+      (await _call<num>('clearCache', {
+        'keep': keepWorkDirs.toList(),
+        'outputDirs': outputDirs.toList(),
+      }))
+          ?.toInt() ??
+      0;
+
+  @override
+  Future<DownloaderPermissions?> permissions() async {
+    final m = await _call<Map<dynamic, dynamic>>('permissions') ?? const {};
+    return DownloaderPermissions(
+      notifications: m['notifications'] == true,
+      storage: m['storage'] == true,
+      sdk: (m['sdk'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  Future<void> openNotificationSettings() => _call<void>('openNotificationSettings');
 
   @override
   Future<void> cancelFetch(String requestId) =>
