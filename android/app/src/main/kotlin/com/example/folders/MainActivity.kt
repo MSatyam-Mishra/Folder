@@ -45,6 +45,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var notifications: NotificationsNative? = null
     private var videoPlayer: VideoPlayerNative? = null
     private var appCloser: AppCloserNative? = null
+    private var tools: ToolNatives? = null
 
     // Back at the top of the app while work goes on: the app stays, as closing
     // it would end the work. Only reached when Flutter has nothing left to pop.
@@ -97,6 +98,8 @@ class MainActivity : FlutterFragmentActivity() {
         videoPlayer = null
         appCloser?.dispose()
         appCloser = null
+        tools?.dispose()
+        tools = null
         BackgroundWorkService.onWorkingChanged = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -112,6 +115,7 @@ class MainActivity : FlutterFragmentActivity() {
         notifications = NotificationsNative(this, flutterEngine.dartExecutor.binaryMessenger)
         videoPlayer = VideoPlayerNative(this, flutterEngine.dartExecutor.binaryMessenger)
         appCloser = AppCloserNative(this, flutterEngine.dartExecutor.binaryMessenger)
+        tools = ToolNatives(this, flutterEngine.dartExecutor.binaryMessenger)
         
         usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
 

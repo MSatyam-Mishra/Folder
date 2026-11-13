@@ -37,6 +37,11 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    // IShizukuFiles.aidl: the app's helper in Shizuku's process.
+    buildFeatures {
+        aidl = true
+    }
+
     defaultConfig {
         applicationId = "com.synqixlabs.folders"
         // You can update the following values to match your application needs.
@@ -114,6 +119,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     // HEIC writing (image conversion), with the phone's HEVC encoder.
     implementation("androidx.heifwriter:heifwriter:1.1.0")
+    // Android/data and Android/obb through Shizuku (Apache-2.0).
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 
     // Video downloader: yt-dlp with Python, QuickJS and FFmpeg for Android
     // (GPL-3.0; https://github.com/yausername/youtubedl-android, maintained

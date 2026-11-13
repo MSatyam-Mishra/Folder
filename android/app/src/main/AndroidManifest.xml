@@ -43,6 +43,15 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Shizuku hands the app its binder through this (Android/data and obb). -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -354,6 +363,8 @@
     <queries>
         <!-- Who shows an app's info page, and its Force stop button's words, in the phone's language. -->
         <package android:name="com.android.settings"/>
+        <!-- Whether Shizuku is installed, and opening it. -->
+        <package android:name="moe.shizuku.privileged.api"/>
         <intent>
             <action android:name="android.settings.APPLICATION_DETAILS_SETTINGS"/>
             <data android:scheme="package"/>

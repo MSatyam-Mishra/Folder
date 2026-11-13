@@ -15,3 +15,7 @@
 # Python/FFmpeg) creates its zip extra-field classes reflectively.
 -keep class com.yausername.** { *; }
 -keep class org.apache.commons.compress.archivers.zip.** { *; }
+
+# Shizuku starts the helper for Android/data and obb by its name and calls
+# its constructor by reflection.
+-keep class com.example.folders.ShizukuFileService { <init>(...); }
