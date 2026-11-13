@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/services/path_changes.dart';
 import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
@@ -31,6 +32,10 @@ abstract final class TrashActions {
     final bloc = context.read<FileExplorerBloc>();
     final messenger = ScaffoldMessenger.of(context);
     final result = await trash.moveToTrash(paths);
+    // Tags go along, so Undo or Restore brings them back.
+    for (final item in result.trashed) {
+      PathChanges.moved(item.originalPath, item.storedPath);
+    }
     _refresh(bloc, endSelection: true);
 
     if (result.failed.isNotEmpty && context.mounted) {
@@ -85,7 +90,7 @@ abstract final class TrashActions {
     var failed = 0;
     for (final item in items) {
       try {
-        await Trash.instance.restore(item);
+        PathChanges.moved(item.storedPath, await Trash.instance.restore(item));
       } catch (_) {
         failed++;
       }
@@ -128,6 +133,7 @@ abstract final class TrashActions {
     for (final item in items) {
       try {
         await Trash.instance.deleteForGood(item);
+        PathChanges.deleted(item.storedPath);
       } catch (_) {
         failed++;
       }

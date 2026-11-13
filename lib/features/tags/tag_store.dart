@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:folders/core/formats/finder_tags_plist.dart';
 import 'package:folders/core/platform/system_tags.dart';
 import 'package:folders/core/services/path_changes.dart';
+import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/tags/tag_color.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -321,14 +322,14 @@ class TagStore extends ChangeNotifier {
     final found = <FileSystemEntity>[];
     final gone = <String>[];
     for (final path in pathsWith(tag)) {
-      switch (await FileSystemEntity.type(path)) {
-        case FileSystemEntityType.directory:
-          found.add(Directory(path));
-        case FileSystemEntityType.notFound:
-          if (goneForGood(path)) gone.add(path);
-        default:
-          found.add(File(path));
+      final type = await FileSystemEntity.type(path);
+      if (type == FileSystemEntityType.notFound) {
+        if (goneForGood(path)) gone.add(path);
+        continue;
       }
+      // In the Trash: kept, so its tags come back with it, but not shown.
+      if (Trash.instance.contains(path)) continue;
+      found.add(type == FileSystemEntityType.directory ? Directory(path) : File(path));
     }
     if (gone.isNotEmpty) {
       _change(() {

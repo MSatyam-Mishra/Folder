@@ -5,7 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:folders/core/formats/finder_tags_plist.dart';
 import 'package:folders/core/platform/system_tags.dart';
 import 'package:folders/core/repositories/file_repository.dart';
+import 'package:folders/core/services/batch_rename.dart';
 import 'package:folders/core/services/path_changes.dart';
+import 'package:folders/core/services/trash/spec_trash.dart';
+import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/clipboard/paste_task.dart';
 import 'package:folders/features/tags/tag_color.dart';
 import 'package:folders/features/tags/tag_paths.dart';
@@ -154,6 +157,43 @@ void main() {
 
     // Kept for the next start.
     expect(names(await open(), p.join(moved, 'plan.txt')), ['Red']);
+  });
+
+  test('tags follow a batch rename, swaps included', () async {
+    final a = make('a.txt'), b = make('b.txt');
+    final store = await open();
+    store.setTag([a], 'Red', on: true);
+    store.setTag([b], 'Blue', on: true);
+    final result = await BatchRename.apply([
+      RenamePlan(RenameSource(a), 'b.txt'),
+      RenamePlan(RenameSource(b), 'a.txt'),
+    ]);
+    expect(result.failed, isEmpty);
+    expect(File(b).readAsStringSync(), 'a.txt', reason: 'the files really swapped');
+    expect(names(store, b), ['Red']);
+    expect(names(store, a), ['Blue']);
+    await BatchRename.undo(result);
+    expect(names(store, a), ['Red']);
+    expect(names(store, b), ['Blue']);
+  });
+
+  test("items in the Trash keep their tags but don't show in the tag's folder", () async {
+    final trashDir = p.join(root.path, 'trash');
+    final before = Trash.instance;
+    Trash.instance = SpecTrash.inFolder(trashDir);
+    addTearDown(() => Trash.instance = before);
+    final a = make('docs/a.txt'), b = make('docs/b.txt');
+    final store = await open();
+    store.setTag([a, b], 'Green', on: true);
+
+    final result = await Trash.instance.moveToTrash([a]);
+    final item = result.trashed.single;
+    PathChanges.moved(item.originalPath, item.storedPath); // As TrashActions does.
+    expect((await store.entitiesWith('Green')).map((e) => p.basename(e.path)), ['b.txt']);
+    expect(names(store, item.storedPath), ['Green'], reason: 'kept while in the Trash');
+
+    PathChanges.moved(item.storedPath, await Trash.instance.restore(item));
+    expect((await store.entitiesWith('Green')).map((e) => p.basename(e.path)).toSet(), {'a.txt', 'b.txt'});
   });
 
   test('copies keep the tags; deleted items lose them', () async {

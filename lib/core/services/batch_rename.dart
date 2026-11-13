@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:folders/core/services/path_changes.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
@@ -335,6 +336,8 @@ abstract final class BatchRename {
       final temp = p.join(p.dirname(from), '.folders-rename-$stamp-$i');
       try {
         await _rename(from, temp);
+        // Through the temporary name, so tags follow swaps the right way.
+        PathChanges.moved(from, temp);
         parked.add((from, temp, to));
       } catch (e) {
         failed[from] = _reason(e);
@@ -347,11 +350,13 @@ abstract final class BatchRename {
           throw FileSystemException('Already in the folder', to);
         }
         await _rename(temp, to);
+        PathChanges.moved(temp, to);
         done.add((from, to));
       } catch (e) {
         failed[from] = _reason(e);
         try {
           await _rename(temp, from);
+          PathChanges.moved(temp, from);
         } catch (_) {}
       }
     }
