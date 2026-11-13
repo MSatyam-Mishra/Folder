@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -171,6 +172,32 @@ void main() {
       final pending = stopped.start();
       stopped.stop();
       expect(await pending, isNull);
+    });
+
+    test('Stop leaves no folder open: the tree can go at once', () async {
+      for (var i = 0; i < 400; i++) {
+        save('big/d$i/e/f.bin', 10);
+      }
+      final started = Completer<void>();
+      final scan = StorageScan(at('big'), workers: 3, onProgress: (_) {
+        if (!started.isCompleted) started.complete();
+      });
+      final pending = scan.start();
+      await started.future;
+      scan.stop();
+      expect(await pending, isNull);
+      Object? failure;
+      for (var i = 0; i < 40; i++) {
+        try {
+          Directory(at('big')).deleteSync(recursive: true);
+          failure = null;
+          break;
+        } on FileSystemException catch (error) {
+          failure = error;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+      }
+      expect(failure, isNull, reason: 'a folder still held open');
     });
   });
 

@@ -131,6 +131,8 @@ class CompressJob {
   /// Set to 1 to stop; the isolate reads it. Freed once the isolate is gone.
   final Pointer<Uint8> _stop = calloc<Uint8>();
   var _exited = false;
+  var _killed = false;
+  Timer? _fallback;
 
   bool get cancelled => _cancelled;
 
@@ -149,7 +151,8 @@ class CompressJob {
         failure ??= message.firstOrNull;
       } else if (message == null) {
         _exited = true;
-        calloc.free(_stop);
+        _fallback?.cancel();
+        if (!_killed) calloc.free(_stop);
         if (!_done.isCompleted) {
           _cancelled
               ? _done.complete(null)
@@ -183,8 +186,9 @@ class CompressJob {
     if (!_exited) _stop.value = 1;
     if (!_done.isCompleted) _done.complete(null);
     // Should it not get to its next check (a hung drive), it's ended.
-    Timer(const Duration(seconds: 15), () {
+    _fallback = Timer(const Duration(seconds: 15), () {
       if (_exited) return;
+      _killed = true;
       _isolate?.kill(priority: Isolate.immediate);
       Timer(const Duration(seconds: 1), () => removeParts(destination));
     });

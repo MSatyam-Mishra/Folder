@@ -271,10 +271,14 @@ class StorageScanResult {
 
 /// Reads a folder tree from the disk, on whatever isolate calls [scan].
 class StorageScanner {
-  StorageScanner(this.root, {this.report, @visibleForTesting Set<String>? skip})
+  StorageScanner(this.root, {this.report, this.stop, @visibleForTesting Set<String>? skip})
       : _skip = skip ?? mountsInside(root);
 
   final String root;
+
+  /// Asked before each folder; true ends the scan there, between listings,
+  /// so no folder is left open.
+  final bool Function()? stop;
   final void Function(StorageScanProgress progress)? report;
 
   /// Files kept one by one per folder, at the most.
@@ -323,6 +327,7 @@ class StorageScanner {
   /// what's right in it: its folders then go to [deferred], empty, for
   /// someone else to read, and [settle] adds them up afterwards.
   void _scan(StorageFolder folder, String path, {required bool inApp, List<_Task>? deferred}) {
+    if (stop?.call() ?? false) throw const ScanStopped();
     final entries = FolderListing.list(path);
     if (entries == null) {
       folder.unreadable = true;
@@ -524,6 +529,11 @@ class StorageScanner {
       );
 }
 
+/// Thrown out of a scan that was asked to stop.
+class ScanStopped implements Exception {
+  const ScanStopped();
+}
+
 /// A folder for a worker to read: an empty node in the tree, filled in place
 /// with what the worker found.
 class _Task {
@@ -540,10 +550,13 @@ class _Task {
 /// folders enough to share out, then hands them to [workers] isolates one
 /// at a time, and fits what they found into the tree.
 class ParallelStorageScan {
-  ParallelStorageScan(this.root, {required this.workers, this.report, this.onWorker});
+  ParallelStorageScan(this.root, {required this.workers, this.report, this.onWorker, this.stopFlag});
 
   final String root;
   final int workers;
+
+  /// The address of a byte that turns 1 to stop; the workers read it too.
+  final int? stopFlag;
   final void Function(StorageScanProgress progress)? report;
 
   /// Each worker as it starts, so whoever can stop this scan can stop them.
@@ -555,7 +568,8 @@ class ParallelStorageScan {
   Future<StorageScanResult> scan() async {
     final clock = Stopwatch()..start();
     final skip = StorageScanner.mountsInside(root);
-    final here = StorageScanner(root, skip: skip).._clock.start();
+    final flag = stopFlag;
+    final here = StorageScanner(root, skip: skip, stop: flag == null ? null : _flagReader(flag)).._clock.start();
     final top = StorageFolder(p.normalize(root), null);
     final expanded = <StorageFolder>[];
     final tasks = <_Task>[];
@@ -660,7 +674,7 @@ class ParallelStorageScan {
       for (var worker = 0; worker < count; worker++) {
         final isolate = await Isolate.spawn(
           _work,
-          (port.sendPort, worker, root, skip),
+          (port.sendPort, worker, root, skip, stopFlag),
           paused: true,
           debugName: 'storage scan $worker',
         );
@@ -694,13 +708,19 @@ class ParallelStorageScan {
 
   /// A worker: reads the folders it's given until it's told there are no
   /// more, then hands back all it found without a copy.
-  static void _work((SendPort, int, String, Set<String>) job) {
-    final (coordinator, worker, root, skip) = job;
+  static bool Function() _flagReader(int address) {
+    final flag = Pointer<Uint8>.fromAddress(address);
+    return () => flag.value != 0;
+  }
+
+  static void _work((SendPort, int, String, Set<String>, int?) job) {
+    final (coordinator, worker, root, skip, stopFlag) = job;
     final inbox = RawReceivePort();
     final found = <int, StorageFolder>{};
     final scanner = StorageScanner(
       root,
       skip: skip,
+      stop: stopFlag == null ? null : _flagReader(stopFlag),
       report: (progress) =>
           coordinator.send(['progress', worker, progress.files, progress.folders, progress.disk, progress.place]),
     );
@@ -709,7 +729,13 @@ class ParallelStorageScan {
         final index = message[0] as int;
         final path = message[1] as String;
         final folder = StorageFolder(p.basename(path), null);
-        scanner._scanTask(_Task(folder, path, message[2] as bool));
+        try {
+          scanner._scanTask(_Task(folder, path, message[2] as bool));
+        } on ScanStopped {
+          // Asked to stop: it ends without its results, which nobody wants.
+          inbox.close();
+          Isolate.exit();
+        }
         found[index] = folder;
         coordinator.send(['next', worker]);
       } else {
@@ -737,58 +763,82 @@ class StorageScan {
 
   Isolate? _isolate;
   final _workers = <Isolate>[];
-  ReceivePort? _port;
   var _stopped = false;
   final _done = Completer<StorageScanResult?>();
 
+  /// Turns 1 to stop; the isolates read it before each folder, so they
+  /// close what they have open (on Windows a folder held open by a killed
+  /// isolate can't be renamed or deleted until the app ends).
+  final Pointer<Uint8> _stop = calloc<Uint8>();
+  var _exited = false;
+  var _killed = false;
+  Timer? _fallback;
+
   /// What the scan found; null if it was stopped. Throws if it failed.
   Future<StorageScanResult?> start() async {
-    final port = _port = ReceivePort();
+    final port = ReceivePort();
     Object? failure;
     port.listen((message) {
       if (message is StorageScanProgress) {
         if (!_stopped) onProgress?.call(message);
       } else if (message is Isolate) {
         _workers.add(message);
-        if (_stopped) message.kill(priority: Isolate.immediate);
       } else if (message is StorageScanResult) {
         if (!_done.isCompleted) _done.complete(message);
       } else if (message is List) {
         failure = message.firstOrNull;
       } else if (message == null) {
-        if (!_done.isCompleted) _done.completeError(StateError("The scan didn't finish: ${failure ?? 'it ended'}"));
+        _exited = true;
+        _fallback?.cancel();
+        // Workers may still read the flag after a kill: then it stays.
+        if (!_killed) calloc.free(_stop);
+        if (!_done.isCompleted) {
+          _stopped ? _done.complete(null) : _done.completeError(StateError("The scan didn't finish: ${failure ?? 'it ended'}"));
+        }
         port.close();
       }
     });
     final send = port.sendPort;
     try {
-      _isolate = await Isolate.spawn(_run, (send, root, workers), onExit: send, onError: send);
+      _isolate = await Isolate.spawn(_run, (send, root, workers, _stop.address), onExit: send, onError: send);
     } on Object catch (error) {
       port.close();
+      _exited = true;
+      calloc.free(_stop);
       if (!_done.isCompleted) _done.completeError(error);
     }
-    if (_stopped) _isolate?.kill(priority: Isolate.immediate);
     return _done.future;
   }
 
-  static Future<void> _run((SendPort, String, int) job) async {
-    final (send, root, workers) = job;
-    final result = workers <= 1
-        ? StorageScanner(root, report: send.send).scan()
-        : await ParallelStorageScan(root, workers: workers, report: send.send, onWorker: send.send).scan();
-    // The whole tree goes back as it is, without a copy.
-    Isolate.exit(send, result);
+  static Future<void> _run((SendPort, String, int, int) job) async {
+    final (send, root, workers, stopFlag) = job;
+    try {
+      final result = workers <= 1
+          ? StorageScanner(root, report: send.send, stop: ParallelStorageScan._flagReader(stopFlag)).scan()
+          : await ParallelStorageScan(root, workers: workers, report: send.send, onWorker: send.send, stopFlag: stopFlag)
+              .scan();
+      // The whole tree goes back as it is, without a copy.
+      Isolate.exit(send, result);
+    } on ScanStopped {
+      // Stopped: nothing to send.
+    }
   }
 
-  /// Stops at once, workers too; [start] gives null.
+  /// Stops within a folder or two, workers too; [start] gives null.
   void stop() {
+    if (_stopped) return;
     _stopped = true;
-    _isolate?.kill(priority: Isolate.immediate);
-    for (final worker in _workers) {
-      worker.kill(priority: Isolate.immediate);
-    }
-    _port?.close();
+    if (!_exited) _stop.value = 1;
     if (!_done.isCompleted) _done.complete(null);
+    // A drive that doesn't answer may hold a listing up: then it's ended.
+    _fallback = Timer(const Duration(seconds: 10), () {
+      if (_exited) return;
+      _killed = true;
+      _isolate?.kill(priority: Isolate.immediate);
+      for (final worker in _workers) {
+        worker.kill(priority: Isolate.immediate);
+      }
+    });
   }
 }
 
