@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/platform/windows_default_app.dart';
+import 'package:folders/core/services/apk_installer.dart';
 import 'package:folders/core/files/file_types.dart';
 import 'package:folders/features/viewer_3d/screens/blend_viewer_screen.dart';
 import 'package:folders/features/viewer_3d/screens/three_d_viewer_screen.dart';
@@ -161,6 +162,11 @@ class FileOpener {
     // over would start Folders again; Windows asks for an app instead.
     if (Platform.isWindows && WindowsDefaultApp.isThisApp(file.path)) {
       await WindowsDefaultApp.chooseApp(file.path);
+      return;
+    }
+    // Android's installer, after "Install unknown apps" if need be.
+    if (ApkInstaller.applies && ApkInstaller.isApk(file.path)) {
+      await ApkInstaller.install(context, file);
       return;
     }
     final result = await OpenFilex.open(file.path);

@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-path name="external_files" path="."/>
+    <!-- APKs handed to the installer from a memory card or the app's own
+         folders (ApkInstallNative). Nothing is served without a grant. -->
+    <root-path name="root" path="."/>
 </paths>

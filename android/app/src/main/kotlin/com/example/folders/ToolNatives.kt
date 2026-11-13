@@ -10,8 +10,10 @@ import io.flutter.plugin.common.BinaryMessenger
  */
 class ToolNatives(activity: ComponentActivity, messenger: BinaryMessenger) {
     private val shizuku = ShizukuNative(activity, messenger)
+    private val apkInstall = ApkInstallNative(activity, messenger)
 
     fun dispose() {
         shizuku.dispose()
+        apkInstall.dispose()
     }
 }
