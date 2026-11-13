@@ -45,6 +45,11 @@ class ArchiveItem {
 /// header too, which hides the names until the password is given, as
 /// 7-Zip's -mhe does. 7-Zip, WinRAR, PeaZip, p7zip and Windows 11 (through
 /// libarchive, without passwords) read what it writes.
+///
+/// The header's layout follows koni_sevenz's writer (MIT, the koni_archive
+/// authors), which keeps everything in memory; this one streams, packs
+/// files into solid folders, and lists AES before the compressor as 7-Zip
+/// does (py7zr reads them only in that order).
 class SevenZWriter {
   SevenZWriter(
     this.sink, {
