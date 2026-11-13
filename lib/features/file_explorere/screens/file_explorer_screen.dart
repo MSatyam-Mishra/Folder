@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:folders/shared/layout/sidebar_width.dart';
+import 'package:folders/features/document_scanner/scan_document.dart';
 import 'package:folders/features/file_explorere/widgets/this_pc_view.dart';
 import 'package:folders/features/file_explorere/explorer_zoom.dart';
 import 'package:folders/shared/widgets/scrollbar_scroll_view.dart';
@@ -438,6 +439,7 @@ class _FileExplorerUI extends StatelessWidget {
                 context,
                 onNewFolder: () => fileActionsService.createFolder(context, loaded.path),
                 onNewFile: (kind) => fileActionsService.startNewFile(context, loaded.path, kind),
+                onScanDocument: () => scanDocumentInto(context, loaded.path),
               ),
             )
           : null,
@@ -983,6 +985,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onPressed: () => showNewItemSheet(
                   context,
                   onNewFile: (kind) => fileActionsService.startNewFile(context, state.path, kind),
+                  onScanDocument: () => scanDocumentInto(context, state.path),
                 ),
                 icon: const Icon(LucideIcons.filePlus, size: 16),
                 label: const Text('New file'),

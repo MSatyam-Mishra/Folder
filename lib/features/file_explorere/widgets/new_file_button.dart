@@ -1,5 +1,6 @@
 import 'package:folders/core/services/new_files.dart';
 import 'package:folders/core/theme/app_style.dart';
+import 'package:folders/features/document_scanner/document_scanner.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/file_explorere/widgets/file_list_item.dart' show SelectionCheck;
 import 'package:folders/shared/ui/app_ui.dart';
@@ -73,29 +74,36 @@ class NewFileButton extends StatelessWidget {
 
 /// Where there's no room for the buttons in the header (a phone): what to
 /// create, in a sheet. Its first row has the settings icon, as in the menu of
-/// [NewFileButton]. Without [onNewFolder], only files are offered.
+/// [NewFileButton]. Without [onNewFolder], only files are offered; with
+/// [onScanDocument], "Scan document" too where there's a scanner (Android).
 Future<void> showNewItemSheet(
   BuildContext context, {
   VoidCallback? onNewFolder,
   required ValueChanged<NewFileKind> onNewFile,
+  VoidCallback? onScanDocument,
 }) async {
   final picked = await AppSheet.show<Object>(
     context,
-    child: _NewItemList(withFolder: onNewFolder != null),
+    child: _NewItemList(withFolder: onNewFolder != null, withScan: onScanDocument != null && DocumentScanner.supported),
   );
   if (picked is NewFileKind) {
     onNewFile(picked);
   } else if (identical(picked, _NewItemList.folder)) {
     onNewFolder?.call();
+  } else if (identical(picked, _NewItemList.scan)) {
+    onScanDocument?.call();
   }
 }
 
 class _NewItemList extends StatefulWidget {
-  const _NewItemList({required this.withFolder});
+  const _NewItemList({required this.withFolder, this.withScan = false});
 
   static const folder = Object();
+  // Not const: const Object()s are one and the same, as [folder] is.
+  static final scan = Object();
 
   final bool withFolder;
+  final bool withScan;
 
   @override
   State<_NewItemList> createState() => _NewItemListState();
@@ -149,6 +157,7 @@ class _NewItemListState extends State<_NewItemList> {
           ],
         ),
         if (widget.withFolder) _row(_NewItemList.folder, LucideIcons.folderPlus, 'New folder'),
+        if (widget.withScan) _row(_NewItemList.scan, LucideIcons.scanLine, 'Scan document'),
         for (final kind in NewFiles.kinds)
           if (chosen.contains(kind.extension)) _row(kind, kind.icon, kind.menuLabel),
       ],

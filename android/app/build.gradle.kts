@@ -122,6 +122,9 @@ dependencies {
     // Android/data and Android/obb through Shizuku (Apache-2.0).
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
+    // Document scanner: Google's, from Play services, which brings its
+    // screens and model (nothing big in the APK).
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
 
     // Video downloader: yt-dlp with Python, QuickJS and FFmpeg for Android
     // (GPL-3.0; https://github.com/yausername/youtubedl-android, maintained

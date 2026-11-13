@@ -27,7 +27,8 @@ void main() {
 
   test('each tool has a route that finds it again', () {
     for (final tool in Tool.values) {
-      expect(Tool.fromRoute(tool.shortcut.route), tool);
+      // As on Android, which has every tool (the document scanner only there).
+      expect(Tool.fromRoute(tool.shortcut.route, android: true), tool);
     }
     expect(Tool.fromRoute('video_downloader'), isNull);
   });

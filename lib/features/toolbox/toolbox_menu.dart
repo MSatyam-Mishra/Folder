@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:folders/core/build_features.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/services/app_shortcuts.dart';
@@ -7,6 +9,7 @@ import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/network/wifi_sharing.dart';
+import 'package:folders/features/document_scanner/document_scanner_screen.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
 import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/music_player_screen.dart';
@@ -26,6 +29,7 @@ enum Tool {
   ramCleaner('ram_cleaner', LucideIcons.memoryStick, 'RAM cleaner', 'See memory in use, and free what the system allows'),
   junkCleaner('memory_cleaner', LucideIcons.eraser, 'Junk cleaner', 'Remove temporary files, caches and other junk'),
   duplicateFinder('duplicate_finder', LucideIcons.copy, 'Duplicate finder', 'Find files with the same contents, and clean them up'),
+  documentScanner('document_scanner', LucideIcons.scanLine, 'Document scanner', 'Scan pages to a PDF or pictures with the camera'),
   videoPlayer('video_player', LucideIcons.film, 'Video player', 'All the videos on this device'),
   musicPlayer('music_player', LucideIcons.music, 'Music player', 'All your music, one song after another'),
   videoDownloader('video_downloader', LucideIcons.cloudDownload, 'Video downloader', 'Save videos and their sound from a link'),
@@ -41,18 +45,19 @@ enum Tool {
   final String title;
   final String description;
 
-  /// The tools this build has: the video downloader only where it's built in.
-  static List<Tool> get available => availableIn(videoDownloader: kVideoDownloaderEnabled);
+  /// The tools this build has: the video downloader only where it's built in,
+  /// the document scanner (Google's, from Play services) only on Android.
+  static List<Tool> get available => availableIn(videoDownloader: kVideoDownloaderEnabled, android: Platform.isAndroid);
 
   @visibleForTesting
-  static List<Tool> availableIn({required bool videoDownloader}) => [
+  static List<Tool> availableIn({required bool videoDownloader, bool android = false}) => [
         for (final tool in values)
-          if (tool != Tool.videoDownloader || videoDownloader) tool,
+          if ((tool != Tool.videoDownloader || videoDownloader) && (tool != Tool.documentScanner || android)) tool,
       ];
 
   /// The tool a shortcut's route asks for, if this build has it.
-  static Tool? fromRoute(String route, {@visibleForTesting bool videoDownloader = kVideoDownloaderEnabled}) {
-    for (final tool in availableIn(videoDownloader: videoDownloader)) {
+  static Tool? fromRoute(String route, {@visibleForTesting bool videoDownloader = kVideoDownloaderEnabled, @visibleForTesting bool? android}) {
+    for (final tool in availableIn(videoDownloader: videoDownloader, android: android ?? Platform.isAndroid)) {
       if (route == tool.route) return tool;
     }
     return null;
@@ -77,6 +82,7 @@ enum Tool {
         ramCleaner => const RamCleanerScreen(),
         junkCleaner => const JunkCleanerScreen(),
         duplicateFinder => const DuplicateFinderScreen(),
+        documentScanner => const DocumentScannerScreen(),
         videoPlayer => const VideoLibraryScreen(),
         musicPlayer => const MusicPlayerScreen(),
         // A build without the downloader never offers it, nor compiles it in.
