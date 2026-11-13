@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:folders/core/services/audio/audio_support.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:path/path.dart' as p;
@@ -18,8 +19,9 @@ abstract final class Desktop {
   static void initMedia() {
     if (!isDesktop) {
       // Android's videos too, for their subtitles, tracks and formats; its
-      // audio stays with just_audio's own player.
+      // audio stays with just_audio's own player, but for what that can't play.
       MediaKit.ensureInitialized();
+      if (Platform.isAndroid) AudioSupport.initAndroid();
       return;
     }
     if (Platform.isMacOS) {
@@ -53,6 +55,7 @@ abstract final class Desktop {
       macOS: true,
       libmpv: libmpv,
     );
+    AudioSupport.initDesktop();
   }
 
   /// Whether libmpv has loaded on a Mac, where it's the one thing that can fail.

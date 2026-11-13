@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:folders/core/services/audio/audio_support.dart';
 import 'package:folders/features/viewer_kit/viewer_kit.dart';
 import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:folders/shared/widgets/explorer_scaffold.dart';
@@ -40,7 +41,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   Future<void> _initPlayer() async {
     try {
-      await _player.setFilePath(widget.audioFile.path);
+      await AudioSupport.load(_player, widget.audioFile.path);
       // Left the screen while loading: the player is already disposed.
       if (!mounted) return;
       setState(() {
@@ -115,7 +116,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       body = ViewerMessage(
         icon: LucideIcons.fileAudio,
         title: "Can't play this file",
-        message: 'Its format may not be supported on this device.',
+        message: AudioSupport.whyNot(widget.audioFile.path) ?? 'Its format may not be supported on this device.',
         details: _error,
       );
     } else {

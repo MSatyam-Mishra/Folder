@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:folders/core/services/audio/audio_support.dart';
 import 'package:folders/core/services/device_files.dart';
 import 'package:folders/features/category_view/home_media.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
@@ -54,7 +55,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       _duration = Duration.zero;
     });
     try {
-      await _player.setFilePath(songs[index].path);
+      await AudioSupport.load(_player, songs[index].path);
       if (!mounted) return;
       setState(() => _duration = _player.duration ?? Duration.zero);
       unawaited(_player.play());
@@ -62,7 +63,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       debugPrint('Playing ${songs[index].path}: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't play ${songs[index].name}")),
+        SnackBar(content: Text(AudioSupport.whyNot(songs[index].path) ?? "Couldn't play ${songs[index].name}")),
       );
     }
   }
