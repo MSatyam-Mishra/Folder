@@ -29,6 +29,7 @@ import 'package:folders/core/router/file_opener.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/vault/vault_store.dart';
+import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/core/services/device_files.dart';
 
 class FileActionsService {
@@ -91,6 +92,8 @@ class FileActionsService {
     VoidCallback? onShowContents,
     VoidCallback? onShowInFolder,
     bool protected = false,
+    /// Rows the browser adds after Cut ("Copy to other pane").
+    List<PaneMenuAction> extras = const [],
   }) async {
     final isFile = entity is File;
     final package = isPackage(entity);
@@ -149,6 +152,9 @@ class FileActionsService {
               label: 'Cut',
               icon: LucideIcons.scissors,
               shortcut: shortcut('X')),
+          for (final extra in extras)
+            ExplorerMenu.item<Object>(context,
+                value: extra, label: extra.label, icon: extra.icon, shortcut: extra.shortcut),
           ExplorerMenu.item(context,
               value: _EntityAction.rename,
               label: 'Rename',
@@ -182,6 +188,7 @@ class FileActionsService {
       ],
     );
     if (action == null || !context.mounted) return;
+    if (action is PaneMenuAction) return action.run();
     if (action is ShareMethod) return shareVia(context, action, [entity]);
     if (await ImageActions.handle(context, action, images) || !context.mounted) return;
     if (await TagActions.handle(context, action, [entity.path]) || !context.mounted) return;

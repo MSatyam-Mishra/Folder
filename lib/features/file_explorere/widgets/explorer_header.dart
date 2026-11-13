@@ -5,6 +5,8 @@ import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
 import 'package:folders/core/services/new_files.dart';
 import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/features/panes/pane_actions.dart';
+import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -91,6 +93,7 @@ class ExplorerHeader extends StatelessWidget {
     this.onNewFolder,
     this.onNewFile,
     this.onNewWindow,
+    this.toggles = const [],
     this.groupBy,
     this.onGroupByChanged,
     this.searchOpen = false,
@@ -126,6 +129,9 @@ class ExplorerHeader extends StatelessWidget {
 
   /// Opens this folder in another window (desktop).
   final VoidCallback? onNewWindow;
+
+  /// Dual pane and the preview pane: buttons, and rows in the View menu.
+  final List<PaneToggle> toggles;
 
   final GroupBy? groupBy;
   final ValueChanged<GroupBy>? onGroupByChanged;
@@ -176,6 +182,13 @@ class ExplorerHeader extends StatelessWidget {
                 tooltip: Platform.isMacOS ? 'Search (⌘F)' : 'Search (Ctrl+F)',
                 onPressed: onSearch,
               ),
+            // A narrow pane on a computer: one button for a folder or a file.
+            if (!wide && onMenuPressed == null && onNewFolder != null && onNewFile != null)
+              AppIconButton(
+                icon: const Icon(LucideIcons.plus),
+                tooltip: 'New',
+                onPressed: () => showNewItemSheet(context, onNewFolder: onNewFolder, onNewFile: onNewFile!),
+              ),
             if (wide && onNewFolder != null) ...[
               OutlinedButton.icon(
                 onPressed: onNewFolder,
@@ -193,7 +206,7 @@ class ExplorerHeader extends StatelessWidget {
               ],
             ],
             if (viewMode != null && onViewModeChanged != null)
-              _ViewMenuButton(mode: viewMode!, onChanged: onViewModeChanged!),
+              _ViewMenuButton(mode: viewMode!, onChanged: onViewModeChanged!, toggles: toggles),
             if (sortOption != null &&
                 sortOrder != null &&
                 onSortChanged != null)
@@ -204,7 +217,8 @@ class ExplorerHeader extends StatelessWidget {
                 groupBy: groupBy,
                 onGroupByChanged: onGroupByChanged,
               ),
-            if (onNewWindow != null)
+            PaneToggleButtons(toggles: toggles, compact: !wide),
+            if (onNewWindow != null && (wide || onMenuPressed != null))
               AppIconButton(
                 icon: const Icon(LucideIcons.appWindow),
                 tooltip: Platform.isMacOS ? 'New window (⌘N)' : 'New window (Ctrl+N)',
@@ -456,10 +470,11 @@ class _Ellipsis extends StatelessWidget {
 }
 
 class _ViewMenuButton extends StatelessWidget {
-  const _ViewMenuButton({required this.mode, required this.onChanged});
+  const _ViewMenuButton({required this.mode, required this.onChanged, this.toggles = const []});
 
   final ViewMode mode;
   final ValueChanged<ViewMode> onChanged;
+  final List<PaneToggle> toggles;
 
   static IconData iconFor(ViewMode mode) => switch (mode) {
         ViewMode.list => LucideIcons.list,
@@ -482,22 +497,36 @@ class _ViewMenuButton extends StatelessWidget {
         icon: Icon(iconFor(mode)),
         tooltip: 'View',
         onPressed: () async {
-          final picked = await ExplorerMenu.show<ViewMode>(
+          final picked = await ExplorerMenu.show<Object>(
             anchor,
-            minWidth: 180,
+            minWidth: toggles.isEmpty ? 180 : 240,
             items: [
               ExplorerMenu.label(anchor, 'View as'),
               for (final m in ViewMode.values)
-                ExplorerMenu.item(
+                ExplorerMenu.item<Object>(
                   anchor,
                   value: m,
                   label: labelFor(m),
                   icon: iconFor(m),
                   checked: m == mode,
                 ),
+              if (toggles.isNotEmpty) ...[
+                ExplorerMenu.divider(),
+                ExplorerMenu.label(anchor, 'Panes'),
+                for (final t in toggles)
+                  ExplorerMenu.item<Object>(
+                    anchor,
+                    value: t,
+                    label: t.label,
+                    icon: t.icon,
+                    checked: t.on ?? false,
+                    shortcut: t.shortcut,
+                  ),
+              ],
             ],
           );
-          if (picked != null && picked != mode) onChanged(picked);
+          if (picked is PaneToggle) picked.onPressed();
+          if (picked is ViewMode && picked != mode) onChanged(picked);
         },
       ),
     );
@@ -675,6 +704,7 @@ class ExplorerSelectionHeader extends StatelessWidget {
   const ExplorerSelectionHeader({
     super.key,
     this.hasImages = false,
+    this.otherPane = false,
     required this.count,
     required this.total,
     required this.onClose,
@@ -692,6 +722,9 @@ class ExplorerSelectionHeader extends StatelessWidget {
 
   /// Pictures are selected: convert and resize them.
   final bool hasImages;
+
+  /// Two panes show: copy or move to the other one.
+  final bool otherPane;
   final VoidCallback onClose;
   final VoidCallback onShare;
   final VoidCallback onSendNearby;
@@ -789,6 +822,22 @@ class ExplorerSelectionHeader extends StatelessWidget {
                           label: 'Tags…',
                           icon: LucideIcons.tag,
                         ),
+                        if (otherPane) ...[
+                          ExplorerMenu.item(
+                            anchor,
+                            value: SelectionMenuAction.copyToOtherPane,
+                            label: 'Copy to other pane',
+                            icon: LucideIcons.copyPlus,
+                            shortcut: PaneActions.copyShortcut,
+                          ),
+                          ExplorerMenu.item(
+                            anchor,
+                            value: SelectionMenuAction.moveToOtherPane,
+                            label: 'Move to other pane',
+                            icon: LucideIcons.folderInput,
+                            shortcut: PaneActions.moveShortcut,
+                          ),
+                        ],
                       ],
                       if (hasImages) ...[
                         ExplorerMenu.divider(),
@@ -844,6 +893,8 @@ enum SelectionMenuAction {
   clear,
   copy,
   cut,
+  copyToOtherPane,
+  moveToOtherPane,
   rename,
   properties,
   allActions,

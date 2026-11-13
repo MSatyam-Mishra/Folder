@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:folders/shared/layout/sidebar_width.dart';
+import 'package:folders/features/panes/pane_settings.dart';
 import 'package:folders/features/file_explorere/explorer_zoom.dart';
 import 'package:folders/core/app/app_bloc_observer.dart';
 import 'package:folders/core/app_licenses.dart';
@@ -60,6 +61,7 @@ void main(List<String> args) async {
   await IconStrokes.useSaved();
   await ExplorerZoom.instance.load();
   await SidebarWidth.instance.load();
+  await PaneSettings.instance.load();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 

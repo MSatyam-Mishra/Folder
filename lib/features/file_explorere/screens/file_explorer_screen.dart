@@ -38,6 +38,10 @@ import 'package:folders/features/file_explorere/widgets/new_file_button.dart';
 import 'package:folders/features/file_explorere/widgets/paste_bar.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/panes/dual_pane.dart';
+import 'package:folders/features/panes/pane_actions.dart';
+import 'package:folders/features/panes/pane_area.dart';
+import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:folders/shared/layout/adaptive_layout.dart';
@@ -111,10 +115,13 @@ bool get _controlClick =>
 /// focus scope, above [onKey], where every shortcut would be dead: it's taken
 /// back from there.
 class _BrowserKeys extends StatefulWidget {
-  const _BrowserKeys({required this.onKey, required this.child});
+  const _BrowserKeys({required this.onKey, required this.child, this.autofocus = true});
 
   final KeyEventResult Function(KeyEvent event) onKey;
   final Widget child;
+
+  /// Off for a second pane, which gets the keyboard when it's used.
+  final bool autofocus;
 
   @override
   State<_BrowserKeys> createState() => _BrowserKeysState();
@@ -146,7 +153,7 @@ class _BrowserKeysState extends State<_BrowserKeys> {
   @override
   Widget build(BuildContext context) => Focus(
         focusNode: _node,
-        autofocus: true,
+        autofocus: widget.autofocus,
         onKeyEvent: (_, event) => widget.onKey(event),
         child: widget.child,
       );
@@ -257,7 +264,8 @@ class _FileExplorerWithProviders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    // Two panes side by side, while asked for (each tab its own).
+    return DualPaneScope(child: MultiBlocProvider(
       providers: [
         BlocProvider(
           create: (context) =>
@@ -280,7 +288,7 @@ class _FileExplorerWithProviders extends StatelessWidget {
               listener: (context, state) => onFolderChanged!(_pathOf(state)!),
               child: const _FileExplorerUI(),
             ),
-    );
+    ));
   }
 }
 
@@ -315,6 +323,8 @@ class _FileExplorerUI extends StatelessWidget {
 
     // Tablets, unfolded foldables and desktops keep navigation docked.
     final bool docked = AdaptiveSplitView.isSplit(context);
+    // The second of two panes: its page alone, beside the first one's.
+    final second = DualPanes.isSecondPane(context);
     final bool busy = taskState is TaskInProgress;
     final pasteState =
         clipboardState is ClipboardReadyToPaste && !clipboardState.pasted && !busy
@@ -370,12 +380,12 @@ class _FileExplorerUI extends StatelessWidget {
           ),
         // Copying, moving and video downloads; can be tucked away.
         // Copies, conversions and downloads (all background tasks).
-        const ProgressDock(),
+        const PaneDock(child: ProgressDock()),
       ],
     );
 
     final page = DockedTopBarScaffold(
-      drawer: docked ? null : const MainDrawer(),
+      drawer: docked || second ? null : const MainDrawer(),
       topBarBuilder: (scaffoldContext) => _buildDockedTopBar(
         scaffoldContext,
         fileExplorerState: fileExplorerState,
@@ -389,7 +399,8 @@ class _FileExplorerUI extends StatelessWidget {
           final current = context.read<FileExplorerBloc>().state;
           if (state is ClipboardPasteSuccess && current is FileExplorerLoaded) {
             context.read<FileExplorerBloc>().add(LoadDirectory(current.path));
-          } else if (state is ClipboardPasteFailure) {
+          } else if (state is ClipboardPasteFailure && DualPanes.activeNow(context)) {
+            // Said once, in the active pane.
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Couldn't paste: ${state.error}")),
             );
@@ -410,10 +421,14 @@ class _FileExplorerUI extends StatelessWidget {
           : null,
     );
 
-    return PopScope(
+    // Beside the page: a second pane while dual pane is on, and the preview
+    // pane while that's on.
+    final panes = second ? page : DualPaneArea(first: page, second: (_) => const _FileExplorerUI());
+
+    // With two panes, Back is for the active one.
+    return PanePopScope(
       canPop: canPop,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+      onBack: () {
         if (isSelectionMode) {
           context.read<FileExplorerBloc>().add(
             ToggleSelectionMode(enable: false),
@@ -425,8 +440,9 @@ class _FileExplorerUI extends StatelessWidget {
         }
       },
       child: _BrowserKeys(
+        autofocus: !second,
         onKey: (event) => _onKey(context, event),
-        child: docked
+        child: docked && !second
             // Its border can be dragged. Each pane paints its own background.
             ? ValueListenableBuilder<double>(
                 valueListenable: SidebarWidth.instance,
@@ -439,11 +455,12 @@ class _FileExplorerUI extends StatelessWidget {
                   divider: false,
                   onResize: SidebarWidth.instance.set,
                   onResizeReset: () => SidebarWidth.instance.set(SidebarWidth.usual),
-                  primary: page,
-                  secondary: const DockedSidebar(child: MainDrawerContent()),
+                  primary: panes,
+                  // What it opens shows in the active pane.
+                  secondary: const ActivePaneBloc(child: DockedSidebar(child: MainDrawerContent())),
                 ),
               )
-            : page,
+            : panes,
       ),
     );
   }
@@ -455,6 +472,9 @@ class _FileExplorerUI extends StatelessWidget {
     }
     // Typing in a text field: the keys are the field's.
     if (_typing) return KeyEventResult.ignored;
+    // The panes' keys (Tab, Shift+F5, Alt+P...), before the others.
+    final paneKey = PaneActions.onKey(context, event);
+    if (paneKey != null) return paneKey;
     final bloc = context.read<FileExplorerBloc>();
     final state = bloc.state;
     if (state is! FileExplorerLoaded) return KeyEventResult.ignored;
@@ -546,7 +566,9 @@ class _FileExplorerUI extends StatelessWidget {
     final columns = grid ? shown.columns : 1;
     final last = items.length - 1;
     final paths = [for (final e in items) e.path];
-    final at = paths.indexOf(_clicks.cursorPath ?? '');
+    var at = paths.indexOf(_clicks.cursorPath ?? '');
+    // Last moved in the other pane: on from what's selected in this one.
+    if (at < 0) at = items.indexWhere(state.selectedItems.contains);
     final int? wanted;
     if (key == LogicalKeyboardKey.arrowDown) {
       // On the last row a grid stays put, as there's nothing under it.
@@ -603,6 +625,7 @@ class _FileExplorerUI extends StatelessWidget {
       final images = ImageActions.imagesIn(selected);
       return ExplorerSelectionHeader(
         hasImages: images.isNotEmpty,
+        otherPane: PaneActions.canTransfer(context),
         count: selected.length,
         total: fileExplorerState.visibleEntities.length,
         wide: docked,
@@ -631,6 +654,10 @@ class _FileExplorerUI extends StatelessWidget {
             case SelectionMenuAction.cut:
               exitSelection();
               context.read<ClipboardBloc>().add(CutToClipboard(selected));
+            case SelectionMenuAction.copyToOtherPane:
+              PaneActions.transfer(context, move: false, items: selected);
+            case SelectionMenuAction.moveToOtherPane:
+              PaneActions.transfer(context, move: true, items: selected);
             case SelectionMenuAction.rename:
               exitSelection();
               fileActionsService.showRenameDialog(context, selected.first);
@@ -663,10 +690,12 @@ class _FileExplorerUI extends StatelessWidget {
       crumbs: path == null
           ? const []
           : explorerCrumbs(path, labels: loaded?.pathLabels ?? const {}),
-      wide: docked,
+      // A narrow pane beside another one or the preview: the compact one.
+      wide: docked && PaneActions.roomyHeader(context),
       statusChip: GitBranchChip(git: GitStatusController.of(bloc)),
       onNavigate: (target) => bloc.add(LoadDirectory(target)),
-      onMenuPressed: docked ? null : () => Scaffold.of(context).openDrawer(),
+      onMenuPressed: docked || DualPanes.isSecondPane(context) ? null : () => Scaffold.of(context).openDrawer(),
+      toggles: PaneActions.toggles(context),
       viewMode: thisPc ? null : loaded?.viewMode,
       sortOption: thisPc ? null : loaded?.sortOption,
       sortOrder: thisPc ? null : loaded?.sortOrder,
@@ -1301,6 +1330,7 @@ class _FileExplorerUI extends StatelessWidget {
       onOpen: () => _open(context, state, entity),
       onShowContents: () =>
           context.read<FileExplorerBloc>().add(LoadDirectory(entity.path)),
+      extras: thisPc ? const [] : PaneActions.menuActions(context, [entity]),
     );
   }
 
@@ -1332,6 +1362,7 @@ class _FileExplorerUI extends StatelessWidget {
             label: 'Cut',
             icon: LucideIcons.scissors,
             shortcut: FileActionsService.shortcut('X')),
+        ...PaneActions.menuEntries(context, selected),
         ExplorerMenu.divider(),
         if (imageEntries.isNotEmpty) ...[
           ...imageEntries,
@@ -1361,6 +1392,7 @@ class _FileExplorerUI extends StatelessWidget {
       ],
     );
     if (action == null || !context.mounted) return;
+    if (action is PaneMenuAction) return action.run();
     if (action is ShareMethod) {
       return fileActionsService.shareVia(context, action, selected);
     }
