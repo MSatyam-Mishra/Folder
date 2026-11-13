@@ -98,9 +98,13 @@ class ExplorerHeader extends StatelessWidget {
     this.onSearch,
     this.onSearchChanged,
     this.onSearchClosed,
+    this.statusChip,
   });
 
   final List<PathCrumb> crumbs;
+
+  /// A small chip before the actions: the Git branch.
+  final Widget? statusChip;
 
   /// Breadcrumb layout (wide screens with the docked sidebar).
   final bool wide;
@@ -165,6 +169,7 @@ class ExplorerHeader extends StatelessWidget {
                       : _CompactTitle(crumbs: crumbs, onNavigate: onNavigate),
             ),
             const SizedBox(width: 8),
+            if (!searchOpen && statusChip != null) statusChip!,
             if (!searchOpen && onSearch != null)
               AppIconButton(
                 icon: const Icon(LucideIcons.search),

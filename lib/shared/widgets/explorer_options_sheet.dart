@@ -6,6 +6,7 @@ import 'package:folders/core/theme/app_style.dart';
 import 'package:folders/core/theme/ios_style.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/git_status/git_status_controller.dart';
 import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:folders/shared/widgets/theme_choices.dart';
 import 'package:folders/shared/ui/app_ui.dart';
@@ -232,6 +233,18 @@ class ExplorerOptionsSheet extends StatelessWidget {
           title: 'Thumbnails',
           subtitle: 'Pictures of images, videos, PDFs and documents instead of their icons',
         ),
+        if (Desktop.isDesktop)
+          ValueListenableBuilder<bool>(
+            valueListenable: GitStatusSettings.instance..load(),
+            builder: (context, on, _) => _SwitchRow(
+              contentPadding: EdgeInsets.zero,
+              icon: LucideIcons.gitBranch,
+              value: on,
+              onChanged: GitStatusSettings.instance.set,
+              title: 'Git status',
+              subtitle: 'The branch and what changed, in folders kept with Git',
+            ),
+          ),
         // Android's style is Material's, without glass; iOS's always has it.
         if (!Desktop.isDesktop && settings.style != AppStyle.android && !settings.style.glass)
           _SwitchRow(

@@ -29,6 +29,8 @@ import 'package:folders/features/file_explorere/widgets/social_tabs.dart';
 import 'package:folders/features/file_explorere/widgets/image_actions.dart';
 import 'package:folders/features/file_explorere/widgets/inline_rename.dart';
 import 'package:folders/features/file_explorere/widgets/item_marks.dart';
+import 'package:folders/features/git_status/git_status_controller.dart';
+import 'package:folders/features/git_status/git_widgets.dart';
 import 'package:folders/features/tags/tag_actions.dart';
 import 'package:folders/features/tags/tag_folder_bar.dart';
 import 'package:folders/features/tags/tag_paths.dart';
@@ -662,6 +664,7 @@ class _FileExplorerUI extends StatelessWidget {
           ? const []
           : explorerCrumbs(path, labels: loaded?.pathLabels ?? const {}),
       wide: docked,
+      statusChip: GitBranchChip(git: GitStatusController.of(bloc)),
       onNavigate: (target) => bloc.add(LoadDirectory(target)),
       onMenuPressed: docked ? null : () => Scaffold.of(context).openDrawer(),
       viewMode: thisPc ? null : loaded?.viewMode,
@@ -880,6 +883,8 @@ class _FileExplorerUI extends StatelessWidget {
     final groups = state.groups.isEmpty ? [EntityGroup('', entities)] : state.groups;
     final bloc = context.read<FileExplorerBloc>();
     final searching = state.query.isNotEmpty;
+    // Git's marks on the items, in a work tree (computers).
+    final git = GitStatusController.of(bloc);
 
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
@@ -983,14 +988,14 @@ class _FileExplorerUI extends StatelessWidget {
       return ShownItem(
         items: shown,
         entity: entity,
-        child: FileDragSource(
+        child: GitDim(git: git, path: entity.path, child: FileDragSource(
           entity: entity,
           draggable: entity.path != state.renamingPath,
           selection: () => state.selectedItems.contains(entity)
               ? [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e]
               : const [],
           child: target,
-        ),
+        )),
       );
     }
 
@@ -1047,7 +1052,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity, centered: true),
                 onPeek: onPeek(entity),
-                marks: ItemMarks(path: entity.path, gap: 0),
+                marks: ItemMarks(path: entity.path, git: git, gap: 0),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1099,7 +1104,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity),
                 onPeek: onPeek(entity),
-                marks: ItemMarks(path: entity.path),
+                marks: ItemMarks(path: entity.path, git: git),
               ));
             }, childCount: group.entities.length),
           ),
