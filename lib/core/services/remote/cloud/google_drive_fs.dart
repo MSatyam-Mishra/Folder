@@ -85,6 +85,8 @@ class GoogleDriveService extends CloudService {
           RemoteErrorKind.other, "Folders has used up today's Google Drive allowance. Try again tomorrow."),
       (403, 'cannotDownloadAbusiveFile') =>
         const RemoteException(RemoteErrorKind.permission, 'Google flagged this file as harmful, so it can\'t be downloaded.'),
+      (403, 'exportSizeLimitExceeded') => const RemoteException(RemoteErrorKind.unsupported,
+          'This Google document is too big for Google to send as a file. Open it in Google Docs instead.'),
       (403, 'teamDriveFileLimitExceeded' || 'numChildrenInNonRootLimitExceeded') =>
         const RemoteException(RemoteErrorKind.other, 'This folder is holding as many items as Google Drive allows.'),
       (403, _) => const RemoteException(RemoteErrorKind.permission, "You don't have permission to do that in Google Drive."),

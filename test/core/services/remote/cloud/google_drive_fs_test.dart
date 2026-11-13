@@ -305,6 +305,11 @@ void main() {
     final exported = utf8.decode(await read('/My Drive/Report.docx'));
     expect(exported, startsWith('EXPORTED Report as application/vnd.openxmlformats'));
     expect(utf8.decode(await read('/My Drive/Report.docx', start: 9, end: 15)), 'Report');
+
+    cloud.faults.add(Fault((s) => s.path.endsWith('/export'),
+        status: 403, body: jsonEncode({'error': {'code': 403, 'errors': [{'reason': 'exportSizeLimitExceeded'}]}})));
+    await expectLater(read('/My Drive/Report.docx'),
+        throwsA(isA<RemoteException>().having((e) => e.message, 'message', contains('too big'))));
   });
 
   test('small uploads in one go; existing files only when overwriting', () async {
