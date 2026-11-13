@@ -21,7 +21,7 @@ enum EntryKind { file, folder, link }
 /// Something right in a folder: a link (or junction) is marked as one and
 /// never followed.
 class FolderEntry {
-  const FolderEntry(this.name, this.kind, this.size, this.modified);
+  const FolderEntry(this.name, this.kind, this.size, this.modified, {this.attributes = 0});
 
   final String name;
   final EntryKind kind;
@@ -31,6 +31,9 @@ class FolderEntry {
 
   /// Milliseconds since the epoch.
   final int modified;
+
+  /// Windows' file attributes (FILE_ATTRIBUTE_*); 0 elsewhere.
+  final int attributes;
 }
 
 /// Lists a folder with each file's size and modified time. On Windows that's
@@ -74,6 +77,11 @@ abstract final class FolderListing {
   static bool _isLink(int tag) =>
       tag == 0xA000000C || tag == 0xA0000003 || tag == 0xA000001D || tag == 0x8000001B;
 
+  /// Where WIN32_FIND_DATAW keeps cFileName (after the attributes, three
+  /// FILETIMEs, the size and two reserved words), and its length.
+  static const _nameOffset = 44;
+  static const _maxName = 260;
+
   /// Windows' FILETIME (100 ns steps since 1601) in milliseconds since 1970.
   static const _epochGap = 11644473600000;
 
@@ -99,10 +107,17 @@ abstract final class FolderListing {
       );
       if (handle == INVALID_HANDLE_VALUE) return null;
       final listed = <FolderEntry>[];
+      // The name read straight from the struct: win32's cFileName builds it
+      // a character at a time, which was most of the time listing took.
+      final nameChars = (data.cast<Uint8>() + _nameOffset).cast<Uint16>().asTypedList(_maxName);
       try {
         do {
           final found = data.ref;
-          final name = found.cFileName;
+          var length = 0;
+          while (length < _maxName && nameChars[length] != 0) {
+            length++;
+          }
+          final name = String.fromCharCodes(nameChars, 0, length);
           if (name == '.' || name == '..') continue;
           final attributes = found.dwFileAttributes;
           final kind = attributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 && _isLink(found.dwReserved0)
@@ -115,6 +130,7 @@ abstract final class FolderListing {
             kind,
             kind == EntryKind.file ? found.nFileSizeHigh * 0x100000000 + found.nFileSizeLow : 0,
             time ~/ 10000 - _epochGap,
+            attributes: attributes,
           ));
         } while (FindNextFile(handle, data) != 0);
       } finally {
