@@ -24,6 +24,7 @@ import 'package:folders/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:folders/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:folders/features/file_explorere/widgets/file_list_item.dart';
 import 'package:folders/features/file_explorere/widgets/file_peek.dart';
+import 'package:folders/features/file_explorere/widgets/history_buttons.dart';
 import 'package:folders/features/file_explorere/widgets/selection_band.dart';
 import 'package:folders/features/file_explorere/widgets/social_tabs.dart';
 import 'package:folders/features/file_explorere/widgets/image_actions.dart';
@@ -115,10 +116,13 @@ bool get _controlClick =>
 /// focus scope, above [onKey], where every shortcut would be dead: it's taken
 /// back from there.
 class _BrowserKeys extends StatefulWidget {
-  const _BrowserKeys({required this.onKey, required this.child, this.autofocus = true});
+  const _BrowserKeys({required this.onKey, required this.child, this.autofocus = true, this.onPointerDown});
 
   final KeyEventResult Function(KeyEvent event) onKey;
   final Widget child;
+
+  /// Any button pressed over the browser (the mouse's back and forward).
+  final PointerDownEventListener? onPointerDown;
 
   /// Off for a second pane, which gets the keyboard when it's used.
   final bool autofocus;
@@ -155,8 +159,19 @@ class _BrowserKeysState extends State<_BrowserKeys> {
         focusNode: _node,
         autofocus: widget.autofocus,
         onKeyEvent: (_, event) => widget.onKey(event),
-        child: widget.child,
+        child: Listener(onPointerDown: widget.onPointerDown == null ? null : _pointerDown, child: widget.child),
       );
+
+  /// The pointer last handled by any browser: with two panes, the second
+  /// pane's keys sit inside the first's, and the innermost one (told first)
+  /// is the pane the button was pressed in.
+  static int? _handledPointer;
+
+  void _pointerDown(PointerDownEvent event) {
+    if (_handledPointer == event.pointer) return;
+    _handledPointer = event.pointer;
+    widget.onPointerDown!(event);
+  }
 }
 
 class FileExplorerScreen extends StatefulWidget {
@@ -319,7 +334,8 @@ class _FileExplorerUI extends StatelessWidget {
     final String? parentPath = path == null
         ? null
         : ExplorerPaths.parentOf(path);
-    final bool canPop = !isSelectionMode && parentPath == null;
+    // Back walks the history first, then goes up; at the top it leaves.
+    final bool canPop = !isSelectionMode && !context.read<FileExplorerBloc>().history.canBack && parentPath == null;
 
     // Tablets, unfolded foldables and desktops keep navigation docked.
     final bool docked = AdaptiveSplitView.isSplit(context);
@@ -435,13 +451,13 @@ class _FileExplorerUI extends StatelessWidget {
           );
           return;
         }
-        if (parentPath != null) {
-          context.read<FileExplorerBloc>().add(LoadDirectory(parentPath));
-        }
+        final bloc = context.read<FileExplorerBloc>();
+        if (!bloc.goBack()) bloc.goUp(replace: true);
       },
       child: _BrowserKeys(
         autofocus: !second,
         onKey: (event) => _onKey(context, event),
+        onPointerDown: (event) => context.read<FileExplorerBloc>().sideButton(event.buttons),
         child: docked && !second
             // Its border can be dragged. Each pane paints its own background.
             ? ValueListenableBuilder<double>(
@@ -542,11 +558,18 @@ class _FileExplorerUI extends StatelessWidget {
       bloc.add(ToggleSelectionMode(enable: false));
     } else if (key == LogicalKeyboardKey.escape && state.searchOpen) {
       bloc.add(CloseSearch());
-    } else if ((key == LogicalKeyboardKey.backspace && !Platform.isMacOS) ||
-        (keys.isAltPressed && key == LogicalKeyboardKey.arrowLeft) ||
-        (command && key == LogicalKeyboardKey.arrowUp) ||
-        // ⌘[ goes back up on macOS; backspace there is the delete key.
+    } else if ((keys.isAltPressed && key == LogicalKeyboardKey.arrowLeft) ||
+        key == LogicalKeyboardKey.browserBack ||
         (Platform.isMacOS && command && key == LogicalKeyboardKey.bracketLeft)) {
+      bloc.goBack();
+    } else if ((keys.isAltPressed && key == LogicalKeyboardKey.arrowRight) ||
+        key == LogicalKeyboardKey.browserForward ||
+        (Platform.isMacOS && command && key == LogicalKeyboardKey.bracketRight)) {
+      bloc.goForward();
+    } else if ((key == LogicalKeyboardKey.backspace && !Platform.isMacOS) ||
+        (keys.isAltPressed && key == LogicalKeyboardKey.arrowUp) ||
+        // Backspace is the delete key on a Mac.
+        (command && key == LogicalKeyboardKey.arrowUp)) {
       final parent = ExplorerPaths.parentOf(state.path);
       if (parent == null) return KeyEventResult.ignored;
       bloc.add(LoadDirectory(parent));
@@ -687,6 +710,13 @@ class _FileExplorerUI extends StatelessWidget {
     // This PC has one layout: nothing to arrange.
     final thisPc = path != null && ExplorerPaths.isWindowsRoots(path);
     return ExplorerHeader(
+      leading: Desktop.isDesktop && docked
+          ? HistoryButtons(
+              history: bloc.history,
+              onGo: bloc.goInHistory,
+              onUp: path == null || ExplorerPaths.parentOf(path) == null ? null : () => bloc.goUp(),
+            )
+          : null,
       crumbs: path == null
           ? const []
           : explorerCrumbs(path, labels: loaded?.pathLabels ?? const {}),

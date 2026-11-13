@@ -19,7 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../support/themed_app.dart';
 
 /// The file list on a Mac: packages and installers open like files, ⌘⌫
-/// deletes, ⌘[ goes up, and Control-click opens the menus.
+/// deletes, ⌘↑ goes up, ⌘[ goes back, and Control-click opens the menus.
 void main() {
   late Directory root;
   late Directory docs;
@@ -151,7 +151,7 @@ void main() {
     expect(launched, isEmpty);
   });
 
-  testWidgets('⌘⌫ deletes, backspace stays, ⌘[ goes up', (tester) async {
+  testWidgets('⌘⌫ deletes, backspace stays, ⌘↑ goes up, ⌘[ goes back', (tester) async {
     final bloc = await open(tester);
     await click(tester, 'alpha.txt');
     expect(row(tester, 'alpha.txt').isSelected, isTrue);
@@ -170,9 +170,18 @@ void main() {
     expect(File(p.join(docs.path, 'alpha.txt')).existsSync(), isTrue);
 
     await withKey(tester, LogicalKeyboardKey.metaLeft,
-        () => tester.sendKeyEvent(LogicalKeyboardKey.bracketLeft));
+        () => tester.sendKeyEvent(LogicalKeyboardKey.arrowUp));
     await settle(tester);
     expect(pathOf(bloc), root.path);
+
+    await withKey(tester, LogicalKeyboardKey.metaLeft,
+        () => tester.sendKeyEvent(LogicalKeyboardKey.bracketLeft));
+    await settle(tester);
+    expect(pathOf(bloc), docs.path, reason: 'back, as in Finder');
+    await withKey(tester, LogicalKeyboardKey.metaLeft,
+        () => tester.sendKeyEvent(LogicalKeyboardKey.bracketRight));
+    await settle(tester);
+    expect(pathOf(bloc), root.path, reason: 'and forward');
   });
 
   testWidgets('menus show ⌘⌫ for delete', (tester) async {

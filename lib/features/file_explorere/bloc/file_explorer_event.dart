@@ -12,7 +12,10 @@ class LoadDirectory extends FileExplorerEvent {
   /// ...and to rename where it's shown.
   final bool rename;
 
-  LoadDirectory(this.path, {this.select, this.rename = false});
+  /// What it does to Back and Forward.
+  final HistoryStep step;
+
+  LoadDirectory(this.path, {this.select, this.rename = false, this.step = HistoryStep.record});
 }
 
 class StopRenaming extends FileExplorerEvent {}

@@ -102,12 +102,15 @@ class ExplorerHeader extends StatelessWidget {
     this.onSearchChanged,
     this.onSearchClosed,
     this.statusChip,
+    this.leading,
   });
 
   final List<PathCrumb> crumbs;
 
   /// A small chip before the actions: the Git branch.
   final Widget? statusChip;
+  /// Before the location: Back, Forward and Up on computers.
+  final Widget? leading;
 
   /// Breadcrumb layout (wide screens with the docked sidebar).
   final bool wide;
@@ -157,6 +160,10 @@ class ExplorerHeader extends StatelessWidget {
                 onPressed: onMenuPressed,
               ),
               const SizedBox(width: 8),
+            ],
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: 4),
             ],
             Expanded(
               child: searchOpen

@@ -4,11 +4,14 @@ import 'package:bloc/bloc.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/features/file_explorere/bloc/folder_history.dart';
 import 'package:folders/features/file_explorere/bloc/folder_search.dart';
 import 'package:folders/features/file_explorere/bloc/grouping.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+
+export 'package:folders/features/file_explorere/bloc/folder_history.dart' show HistoryStep;
 
 part 'file_explorer_event.dart';
 part 'file_explorer_state.dart';
@@ -230,6 +233,9 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
         nameOf: s.labelFor,
       );
 
+  /// The folders this browser showed, for Back and Forward.
+  final history = FolderHistory();
+
   /// Incremented per [LoadDirectory]; a load that finishes after a newer
   /// one started drops its result, so the last folder opened always wins.
   int _loadGeneration = 0;
@@ -281,6 +287,7 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
   ) async {
     final generation = ++_loadGeneration;
     bool stale() => generation != _loadGeneration;
+    history.apply(event.path, event.step);
     try {
       // Refreshing the folder already on screen (e.g. after a viewer saved a
       // copy) keeps the list and its scroll position instead of flashing a
