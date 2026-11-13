@@ -279,6 +279,7 @@ class RemoteProtocolInfo {
     this.usesPrivateKey = false,
     this.signIn,
     this.isAvailable,
+    this.deleteNote,
   });
 
   final RemoteProtocol protocol;
@@ -304,6 +305,11 @@ class RemoteProtocolInfo {
   /// Whether it can be used on this system and build (a cloud service
   /// without its client id, Shizuku off Android...). Always when null.
   final bool Function()? isAvailable;
+
+  /// What happens to deleted items, for the delete confirmation, when they
+  /// can be brought back ("Deleted items go to Google Drive's trash..."). Null
+  /// when they're gone for good.
+  final String? deleteNote;
 
   bool get available => isAvailable?.call() ?? true;
 }

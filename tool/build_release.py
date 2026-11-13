@@ -14,8 +14,16 @@ crash stack traces (`flutter symbolize`) are kept in build/symbols/v<version>/
 
 Signing uses android/key.properties (git-ignored). Without it the APKs are
 signed with the debug key, which can't update an installed release.
+
+Google Drive, OneDrive and Dropbox need the app ids registered for Folders
+(docs/cloud-setup.md), taken from the environment when set:
+FOLDERS_GOOGLE_CLIENT_ID, FOLDERS_GOOGLE_CLIENT_SECRET,
+FOLDERS_ONEDRIVE_CLIENT_ID and FOLDERS_DROPBOX_APP_KEY. A service whose ids
+are missing isn't offered in that build. They go to flutter through a file,
+never on the command line or in this script's output.
 """
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -24,6 +32,27 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ABIS = ['arm64-v8a', 'armeabi-v7a', 'x86_64']
+CLOUD_SERVICES = [
+    ('Google Drive', ['FOLDERS_GOOGLE_CLIENT_ID', 'FOLDERS_GOOGLE_CLIENT_SECRET']),
+    ('OneDrive', ['FOLDERS_ONEDRIVE_CLIENT_ID']),
+    ('Dropbox', ['FOLDERS_DROPBOX_APP_KEY']),
+]
+
+
+def cloud_defines():
+    """Writes the cloud services' ids from the environment to a file for
+    --dart-define-from-file; returns its path, or None when there are none."""
+    values = {key: os.environ[key] for _, keys in CLOUD_SERVICES for key in keys
+              if os.environ.get(key)}
+    on = [name for name, keys in CLOUD_SERVICES if all(k in values for k in keys)]
+    print('Cloud services:', ', '.join(on) if on else 'none (no app ids in the environment)')
+    if not values:
+        return None
+    path = os.path.join(ROOT, 'build', 'cloud_defines.json')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(values, f)
+    return path
 
 
 def main():
@@ -41,12 +70,19 @@ def main():
         common += ['--dart-define=VIDEO_DOWNLOADER=false',
                    '--android-project-arg=explorer.videoDownloader=false']
         print('Building without the video downloader.')
-    for extra in (['--split-per-abi'], []):
-        print('flutter', ' '.join(common + extra))
-        subprocess.run([flutter, *common, *extra], cwd=ROOT, check=True)
-        if extra:
-            # The universal build reuses the output folder; take the splits first.
-            stage(version, split=True)
+    defines = cloud_defines()
+    if defines:
+        common.append(f'--dart-define-from-file={defines}')
+    try:
+        for extra in (['--split-per-abi'], []):
+            print('flutter', ' '.join(common + extra))
+            subprocess.run([flutter, *common, *extra], cwd=ROOT, check=True)
+            if extra:
+                # The universal build reuses the output folder; take the splits first.
+                stage(version, split=True)
+    finally:
+        if defines:
+            os.remove(defines)
     stage(version, split=False)
 
 

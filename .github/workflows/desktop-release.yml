@@ -10,6 +10,10 @@ name: Desktop apps
 #
 # Secrets: MSIX_CERTIFICATE (base64 .pfx) and MSIX_CERTIFICATE_PASSWORD sign
 # the MSIX files; packaging/windows/folders-msix.cer is its public part.
+# FOLDERS_GOOGLE_CLIENT_ID, FOLDERS_GOOGLE_CLIENT_SECRET,
+# FOLDERS_ONEDRIVE_CLIENT_ID and FOLDERS_DROPBOX_APP_KEY, when set, turn on
+# Google Drive, OneDrive and Dropbox (docs/cloud-setup.md); the apps build
+# without them, and then don't offer those services.
 on:
   release:
     types: [published]
@@ -58,8 +62,18 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
-      - run: flutter build windows --release
+      - run: >-
+          flutter build windows --release
+          "--dart-define=FOLDERS_GOOGLE_CLIENT_ID=$env:FOLDERS_GOOGLE_CLIENT_ID"
+          "--dart-define=FOLDERS_GOOGLE_CLIENT_SECRET=$env:FOLDERS_GOOGLE_CLIENT_SECRET"
+          "--dart-define=FOLDERS_ONEDRIVE_CLIENT_ID=$env:FOLDERS_ONEDRIVE_CLIENT_ID"
+          "--dart-define=FOLDERS_DROPBOX_APP_KEY=$env:FOLDERS_DROPBOX_APP_KEY"
         env:
+          # The cloud services' app ids; empty when the secrets aren't set.
+          FOLDERS_GOOGLE_CLIENT_ID: ${{ secrets.FOLDERS_GOOGLE_CLIENT_ID }}
+          FOLDERS_GOOGLE_CLIENT_SECRET: ${{ secrets.FOLDERS_GOOGLE_CLIENT_SECRET }}
+          FOLDERS_ONEDRIVE_CLIENT_ID: ${{ secrets.FOLDERS_ONEDRIVE_CLIENT_ID }}
+          FOLDERS_DROPBOX_APP_KEY: ${{ secrets.FOLDERS_DROPBOX_APP_KEY }}
           # Visual Studio 2026 rejects the <experimental/coroutine> header that
           # flutter_inappwebview_windows still uses, unless this is defined.
           # MSVC reads extra options from CL.
@@ -125,7 +139,17 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
-      - run: flutter build linux --release
+      - run: >-
+          flutter build linux --release
+          "--dart-define=FOLDERS_GOOGLE_CLIENT_ID=$FOLDERS_GOOGLE_CLIENT_ID"
+          "--dart-define=FOLDERS_GOOGLE_CLIENT_SECRET=$FOLDERS_GOOGLE_CLIENT_SECRET"
+          "--dart-define=FOLDERS_ONEDRIVE_CLIENT_ID=$FOLDERS_ONEDRIVE_CLIENT_ID"
+          "--dart-define=FOLDERS_DROPBOX_APP_KEY=$FOLDERS_DROPBOX_APP_KEY"
+        env:
+          FOLDERS_GOOGLE_CLIENT_ID: ${{ secrets.FOLDERS_GOOGLE_CLIENT_ID }}
+          FOLDERS_GOOGLE_CLIENT_SECRET: ${{ secrets.FOLDERS_GOOGLE_CLIENT_SECRET }}
+          FOLDERS_ONEDRIVE_CLIENT_ID: ${{ secrets.FOLDERS_ONEDRIVE_CLIENT_ID }}
+          FOLDERS_DROPBOX_APP_KEY: ${{ secrets.FOLDERS_DROPBOX_APP_KEY }}
       # flutter build only prints the last line of a native build error.
       - name: Show the native build error
         if: failure()
