@@ -122,5 +122,8 @@ class FileExplorerError extends FileExplorerState {
   /// The folder that failed to open, when known.
   final String? path;
 
-  FileExplorerError(this.message, {this.path});
+  /// What went wrong (a [RemoteException] on network places).
+  final Object? error;
+
+  FileExplorerError(this.message, {this.path, this.error});
 }

@@ -49,7 +49,7 @@ List<PathCrumb> explorerCrumbs(
   String? current = path;
   while (current != null && crumbs.length < 64) {
     crumbs.add(PathCrumb(current, _labelFor(current, labels)));
-    if (_isStorageRoot(current)) break;
+    if (_isStorageRoot(current) || ExplorerPaths.isRemoteRoot(current)) break;
     current = ExplorerPaths.parentOf(current);
   }
   return crumbs.reversed.toList();

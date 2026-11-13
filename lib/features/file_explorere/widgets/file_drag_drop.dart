@@ -5,6 +5,7 @@ import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/platform/macos_files.dart';
 import 'package:folders/core/platform/macos_writable.dart';
 import 'package:folders/core/platform/windows_drop_files.dart';
+import 'package:folders/core/services/remote/remote_fs.dart';
 import 'package:folders/features/file_explorere/widgets/selection_band.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/services.dart';
@@ -33,10 +34,15 @@ class FileDragSource extends StatelessWidget {
   final bool draggable;
   final List<FileSystemEntity> Function()? selection;
 
-  static DragItem _item(FileSystemEntity entity) => DragItem(
-        localData: {'path': entity.path},
-        suggestedName: p.basename(entity.path),
-      )..add(Formats.fileUri(Uri.file(entity.path)));
+  static DragItem _item(FileSystemEntity entity) {
+    final item = DragItem(localData: {'path': entity.path}, suggestedName: p.basename(entity.path));
+    // On a network place: no file for other apps to take (only its name as
+    // text), just this app's folders and tabs.
+    if (RemotePaths.isRemote(entity.path)) {
+      return item..add(Formats.plainText(RemotePaths.nameOf(RemotePaths.parse(entity.path)!.$2)));
+    }
+    return item..add(Formats.fileUri(Uri.file(entity.path)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +107,8 @@ class _FileDropTargetState extends State<FileDropTarget> {
   Widget build(BuildContext context) {
     if (!nativeDragAndDrop) return widget.builder(context, false);
     return DropRegion(
-      formats: const [Formats.fileUri],
+      // Text too: items of network places carry their name, not a file.
+      formats: const [Formats.fileUri, Formats.plainText],
       hitTestBehavior: HitTestBehavior.opaque,
       onDropEnter: (_) => _hover(true),
       onDropLeave: (_) => _hover(false),
@@ -110,6 +117,10 @@ class _FileDropTargetState extends State<FileDropTarget> {
         final sources = [
           for (final item in event.session.items) ?_localPath(item),
         ];
+        // Text from another app isn't a file.
+        if (sources.isEmpty && !event.session.items.any((item) => item.canProvide(Formats.fileUri))) {
+          return DropOperation.none;
+        }
         // Not onto itself, nor into a folder inside a dragged folder.
         if (sources.any((s) => p.equals(s, widget.folder) || p.isWithin(s, widget.folder))) {
           return DropOperation.none;
@@ -183,6 +194,14 @@ Future<List<String>> droppedFilePaths(List<DropItem> items) => _FileDropTargetSt
 /// (a read-only volume, a folder that isn't the user's) is always copied.
 bool dropMoves(String? source, String destination, {required bool fromThisApp}) {
   final keys = HardwareKeyboard.instance;
+  // To, from or between network places: a move within one place, else a
+  // copy; Ctrl (Option on macOS) copies and Shift (Cmd) moves, as usual.
+  if (source != null && (RemotePaths.isRemote(source) || RemotePaths.isRemote(destination))) {
+    if (Platform.isMacOS ? keys.isAltPressed : (keys.isControlPressed || keys.isMetaPressed)) return false;
+    if (Platform.isMacOS ? keys.isMetaPressed : keys.isShiftPressed) return true;
+    final from = RemotePaths.parse(source)?.$1;
+    return from != null && from == RemotePaths.parse(destination)?.$1;
+  }
   if (Platform.isMacOS) {
     if (keys.isAltPressed) return false;
     // The system volume shares its device id with the user's, so this

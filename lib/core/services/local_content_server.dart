@@ -157,6 +157,17 @@ class LocalContentServer {
         cacheControl: immutable ? _immutable : _noStore,
       ));
 
+  /// Serves what [resolver] gives, read in the ranges asked for (HTTP
+  /// `Range`) and never whole: files on network places, streamed to the
+  /// video player so it can seek.
+  Future<Uri> mountRanged(FutureOr<RangedContent?> Function(String path) resolver) => _mount(_Mount(
+        (path) async {
+          final content = await resolver(path);
+          return content == null ? null : _RangedContent(content);
+        },
+        cacheControl: _noStore,
+      ));
+
   Future<Uri> _mount(_Mount mount) async {
     final server = await _ensureStarted();
     final id = _randomId(12);
@@ -287,4 +298,24 @@ class _FileContent implements _Content {
 
   @override
   Stream<List<int>> read(int start, int end) => file.openRead(start, end);
+}
+
+/// Content of a known [length], read in ranges: bytes `[start, end)`.
+class RangedContent {
+  const RangedContent(this.length, this.read);
+
+  final int length;
+  final Stream<List<int>> Function(int start, int end) read;
+}
+
+class _RangedContent implements _Content {
+  _RangedContent(this.content);
+
+  final RangedContent content;
+
+  @override
+  int get length => content.length;
+
+  @override
+  Stream<List<int>> read(int start, int end) => content.read(start, end);
 }

@@ -6,7 +6,10 @@ import 'package:bloc/bloc.dart';
 import 'package:folders/core/services/background_tasks.dart';
 import 'package:folders/core/services/file_clipboard.dart';
 import 'package:folders/core/services/path_changes.dart';
+import 'package:folders/core/services/remote/remote_fs.dart';
+import 'package:folders/core/services/remote/remote_transfer.dart';
 import 'package:folders/features/clipboard/paste_task.dart';
+import 'package:folders/features/clipboard/remote_clipboard.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/foundation.dart';
@@ -25,6 +28,7 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     on<CopyToClipboard>((event, emit) => _put(event.entities, ClipboardOperation.copy, emit));
     on<CutToClipboard>((event, emit) => _put(event.entities, ClipboardOperation.cut, emit));
     on<ClearClipboard>((event, emit) async {
+      RemoteClipboard.held = null;
       emit(ClipboardEmpty());
       await _quietly(clipboard.clear);
     });
@@ -57,6 +61,13 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     if (entities.isEmpty) return;
     final ready = ClipboardReadyToPaste(entities: entities, operation: operation);
     emit(ready);
+    // Network places' items stay in this app, see RemoteClipboard.
+    if (RemoteClipboard.holds(entities)) {
+      RemoteClipboard.held = RemoteClipboardItems(entities, cut: operation == ClipboardOperation.cut);
+      await _quietly(clipboard.clear);
+      return;
+    }
+    RemoteClipboard.held = null;
     await _quietly(() => clipboard.write(ClipboardFiles(
           [for (final e in entities) e.path],
           cut: operation == ClipboardOperation.cut,
@@ -77,6 +88,19 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     }
     final entities = _existing(files);
     final current = state;
+    final held = RemoteClipboard.held;
+    if (entities.isEmpty && held != null) {
+      // Network places' items, which the system clipboard doesn't hold.
+      if (!identical(state, current) || _pasting) return;
+      final operation = held.cut ? ClipboardOperation.cut : ClipboardOperation.copy;
+      if (current is! ClipboardReadyToPaste ||
+          current.operation != operation ||
+          !listEquals([for (final e in current.entities) e.path], held.paths)) {
+        emit(ClipboardReadyToPaste(entities: held.entities, operation: operation));
+      }
+      return;
+    }
+    if (entities.isNotEmpty) RemoteClipboard.held = null;
     if (entities.isEmpty) {
       // macOS: another app's files, left until the user pastes.
       final elsewhere = files == null && _readsOnPaste && await _holdsFiles();
@@ -108,7 +132,8 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     try {
       // macOS: what's on the pasteboard now, unless nothing was copied
       // since the last look (which is every 0.7 s).
-      final current = before is ClipboardReadyToPaste && await _unchanged(before)
+      final current = before is ClipboardReadyToPaste &&
+              (RemoteClipboard.holds(before.entities) || await _unchanged(before))
           ? before
           : await _readToPaste(before, emit);
       if (current == null) return; // Nothing to paste after all.
@@ -119,6 +144,7 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
         emit(ClipboardPasteSuccess(targets));
         if (move) {
           // Moved: nothing left to paste, in any window.
+          RemoteClipboard.held = null;
           emit(ClipboardEmpty());
           await _quietly(clipboard.clear);
         } else {
@@ -129,7 +155,7 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
         }
       } catch (e) {
         emit(ClipboardPasteFailure(
-          error: e is FileSystemException ? _describe(e) : '$e',
+          error: _errorText(e),
           previousState: current,
         ));
         emit(current);
@@ -239,7 +265,7 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
       final targets = await _transfer(event.sources, event.destination, event.move);
       emit(ClipboardPasteSuccess(targets));
     } catch (e) {
-      emit(ClipboardPasteFailure(error: e is FileSystemException ? _describe(e) : '$e'));
+      emit(ClipboardPasteFailure(error: _errorText(e)));
     }
     // What's on the clipboard stays.
     if (before is ClipboardReadyToPaste || before is ClipboardEmpty) emit(before);
@@ -249,29 +275,40 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
   Future<List<String>> _transfer(List<String> sources, String destination, bool move) async {
     final verb = move ? 'Moving' : 'Copying';
     final title = sources.length == 1
-        ? '$verb "${p.basename(sources.single)}"'
+        ? '$verb "${_nameOf(sources.single)}"'
         : '$verb ${sources.length} items';
     taskProgressBloc.add(TaskStarted(title: title, initialMessage: 'Getting ready…'));
+    // Network places: copied here, where their connections are, and can be
+    // cancelled.
+    final remote = transferNeedsRemote(sources, destination);
+    final cancel = RemoteCancel();
     _task = BackgroundTasks.instance.start(
       title,
       message: 'Getting ready…',
       headline: move ? 'Move in progress' : 'Copy in progress',
       kind: TaskKind.copy,
+      onCancel: remote ? cancel.cancel : null,
     );
     try {
-      final targets = await _pasteInIsolate(sources, destination, move, onPlaced: (from, to) {
-        // Tags and the like follow what's moved, and copies keep them.
-        if (move) {
-          PathChanges.moved(from, to);
-        } else {
-          PathChanges.copied(from, to);
-        }
-      });
+      final targets = remote
+          ? await transferEntities(sources, destination, move: move, onProgress: _reportProgress, cancel: cancel)
+          : await _pasteInIsolate(sources, destination, move, onPlaced: (from, to) {
+              // Tags and the like follow what's moved, and copies keep them.
+              if (move) {
+                PathChanges.moved(from, to);
+              } else {
+                PathChanges.copied(from, to);
+              }
+            });
       _task!.outputs.addAll(targets);
-      BackgroundTasks.instance.finish(_task!, message: 'Done: ${p.basename(destination)}');
+      BackgroundTasks.instance.finish(_task!, message: 'Done: ${_nameOf(destination)}');
       return targets;
     } catch (e) {
-      BackgroundTasks.instance.fail(_task!, e is FileSystemException ? _describe(e) : '$e');
+      if (cancel.isCancelled) {
+        BackgroundTasks.instance.cancelled(_task!);
+      } else {
+        BackgroundTasks.instance.fail(_task!, _errorText(e));
+      }
       rethrow;
     } finally {
       taskProgressBloc.add(TaskEnded());
@@ -296,16 +333,8 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     });
     port.listen((message) {
       switch (message) {
-        case PasteProgress(:final done, :final total, :final name):
-          taskProgressBloc.add(TaskProgressUpdated(
-            progress: total > 0 ? done / total : 1,
-            message: name.isEmpty ? 'Finishing…' : name,
-          ));
-          _task?.update(
-            progress: total > 0 ? done / total : 1,
-            message: name.isEmpty ? 'Finishing…' : name,
-            detail: total > 0 ? '${filesize(done, 1)}/${filesize(total, 1)}' : null,
-          );
+        case PasteProgress progress:
+          _reportProgress(progress);
         case (String from, String to, true):
           onPlaced?.call(from, to);
         case List<String> targets:
@@ -334,8 +363,32 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
     }
   }
 
+  void _reportProgress(PasteProgress progress) {
+    final PasteProgress(:done, :total, :name) = progress;
+    taskProgressBloc.add(TaskProgressUpdated(
+      progress: total > 0 ? done / total : 1,
+      message: name.isEmpty ? 'Finishing…' : name,
+    ));
+    _task?.update(
+      progress: total > 0 ? done / total : 1,
+      message: name.isEmpty ? 'Finishing…' : name,
+      detail: total > 0 ? '${filesize(done, 1)}/${filesize(total, 1)}' : null,
+    );
+  }
+
   static String _describe(FileSystemException e) =>
-      e.path == null ? e.message : '${e.message} (${p.basename(e.path!)})';
+      e.path == null ? e.message : '${e.message} (${_nameOf(e.path!)})';
+
+  static String _errorText(Object e) => switch (e) {
+        FileSystemException() => _describe(e),
+        RemoteException(kind: RemoteErrorKind.cancelled) => 'it was cancelled',
+        RemoteException(:final message) => message,
+        _ => '$e',
+      };
+
+  /// A path's last part, decoded on network places.
+  static String _nameOf(String path) =>
+      RemotePaths.isRemote(path) ? RemotePaths.nameOf(RemotePaths.parse(path)?.$2 ?? '/') : p.basename(path);
 
   static Future<void> _quietly(Future<void> Function() action) async {
     try {

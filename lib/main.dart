@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:folders/core/services/remote/remote_places.dart';
+import 'package:folders/core/services/remote/remote_registry.dart';
 import 'package:folders/shared/layout/sidebar_width.dart';
 import 'package:folders/features/panes/pane_settings.dart';
 import 'package:folders/features/file_explorere/explorer_zoom.dart';
@@ -62,6 +64,10 @@ void main(List<String> args) async {
   await ExplorerZoom.instance.load();
   await SidebarWidth.instance.load();
   await PaneSettings.instance.load();
+  // Network places: the protocols this build has, and the saved places
+  // (the sidebar and tab titles name them).
+  registerRemoteProtocols();
+  await RemotePlaces.instance.load();
   // Windows: the tabs take the title bar's place.
   await TabbedExplorer.prepareWindow();
 

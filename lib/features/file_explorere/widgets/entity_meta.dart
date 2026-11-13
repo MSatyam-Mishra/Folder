@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/services/remote/remote_entities.dart';
 import 'package:folders/shared/file_icons/file_icons.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/widgets.dart';
@@ -63,6 +64,7 @@ abstract final class EntityFormat {
   static bool isPackage(FileSystemEntity entity) =>
       Platform.isMacOS &&
       entity is Directory &&
+      entity is! RemoteEntity &&
       FileTypes.isMacPackage(entity.path);
 
   /// Whether [entity] gets a package's icon and kind: a macOS package, or

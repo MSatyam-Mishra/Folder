@@ -220,6 +220,9 @@ RemoteProtocolInfo registerFakeProtocol(
   List<RemoteOptionField> options = const [],
   Future<RemoteSignIn?> Function(BuildContext context)? signIn,
   int? defaultPort = 2222,
+  Stream<RemoteFoundHost> Function()? discover,
+  RemoteConnection Function()? builtInPlace,
+  Future<bool> Function(BuildContext context)? fixAccess,
 }) {
   final info = RemoteProtocolInfo(
     protocol: protocol,
@@ -231,6 +234,9 @@ RemoteProtocolInfo registerFakeProtocol(
     signIn: signIn,
     needsHost: signIn == null,
     usesPassword: signIn == null,
+    discover: discover,
+    builtInPlace: builtInPlace,
+    fixAccess: fixAccess,
     create: (connection, secrets) =>
         FakeRemoteFileSystem(connection, secrets, servers[connection.id] ?? servers['']!),
   );

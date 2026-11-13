@@ -58,6 +58,8 @@ abstract final class SystemIcons {
 
   static Future<Uint8List?> _load(String path, int size) async {
     if (ExplorerPaths.isWindowsRoots(path)) return _fetch(_thisPc, size);
+    // A folder on a network place: the plain one, never looked for on disk.
+    if (ExplorerPaths.isRemote(path)) return _plainFolder(size);
     if (Platform.isWindows && !ExplorerPaths.isDriveRoot(path)) {
       // Folders with an icon of their own (Documents, Downloads...) say so
       // in a desktop.ini, or are the user's own folder; the rest share one,

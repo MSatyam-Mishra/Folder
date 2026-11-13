@@ -9,10 +9,26 @@ import 'package:path/path.dart' as p;
 /// Stops a transfer at the next chunk.
 class RemoteCancel {
   bool _cancelled = false;
+  final _listeners = <void Function()>[];
 
   bool get isCancelled => _cancelled;
 
-  void cancel() => _cancelled = true;
+  void cancel() {
+    if (_cancelled) return;
+    _cancelled = true;
+    for (final listener in [..._listeners]) {
+      listener();
+    }
+  }
+
+  /// Calls [listener] when cancelled (at once if it already was).
+  void whenCancelled(void Function() listener) {
+    if (_cancelled) {
+      listener();
+    } else {
+      _listeners.add(listener);
+    }
+  }
 
   void check() {
     if (_cancelled) throw const RemoteException(RemoteErrorKind.cancelled, 'Cancelled');

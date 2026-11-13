@@ -18,7 +18,6 @@ class CategoryGrid extends StatelessWidget {
       Category(icon: LucideIcons.lock, name: 'Vault', fileCount: 5, color: Colors.teal.shade300),
       Category(icon: LucideIcons.archive, name: 'Archives', fileCount: 1, color: Colors.brown.shade300),
       Category(icon: LucideIcons.download, name: 'Downloads', fileCount: 20, color: Colors.green.shade300),
-      Category(icon: LucideIcons.cloud, name: 'Cloud Drive', fileCount: 0, color: Colors.indigo.shade300),
     ];
 
     return Padding(

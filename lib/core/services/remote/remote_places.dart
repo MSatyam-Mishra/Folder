@@ -26,14 +26,28 @@ class RemotePlaces extends ChangeNotifier {
   /// In the order added. Empty until [load] finished.
   List<RemoteConnection> get places => _places;
 
+  /// The places protocols always have ([RemoteProtocolInfo.builtInPlace]),
+  /// where they can be used.
+  List<RemoteConnection> get builtIn => [
+        for (final info in RemoteProtocols.all)
+          if (info.builtInPlace != null && info.available) info.builtInPlace!(),
+      ];
+
   bool get loaded => _loaded;
 
+  /// A saved place, or a built-in one.
   RemoteConnection? byId(String id) {
     for (final place in _places) {
       if (place.id == id) return place;
     }
+    for (final place in builtIn) {
+      if (place.id == id) return place;
+    }
     return null;
   }
+
+  /// Whether [id] is a built-in place, which can't be edited or removed.
+  bool isBuiltIn(String id) => builtIn.any((p) => p.id == id);
 
   /// Reads the saved places (once; later calls wait for the first). Also
   /// registers the protocols this build has.

@@ -1,8 +1,8 @@
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// Floating bar shown while files are on the clipboard: what they are,
@@ -29,7 +29,7 @@ class PasteBar extends StatelessWidget {
     final entities = clipboard.entities;
     final move = clipboard.operation == ClipboardOperation.cut;
     final name = entities.length == 1
-        ? p.basename(entities.single.path)
+        ? ExplorerPaths.displayNameForEntity(entities.single.path)
         : '${entities.length} items';
 
     return ConstrainedBox(

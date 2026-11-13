@@ -31,8 +31,20 @@ abstract interface class RemoteEntity implements FileSystemEntity {
   static bool anyIn(Iterable<FileSystemEntity> entities) => entities.any(isIn);
 
   /// A [RemoteFile] or [RemoteDirectory] for [entry] on [connectionId].
-  static FileSystemEntity of(String connectionId, RemoteEntry entry) =>
-      entry.isDirectory ? RemoteDirectory(connectionId, entry) : RemoteFile(connectionId, entry);
+  static FileSystemEntity of(String connectionId, RemoteEntry entry) {
+    if (entry.isDirectory) return RemoteDirectory(connectionId, entry);
+    final file = RemoteFile(connectionId, entry);
+    _sizes.remove(file.path);
+    _sizes[file.path] = entry.size;
+    if (_sizes.length > 20000) _sizes.remove(_sizes.keys.first);
+    return file;
+  }
+
+  static final _sizes = <String, int>{};
+
+  /// The size of a file listed lately, by its browser path (what has only
+  /// the path, as a thumbnail, asks here).
+  static int? knownSize(String path) => _sizes[path];
 }
 
 /// [FileStat] of a remote entry, from its listing.

@@ -5,6 +5,8 @@ import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/platform/windows_default_app.dart';
 import 'package:folders/core/services/apk_installer.dart';
 import 'package:folders/core/files/file_types.dart';
+import 'package:folders/core/services/remote/remote_entities.dart';
+import 'package:folders/features/remote/remote_open.dart';
 import 'package:folders/features/viewer_3d/screens/blend_viewer_screen.dart';
 import 'package:folders/features/viewer_3d/screens/three_d_viewer_screen.dart';
 import 'package:folders/features/viewer_archive/screens/archive_viewer_screen.dart';
@@ -46,6 +48,8 @@ class FileOpener {
     File file, {
     bool allowExternal = true,
   }) async {
+    // On a network place: streamed or downloaded first.
+    if (file is RemoteFile) return RemoteOpener.open(context, file, allowExternal: allowExternal);
     final kind = await _refineKind(file, FileTypes.kindOf(file.path));
     if (!context.mounted) return null;
     if (kind == FileKind.unknown ||
@@ -62,6 +66,7 @@ class FileOpener {
     FileKind kind, {
     bool allowExternal = true,
   }) async {
+    if (file is RemoteFile) return RemoteOpener.open(context, file, as: kind, allowExternal: allowExternal);
     final screen = _screenFor(file, kind);
     if (screen == null) {
       if (allowExternal) {
@@ -158,6 +163,10 @@ class FileOpener {
   }
 
   static Future<void> openExternally(BuildContext context, File file) async {
+    if (file is RemoteFile) {
+      await RemoteOpener.open(context, file, chooser: true);
+      return;
+    }
     // Windows: when Folders is the type's default app, handing the file
     // over would start Folders again; Windows asks for an app instead.
     if (Platform.isWindows && WindowsDefaultApp.isThisApp(file.path)) {
@@ -183,6 +192,7 @@ class FileOpener {
     File file, {
     bool allowExternal = true,
   }) async {
+    if (file is RemoteFile) return RemoteOpener.open(context, file, chooser: true, allowExternal: allowExternal);
     final kind = FileTypes.kindOf(file.path);
     final options = <(IconData, String, FileKind?)>[
       if (kind != FileKind.unknown && _screenFor(file, kind) != null)

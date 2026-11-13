@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
 
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/files/file_types.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folders/shared/file_icons/file_thumbnail.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 /// A quick look at [file] over the blurred page, without opening it: a tap
@@ -133,7 +133,7 @@ class FilePeek extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  p.basename(file.path),
+                                  ExplorerPaths.displayNameForEntity(file.path),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w500),

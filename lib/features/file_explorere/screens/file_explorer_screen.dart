@@ -47,6 +47,7 @@ import 'package:folders/features/panes/dual_pane.dart';
 import 'package:folders/features/panes/pane_actions.dart';
 import 'package:folders/features/panes/pane_area.dart';
 import 'package:folders/features/panes/pane_menu.dart';
+import 'package:folders/features/remote/remote_actions.dart';
 import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:folders/core/services/trash/trash.dart';
@@ -697,12 +698,7 @@ class _FileExplorerUI extends StatelessWidget {
         onShare: () => fileActionsService.shareMany(context, selected),
         onSendNearby: () {
           exitSelection();
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => LocalSendScreen(initialItems: selected),
-            ),
-          );
+          fileActionsService.shareVia(context, ShareMethod.localSend, selected);
         },
         onCompress: () => _handleCompress(context, fileExplorerState),
         onDelete: () => fileActionsService.deleteFiles(context, selected),
@@ -899,6 +895,7 @@ class _FileExplorerUI extends StatelessWidget {
               icon: const Icon(LucideIcons.arrowLeft, size: 16),
               label: const Text('Go back'),
             ),
+          ...remoteErrorActions(context, state),
           FilledButton.icon(
             onPressed: () => bloc.add(
               LoadDirectory(state.path ?? ExplorerPaths.initialPath),
@@ -1071,7 +1068,7 @@ class _FileExplorerUI extends StatelessWidget {
     Widget? nameEditor(FileSystemEntity e, {bool centered = false}) => e.path == state.renamingPath
         ? InlineRename(
             key: ValueKey(e.path),
-            name: p.basename(e.path),
+            name: ExplorerPaths.displayNameForEntity(e.path),
             centered: centered,
             onDone: (name) => fileActionsService.finishRename(context, e, name),
           )
@@ -1637,7 +1634,7 @@ class _FileExplorerUI extends StatelessWidget {
         if (Terminal.canOpen(state.path))
           ExplorerMenu.item(context,
               value: 'terminal', label: 'Open in Terminal', icon: LucideIcons.squareTerminal, shortcut: 'F4'),
-        if (inFolder)
+        if (inFolder && ExplorerPaths.isLocal(state.path))
           fileActionsService.shareSubmenu(context, [Directory(state.path)],
               label: 'Share this folder'),
       ],
@@ -1701,6 +1698,12 @@ class _FileExplorerUI extends StatelessWidget {
     FileExplorerLoaded state,
   ) async {
     if (state.selectedItems.isEmpty) return;
+    if (ExplorerPaths.isRemote(state.path)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Files on a network place can't be zipped there. Copy them here first."),
+      ));
+      return;
+    }
     final count = state.selectedItems.length;
 
     final String? fileName = await fileActionsService.promptForName(
@@ -1764,7 +1767,7 @@ class _FileExplorerUI extends StatelessWidget {
     FileExplorerState state,
   ) async {
     if (state is! FileExplorerLoaded ||
-        ExplorerPaths.isVirtual(state.path)) {
+        !ExplorerPaths.isLocal(state.path)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Open a folder to share it')),
       );

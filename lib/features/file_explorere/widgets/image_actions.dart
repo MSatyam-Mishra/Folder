@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/services/background_tasks.dart';
 import 'package:folders/core/services/image_convert/image_converter.dart';
 import 'package:folders/core/services/image_convert/image_formats.dart';
@@ -38,7 +39,8 @@ abstract final class ImageActions {
   /// The pictures among [entities].
   static List<String> imagesIn(Iterable<FileSystemEntity> entities) => [
         for (final e in entities)
-          if (e is File && isConvertibleImage(e.path)) e.path,
+          // Not on network places: the converter writes beside the file.
+          if (e is File && !ExplorerPaths.isRemote(e.path) && isConvertibleImage(e.path)) e.path,
       ];
 
   /// "Convert to ▸" (every format but the pictures' own) and "Resize…".

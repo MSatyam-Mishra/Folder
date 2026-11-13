@@ -35,6 +35,10 @@ import 'package:folders/features/trash/trash_actions.dart';
 import 'package:folders/features/vault/vault_store.dart';
 import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/core/services/device_files.dart';
+import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/services/remote/remote_entities.dart';
+import 'package:folders/core/services/remote/remote_places.dart';
+import 'package:folders/features/remote/remote_actions.dart';
 
 class FileActionsService {
   final FileRepository repository;
@@ -58,7 +62,7 @@ class FileActionsService {
   /// Whether [entity] is a macOS package (an app, plug-in or document
   /// package): a folder that opens like a file, as in Finder.
   static bool isPackage(FileSystemEntity entity) =>
-      Platform.isMacOS && entity is Directory && FileTypes.isMacPackage(entity.path);
+      Platform.isMacOS && entity is Directory && entity is! RemoteEntity && FileTypes.isMacPackage(entity.path);
 
   /// Whether macOS opens [entity] itself, as Finder does: a package, or an
   /// installer file (.pkg), which opens in Installer.
@@ -66,6 +70,7 @@ class FileActionsService {
       isPackage(entity) ||
       (Platform.isMacOS &&
           entity is File &&
+          entity is! RemoteEntity &&
           FileTypes.macInstaller.contains(FileTypes.extensionOf(entity.path)));
 
   /// Starts macOS's `open` for a package; tests replace it.
@@ -128,7 +133,8 @@ class FileActionsService {
               value: _EntityAction.newTab,
               label: 'Open in new tab',
               icon: LucideIcons.squarePlus),
-        if (Desktop.isDesktop && !package)
+        // A file on a network place opens here, not in a window of its own.
+        if (Desktop.isDesktop && !package && !(isFile && entity is RemoteEntity))
           ExplorerMenu.item(context,
               value: _EntityAction.newWindow,
               label: 'Open in new window',
@@ -178,7 +184,7 @@ class FileActionsService {
         ExplorerMenu.divider(),
         shareSubmenu(context, [entity],
             label: isFile ? 'Share file' : 'Share folder'),
-        if (isFile && VaultStore.supported)
+        if (isFile && VaultStore.supported && entity is! RemoteEntity)
           ExplorerMenu.item(context,
               value: _EntityAction.vault,
               label: 'Move to vault',
@@ -294,6 +300,12 @@ class FileActionsService {
     List<FileSystemEntity> entities,
   ) async {
     if (entities.isEmpty) return;
+    // Files on network places are downloaded first.
+    if (RemoteEntity.anyIn(entities)) {
+      final local = await RemoteActions.local(context, entities);
+      if (local == null || !context.mounted) return;
+      return shareVia(context, method, local);
+    }
     switch (method) {
       case ShareMethod.web || ShareMethod.ftp:
         // A folder is shared whole; files only themselves, not their
@@ -381,16 +393,9 @@ class FileActionsService {
                 icon: LucideIcons.radio,
                 label: 'Send nearby',
                 detail: 'LocalSend',
-                onTap: () => run(
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => LocalSendScreen(initialItems: [entity]),
-                    ),
-                  ),
-                ),
+                onTap: () => run(() => shareVia(context, ShareMethod.localSend, [entity])),
               ),
-              if (entity is File && VaultStore.supported)
+              if (entity is File && VaultStore.supported && entity is! RemoteEntity)
                 _SheetAction(
                   icon: LucideIcons.lockKeyhole,
                   label: 'Move to vault',
@@ -481,6 +486,7 @@ class FileActionsService {
     BuildContext blocContext,
     FileSystemEntity entity,
   ) async {
+    if (entity is RemoteEntity) return RemoteActions.rename(blocContext, entity, this);
     final oldName = p.basename(entity.path);
     final isDirectory = entity is Directory;
     final newName = await promptForName(
@@ -529,6 +535,7 @@ class FileActionsService {
     BuildContext blocContext,
     String parentPath,
   ) async {
+    if (ExplorerPaths.isRemote(parentPath)) return RemoteActions.createFolder(blocContext, parentPath);
     final bloc = blocContext.read<FileExplorerBloc>();
     final path = p.join(parentPath, NewFiles.freeName(parentPath, 'New folder', ''));
     try {
@@ -551,6 +558,7 @@ class FileActionsService {
     FileSystemEntity entity,
     String? name,
   ) async {
+    if (entity is RemoteEntity) return RemoteActions.finishRename(blocContext, entity, name);
     final bloc = blocContext.read<FileExplorerBloc>();
     final oldName = p.basename(entity.path);
     bloc.add(StopRenaming());
@@ -585,6 +593,7 @@ class FileActionsService {
     String folder,
     NewFileKind kind,
   ) async {
+    if (ExplorerPaths.isRemote(folder)) return RemoteActions.newFile(blocContext, folder, kind, this);
     if (kind.editor == NewFileEditor.none) {
       return _createThenOpen(blocContext, folder, kind);
     }
@@ -673,14 +682,17 @@ class FileActionsService {
     BuildContext blocContext,
     FileSystemEntity entity,
   ) async {
-    final name = p.basename(entity.path);
+    final name = ExplorerPaths.displayNameForEntity(entity.path);
+    // A cloud service's trash keeps them; elsewhere they're gone for good.
+    final note = RemoteActions.deleteNote([entity]);
     final confirmed = await _confirmDelete(
       blocContext,
       title: 'Delete "$name"?',
-      message: entity is Directory
-          ? 'This folder and everything in it will be permanently deleted. '
-              "This can't be undone."
-          : "This file will be permanently deleted. This can't be undone.",
+      message: note ??
+          (entity is Directory
+              ? 'This folder and everything in it will be permanently deleted. '
+                  "This can't be undone."
+              : "This file will be permanently deleted. This can't be undone."),
     );
 
     if (confirmed == true) {
@@ -723,8 +735,9 @@ class FileActionsService {
     final confirmed = await _confirmDelete(
       context,
       title: 'Delete ${files.length} items?',
-      message: "The selected items will be permanently deleted. This can't be "
-          'undone.',
+      message: RemoteActions.deleteNote(files) ??
+          "The selected items will be permanently deleted. This can't be "
+              'undone.',
     );
 
     if (confirmed == true) {
@@ -852,6 +865,7 @@ class FileActionsService {
   }
 
   Future<void> share(BuildContext context, FileSystemEntity entity) async {
+    if (entity is RemoteEntity) return shareVia(context, ShareMethod.apps, [entity]);
     if (entity is File) {
       await _shareFiles(context, [XFile(entity.path)]);
     } else if (entity is Directory) {
@@ -875,6 +889,10 @@ class FileActionsService {
   /// several items, folders are skipped.
   void shareMany(BuildContext context, List<FileSystemEntity> entities) {
     if (entities.isEmpty) return;
+    if (RemoteEntity.anyIn(entities)) {
+      shareVia(context, ShareMethod.apps, entities);
+      return;
+    }
     if (entities.length == 1) {
       share(context, entities.single);
       return;
@@ -1007,7 +1025,7 @@ class _EntityHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final name = p.basename(entity.path);
+    final name = ExplorerPaths.displayNameForEntity(entity.path);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
@@ -1295,7 +1313,7 @@ class _PropertiesSheetState extends State<_PropertiesSheet> {
                   ),
                 InfoRow(
                   title: 'Location',
-                  content: entity.parent.path,
+                  content: RemotePlaces.instance.describe(entity.parent.path) ?? entity.parent.path,
                   selectable: true,
                 ),
                 InfoRow(

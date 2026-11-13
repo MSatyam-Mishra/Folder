@@ -343,6 +343,9 @@ class RemoteProtocolInfo {
     this.options = const [],
     this.description,
     this.hostHint,
+    this.discover,
+    this.builtInPlace,
+    this.fixAccess,
   });
 
   final RemoteProtocol protocol;
@@ -386,6 +389,31 @@ class RemoteProtocolInfo {
   /// Greyed text in the empty host field ("nas.local or 192.168.1.5").
   final String? hostHint;
 
+  /// Servers of this kind found on the network (SMB's), for "Find on
+  /// network" in the form; the stream ends when the search does.
+  final Stream<RemoteFoundHost> Function()? discover;
+
+  /// A place that's always there, with nothing to fill in (Shizuku's app
+  /// folders): shown in the sidebar while [available], never in "Add a
+  /// place". Its id must stay the same.
+  final RemoteConnection Function()? builtInPlace;
+
+  /// What the error page's "Set up access" does when such a place refuses
+  /// (Shizuku's set-up); true to try again.
+  final Future<bool> Function(BuildContext context)? fixAccess;
+}
+
+/// A server [RemoteProtocolInfo.discover] found.
+@immutable
+class RemoteFoundHost {
+  const RemoteFoundHost({required this.name, required this.host, this.port});
+
+  /// What it calls itself ("NAS").
+  final String name;
+
+  /// Its address or host name, for [RemoteConnection.host].
+  final String host;
+  final int? port;
 }
 
 /// The protocols this build knows, filled by `registerRemoteProtocols()`.

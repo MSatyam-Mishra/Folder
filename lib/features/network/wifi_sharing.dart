@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// other devices uploaded.
 Future<void> openWifiSharing(NavigatorState navigator, {FileExplorerBloc? explorer}) async {
   final current = explorer?.state;
-  final folder = current is FileExplorerLoaded && !ExplorerPaths.isVirtual(current.path)
+  final folder = current is FileExplorerLoaded && ExplorerPaths.isLocal(current.path)
       ? current.path
       : ExplorerPaths.userFolder;
   await navigator.push(

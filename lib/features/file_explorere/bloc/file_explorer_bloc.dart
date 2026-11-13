@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/remote/remote_fs.dart';
 import 'package:folders/core/services/search/file_search.dart';
 import 'package:folders/core/services/search/photo_text_index.dart';
 import 'package:folders/core/services/search/search_criteria.dart';
@@ -321,7 +322,8 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
     _changed?.cancel();
     _changed = null;
     _watched = path;
-    if (ExplorerPaths.isVirtual(path)) return;
+    // Network places have no watching: F5 lists them again.
+    if (!ExplorerPaths.isLocal(path)) return;
     try {
       _watcher = Directory(path).watch().listen(
         (_) {
@@ -450,8 +452,9 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       if (stale()) return;
       emit(
         FileExplorerError(
-          "Failed to read directory: ${e.toString()}",
+          e is RemoteException ? e.message : "Failed to read directory: ${e.toString()}",
           path: event.path,
+          error: e,
         ),
       );
     }

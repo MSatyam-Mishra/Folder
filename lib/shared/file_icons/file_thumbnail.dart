@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:folders/core/services/remote/remote_fs.dart';
 import 'package:folders/core/services/thumbnails/thumbnails.dart';
+import 'package:folders/features/remote/remote_thumbnail.dart';
 import 'package:folders/core/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,6 +56,7 @@ class _FileThumbnailState extends State<FileThumbnail> {
     final key = '${widget.path}|$_pixels';
     if (key == _for) return;
     _for = key;
+    if (RemotePaths.isRemote(widget.path)) return;
     _picture = Thumbnails.decodesDirectly(widget.path) || !Thumbnails.mayHave(widget.path)
         ? null
         : Thumbnails.load(widget.path, _pixels, wanted: () => mounted);
@@ -70,6 +73,9 @@ class _FileThumbnailState extends State<FileThumbnail> {
     final fit = widget.cover ? BoxFit.cover : BoxFit.contain;
     Widget box(Widget child) => SizedBox.square(dimension: widget.size, child: child);
     if (!show) return box(widget.fallback);
+    if (RemotePaths.isRemote(widget.path)) {
+      return box(RemoteThumbnail(path: widget.path, pixels: _pixels, fit: fit, fallback: widget.fallback, frame: _frame));
+    }
     if (Thumbnails.decodesDirectly(widget.path)) {
       return box(Image.file(
         File(widget.path),
