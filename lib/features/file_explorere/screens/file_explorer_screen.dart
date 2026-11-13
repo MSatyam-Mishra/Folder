@@ -28,6 +28,10 @@ import 'package:folders/features/file_explorere/widgets/selection_band.dart';
 import 'package:folders/features/file_explorere/widgets/social_tabs.dart';
 import 'package:folders/features/file_explorere/widgets/image_actions.dart';
 import 'package:folders/features/file_explorere/widgets/inline_rename.dart';
+import 'package:folders/features/file_explorere/widgets/item_marks.dart';
+import 'package:folders/features/tags/tag_actions.dart';
+import 'package:folders/features/tags/tag_folder_bar.dart';
+import 'package:folders/features/tags/tag_paths.dart';
 import 'package:folders/features/file_explorere/widgets/new_file_button.dart';
 import 'package:folders/features/file_explorere/widgets/paste_bar.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
@@ -640,6 +644,8 @@ class _FileExplorerUI extends StatelessWidget {
             case SelectionMenuAction.resize:
               exitSelection();
               ImageActions.resize(context, images);
+            case SelectionMenuAction.tags:
+              TagActions.showPicker(context, [for (final e in selected) e.path]);
           }
         },
       );
@@ -715,6 +721,21 @@ class _FileExplorerUI extends StatelessWidget {
       FileExplorerError(:final path) => path,
       _ => null,
     };
+    if (path != null && TagPaths.isTag(path)) {
+      // A tag's items, under the tag with its Rename and Delete.
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate, extraTop: TagFolderBar.height),
+          Positioned(
+            top: DockedGlossyTopBar.contentTopInset(context),
+            left: 0,
+            right: 0,
+            child: TagFolderBar(path: path),
+          ),
+        ],
+      );
+    }
     if (path == null || !ExplorerPaths.isSocial(path)) {
       return _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate);
     }
@@ -863,7 +884,9 @@ class _FileExplorerUI extends StatelessWidget {
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
       final dir = p.dirname(e.path);
-      if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path)) return p.basename(dir);
+      if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path) || TagPaths.isTag(state.path)) {
+        return p.basename(dir);
+      }
       if (!searching) return null;
       return p.equals(dir, state.path) ? null : p.relative(dir, from: state.path);
     }
@@ -1024,6 +1047,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity, centered: true),
                 onPeek: onPeek(entity),
+                marks: ItemMarks(path: entity.path, gap: 0),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1075,6 +1099,7 @@ class _FileExplorerUI extends StatelessWidget {
                 onSecondaryTapUp: onSecondaryTap(entity),
                 nameEditor: nameEditor(entity),
                 onPeek: onPeek(entity),
+                marks: ItemMarks(path: entity.path),
               ));
             }, childCount: group.entities.length),
           ),
@@ -1284,6 +1309,9 @@ class _FileExplorerUI extends StatelessWidget {
     final images = ImageActions.imagesIn(selected);
     final imageEntries = images.isEmpty ? const <PopupMenuEntry<Object>>[] : await ImageActions.menuEntries(context, images);
     if (!context.mounted) return;
+    final paths = [for (final e in selected) e.path];
+    final tagEntry = await TagActions.menuEntry(context, paths);
+    if (!context.mounted) return;
     final action = await ExplorerMenu.showAt<Object>(
       context,
       position,
@@ -1304,6 +1332,7 @@ class _FileExplorerUI extends StatelessWidget {
           ...imageEntries,
           ExplorerMenu.divider(),
         ],
+        ?tagEntry,
         fileActionsService.shareSubmenu(context, selected),
         ExplorerMenu.item(context,
             value: 'zip',
@@ -1331,6 +1360,7 @@ class _FileExplorerUI extends StatelessWidget {
       return fileActionsService.shareVia(context, action, selected);
     }
     if (await ImageActions.handle(context, action, images) || !context.mounted) return;
+    if (await TagActions.handle(context, action, paths) || !context.mounted) return;
     switch (action) {
       case 'copy':
         context.read<ClipboardBloc>().add(CopyToClipboard(selected));

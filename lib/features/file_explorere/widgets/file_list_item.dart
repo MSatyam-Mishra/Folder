@@ -60,10 +60,14 @@ class FileListItem extends StatelessWidget {
     this.location,
     this.onSecondaryTapUp,
     this.zoom = 1,
+    this.marks,
   });
 
   /// Icon (or thumbnail) size, 1 the usual (see ExplorerZoom).
   final double zoom;
+
+  /// After the name: tag dots and Git's mark (see ItemMarks).
+  final Widget? marks;
 
   static double _iconFor(FileRowStyle style) => switch (style) {
         FileRowStyle.comfortable => 40,
@@ -160,10 +164,13 @@ class FileListItem extends StatelessWidget {
     final detail = isSelected ? colors.accentForeground.withValues(alpha: 0.8) : colors.mutedForeground;
     final detailStyle = text.bodySmall?.copyWith(color: detail);
     final where = location;
+    final nameText = Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle);
     final label = MetaData(
       metaData: itemDragPart,
       behavior: HitTestBehavior.opaque,
-      child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
+      child: marks == null
+          ? nameText
+          : Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: nameText), marks!]),
     );
     final Widget name = nameEditor ?? (where == null || style == FileRowStyle.comfortable
         ? Align(alignment: Alignment.centerLeft, heightFactor: 1, child: label)

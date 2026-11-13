@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:folders/core/services/social_files.dart';
+import 'package:folders/features/tags/tag_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// Cross-platform paths for the file explorer home and navigation.
@@ -38,7 +39,7 @@ abstract final class ExplorerPaths {
 
   /// Listed by the app, not a folder on disk: nothing can be created or
   /// pasted there, and it has no folder to watch.
-  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path) || isSocial(path);
+  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path) || isSocial(path) || TagPaths.isTag(path);
 
   /// Whether the category [name] opens as such a folder: on computers,
   /// where its files are plain files. macOS's photos and videos are in the
@@ -96,7 +97,7 @@ abstract final class ExplorerPaths {
 
   /// Parent path for back navigation; returns null when already at app root.
   static String? parentOf(String path) {
-    if (isCategory(path)) return homePath;
+    if (isCategory(path) || TagPaths.isTag(path)) return homePath;
     if (isSocial(path)) {
       return socialTabOf(path) == null ? homePath : socialPath(socialAppOf(path)!);
     }
@@ -114,6 +115,7 @@ abstract final class ExplorerPaths {
   static String titleForPath(String path) {
     if (isWindowsRoots(path)) return 'This PC';
     if (isCategory(path)) return path.substring(_categoryPrefix.length);
+    if (TagPaths.isTag(path)) return TagPaths.nameOf(path)!;
     if (isSocial(path)) return socialTabOf(path) ?? SocialApp.byId(socialAppOf(path)!)?.label ?? 'Files';
     if (Platform.isAndroid && path == androidInternalStorage) return 'Files';
     if (isDriveRoot(path)) {

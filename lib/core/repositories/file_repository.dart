@@ -8,6 +8,9 @@ import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/platform/macos_files.dart';
 import 'package:folders/core/platform/windows_locations.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/path_changes.dart';
+import 'package:folders/features/tags/tag_paths.dart';
+import 'package:folders/features/tags/tag_store.dart';
 import 'package:folders/core/services/social_files.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
@@ -50,6 +53,7 @@ class LocalFileRepository implements FileRepository {
       return categoryFiles(ExplorerPaths.titleForPath(path));
     }
     if (ExplorerPaths.isSocial(path)) return SocialFiles.list(path);
+    if (TagPaths.isTag(path)) return TagStore.instance.entitiesWith(TagPaths.nameOf(path)!);
     if (ExplorerPaths.isWindowsRoots(path)) {
       final locations = await WindowsLocations.listAll();
       final entities = <FileSystemEntity>[];
@@ -140,6 +144,7 @@ class LocalFileRepository implements FileRepository {
     } else if (type == FileSystemEntityType.directory) {
       await Directory(path).delete(recursive: recursive);
     }
+    PathChanges.deleted(path);
   }
 
   @override
@@ -150,6 +155,7 @@ class LocalFileRepository implements FileRepository {
     } else if (type == FileSystemEntityType.directory) {
       await Directory(path).rename(newPath);
     }
+    PathChanges.moved(path, newPath);
   }
 
   @override

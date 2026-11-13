@@ -19,12 +19,13 @@ class PasteProgress {
 /// copy into its own folder becomes "name - Copy". A move renames when it
 /// can and copies then deletes across drives. Files keep their modified
 /// time; on macOS files and folders also keep their permissions, extended
-/// attributes and ACLs, as in Finder.
+/// attributes and ACLs, as in Finder. [onPlaced] hears where each item went.
 Future<List<String>> pasteEntities(
   List<String> sources,
   String destination, {
   required bool move,
   void Function(PasteProgress progress)? onProgress,
+  void Function(String from, String to)? onPlaced,
 }) async {
   final targets = <String>[];
   final copies = <(String, String)>[];
@@ -50,6 +51,7 @@ Future<List<String>> pasteEntities(
       try {
         await _entity(source, type).rename(target);
         targets.add(target);
+        onPlaced?.call(source, target);
         continue;
       } on FileSystemException {
         // Another drive: copied, then deleted.
@@ -76,6 +78,7 @@ Future<List<String>> pasteEntities(
     await _copy(source, target, progress);
     if (move) await _entity(source, await FileSystemEntity.type(source, followLinks: false)).delete(recursive: true);
     targets.add(target);
+    onPlaced?.call(source, target);
   }
   onProgress?.call(PasteProgress(total, total, ''));
   return targets;

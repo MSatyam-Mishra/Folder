@@ -16,6 +16,7 @@ import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/wifi_sharing.dart';
 import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
+import 'package:folders/features/tags/tags_sidebar.dart';
 import 'package:folders/features/tools/screens/app_manager_screen.dart';
 import 'package:folders/features/tools/screens/usb_boot_screen.dart';
 import 'package:folders/features/vault/screens/vault_screen.dart';
@@ -121,6 +122,7 @@ class MainDrawerContent extends StatelessWidget {
                     context.read<FileExplorerBloc>().add(LoadDirectory(ExplorerPaths.socialPath(app.id)));
                   },
                 ),
+              const TagsSidebarSection(),
               const AppSidebarSection('Tools'),
               AppSidebarItem(
                 icon: LucideIcons.wrench,

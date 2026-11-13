@@ -778,6 +778,12 @@ class ExplorerSelectionHeader extends StatelessWidget {
                           label: 'Cut',
                           icon: LucideIcons.scissors,
                         ),
+                        ExplorerMenu.item(
+                          anchor,
+                          value: SelectionMenuAction.tags,
+                          label: 'Tags…',
+                          icon: LucideIcons.tag,
+                        ),
                       ],
                       if (hasImages) ...[
                         ExplorerMenu.divider(),
@@ -838,4 +844,5 @@ enum SelectionMenuAction {
   allActions,
   convert,
   resize,
+  tags,
 }

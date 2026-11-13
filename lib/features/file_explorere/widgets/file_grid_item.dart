@@ -29,7 +29,11 @@ class FileGridItem extends StatelessWidget {
     this.onSecondaryTapUp,
     this.gallery = false,
     this.zoom = 1,
+    this.marks,
   });
+
+  /// In the top corner: tag dots and Git's mark (see ItemMarks).
+  final Widget? marks;
 
   /// Tile size, 1 the usual (see ExplorerZoom).
   final double zoom;
@@ -66,6 +70,7 @@ class FileGridItem extends StatelessWidget {
             right: 8,
             child: SelectionCheck(selected: isSelected),
           ),
+        if (marks != null) Positioned(top: 8, left: 8, child: marks!),
       ],
     );
 

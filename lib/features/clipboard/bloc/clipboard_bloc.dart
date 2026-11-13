@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:bloc/bloc.dart';
 import 'package:folders/core/services/background_tasks.dart';
 import 'package:folders/core/services/file_clipboard.dart';
+import 'package:folders/core/services/path_changes.dart';
 import 'package:folders/features/clipboard/paste_task.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:filesize/filesize.dart';
@@ -258,7 +259,14 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
       kind: TaskKind.copy,
     );
     try {
-      final targets = await _pasteInIsolate(sources, destination, move);
+      final targets = await _pasteInIsolate(sources, destination, move, onPlaced: (from, to) {
+        // Tags and the like follow what's moved, and copies keep them.
+        if (move) {
+          PathChanges.moved(from, to);
+        } else {
+          PathChanges.copied(from, to);
+        }
+      });
       _task!.outputs.addAll(targets);
       BackgroundTasks.instance.finish(_task!, message: 'Done: ${p.basename(destination)}');
       return targets;
@@ -273,7 +281,12 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
 
   BackgroundTask? _task;
 
-  Future<List<String>> _pasteInIsolate(List<String> sources, String destination, bool move) async {
+  Future<List<String>> _pasteInIsolate(
+    List<String> sources,
+    String destination,
+    bool move, {
+    void Function(String from, String to)? onPlaced,
+  }) async {
     final port = ReceivePort();
     final errors = ReceivePort();
     await Isolate.spawn(_paste, (port.sendPort, sources, destination, move), onError: errors.sendPort);
@@ -293,6 +306,8 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
             message: name.isEmpty ? 'Finishing…' : name,
             detail: total > 0 ? '${filesize(done, 1)}/${filesize(total, 1)}' : null,
           );
+        case (String from, String to, true):
+          onPlaced?.call(from, to);
         case List<String> targets:
           result.complete(targets);
         case (String message, String? path):
@@ -310,7 +325,8 @@ class ClipboardBloc extends Bloc<ClipboardEvent, ClipboardState> {
   static Future<void> _paste((SendPort, List<String>, String, bool) args) async {
     final (port, sources, destination, move) = args;
     try {
-      port.send(await pasteEntities(sources, destination, move: move, onProgress: port.send));
+      port.send(await pasteEntities(sources, destination,
+          move: move, onProgress: port.send, onPlaced: (from, to) => port.send((from, to, true))));
     } on FileSystemException catch (e) {
       port.send((e.osError?.message.trim().isNotEmpty ?? false) ? ('${e.message}: ${e.osError!.message.trim()}', e.path) : (e.message, e.path));
     } catch (e) {

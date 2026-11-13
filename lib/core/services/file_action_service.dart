@@ -11,6 +11,7 @@ import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/file_explorere/widgets/image_actions.dart';
 import 'package:folders/features/file_explorere/widgets/info_row.dart';
+import 'package:folders/features/tags/tag_actions.dart';
 import 'package:folders/shared/ui/app_ui.dart';
 
 import 'package:filesize/filesize.dart';
@@ -96,6 +97,8 @@ class FileActionsService {
     final images = ImageActions.imagesIn([entity]);
     final imageEntries = images.isEmpty ? const <PopupMenuEntry<Object>>[] : await ImageActions.menuEntries(context, images);
     if (!context.mounted) return;
+    final tagEntry = protected ? null : await TagActions.menuEntry(context, [entity.path]);
+    if (!context.mounted) return;
     final action = await ExplorerMenu.showAt<Object>(
       context,
       position,
@@ -153,6 +156,7 @@ class FileActionsService {
               shortcut: 'F2'),
           ExplorerMenu.divider(),
         ],
+        ?tagEntry,
         ExplorerMenu.divider(),
         shareSubmenu(context, [entity],
             label: isFile ? 'Share file' : 'Share folder'),
@@ -180,6 +184,7 @@ class FileActionsService {
     if (action == null || !context.mounted) return;
     if (action is ShareMethod) return shareVia(context, action, [entity]);
     if (await ImageActions.handle(context, action, images) || !context.mounted) return;
+    if (await TagActions.handle(context, action, [entity.path]) || !context.mounted) return;
     switch (action as _EntityAction) {
       case _EntityAction.open:
         onOpen();
@@ -385,6 +390,11 @@ class FileActionsService {
                 icon: LucideIcons.pencil,
                 label: 'Rename',
                 onTap: () => run(() => showRenameDialog(context, entity)),
+              ),
+              _SheetAction(
+                icon: LucideIcons.tag,
+                label: 'Tags',
+                onTap: () => run(() => TagActions.showPicker(context, [entity.path])),
               ),
               _SheetAction(
                 icon: LucideIcons.info,

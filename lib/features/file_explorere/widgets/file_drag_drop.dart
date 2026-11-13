@@ -172,6 +172,9 @@ class _FileDropTargetState extends State<FileDropTarget> {
   }
 }
 
+/// The local paths of files dropped from this app or another one.
+Future<List<String>> droppedFilePaths(List<DropItem> items) => _FileDropTargetState.droppedPaths(items);
+
 /// Whether dropping [source] into [destination] moves it, as in File
 /// Explorer: Ctrl copies, Shift moves; otherwise a move on the same drive
 /// and a copy to another one. Files from other apps are copied. On macOS
