@@ -9,6 +9,7 @@ import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
 import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/widgets/compress_dialog.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/file_explorere/widgets/checksum_panel.dart';
@@ -184,6 +185,11 @@ class FileActionsService {
         ExplorerMenu.divider(),
         shareSubmenu(context, [entity],
             label: isFile ? 'Share file' : 'Share folder'),
+        if (!protected && entity is! RemoteEntity)
+          ExplorerMenu.item(context,
+              value: _EntityAction.compress,
+              label: 'Compress…',
+              icon: LucideIcons.archive),
         if (isFile && VaultStore.supported && entity is! RemoteEntity)
           ExplorerMenu.item(context,
               value: _EntityAction.vault,
@@ -242,6 +248,12 @@ class FileActionsService {
         _toast(context, 'Cut. Open a folder and paste.');
       case _EntityAction.rename:
         await showRenameDialog(context, entity);
+      case _EntityAction.compress:
+        final bloc = context.read<FileExplorerBloc>();
+        await CompressActions.compressWith(context, [entity.path], p.dirname(entity.path), onDone: () {
+          final state = bloc.state;
+          if (!bloc.isClosed && state is FileExplorerLoaded) bloc.add(LoadDirectory(state.path));
+        });
       case _EntityAction.vault:
         await moveToVault(context, entity as File);
       case _EntityAction.properties:
@@ -1391,6 +1403,7 @@ enum _EntityAction {
   copy,
   cut,
   rename,
+  compress,
   vault,
   properties,
   delete,

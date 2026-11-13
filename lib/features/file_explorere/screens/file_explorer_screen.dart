@@ -12,7 +12,6 @@ import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/platform/terminal.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/router/file_opener.dart';
-import 'package:folders/core/services/archive_service.dart';
 import 'package:folders/core/services/file_action_service.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
 import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
@@ -20,6 +19,7 @@ import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/file_explorere/bloc/grouping.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_empty_state.dart';
+import 'package:folders/features/file_explorere/widgets/compress_dialog.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_header.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
 import 'package:folders/features/file_explorere/widgets/file_drag_drop.dart';
@@ -699,7 +699,7 @@ class _FileExplorerUI extends StatelessWidget {
           exitSelection();
           fileActionsService.shareVia(context, ShareMethod.localSend, selected);
         },
-        onCompress: () => _handleCompress(context, fileExplorerState),
+        onCompress: () => _handleCompressWith(context, fileExplorerState),
         onDelete: () => fileActionsService.deleteFiles(context, selected),
         onMenuAction: (action) {
           switch (action) {
@@ -1527,6 +1527,10 @@ class _FileExplorerUI extends StatelessWidget {
             icon: LucideIcons.fileArchive),
         if (!ExplorerPaths.isWindowsRoots(state.path))
           ExplorerMenu.item(context, value: 'rename', label: 'Rename…', icon: LucideIcons.pencil, shortcut: 'F2'),
+        ExplorerMenu.item(context,
+            value: 'compress',
+            label: 'Compress…',
+            icon: LucideIcons.archive),
         ExplorerMenu.divider(),
         ExplorerMenu.item(context,
             value: 'all',
@@ -1567,6 +1571,8 @@ class _FileExplorerUI extends StatelessWidget {
         _handleCompress(context, state);
       case 'rename':
         BatchRenameDialog.run(context, _inOrder(state));
+      case 'compress':
+        _handleCompressWith(context, state);
       case 'all':
         bloc.add(SelectAll());
       case 'none':
@@ -1692,6 +1698,8 @@ class _FileExplorerUI extends StatelessWidget {
     context.read<FileExplorerBloc>().add(SelectItem(entity));
   }
 
+  /// "Compress to ZIP": asks only for the name, then compresses what's
+  /// selected, folders and all, in the background.
   Future<void> _handleCompress(
     BuildContext context,
     FileExplorerLoaded state,
@@ -1703,7 +1711,8 @@ class _FileExplorerUI extends StatelessWidget {
       ));
       return;
     }
-    final count = state.selectedItems.length;
+    final paths = [for (final entity in state.selectedItems) entity.path];
+    final count = paths.length;
 
     final String? fileName = await fileActionsService.promptForName(
       context,
@@ -1712,53 +1721,33 @@ class _FileExplorerUI extends StatelessWidget {
           ? 'The selected item will be added to a new ZIP archive in this '
                 'folder.'
           : '$count items will be added to a new ZIP archive in this folder.',
-      initialValue: 'archive.zip',
+      initialValue: '${CompressActions.suggestedName(paths, state.path)}.zip',
       selectBaseName: true,
       confirmLabel: 'Compress',
     );
+    if (fileName == null || fileName.trim().isEmpty || !context.mounted) return;
+    final bloc = context.read<FileExplorerBloc>();
+    CompressActions.compressToZip(context, paths, state.path, fileName, onDone: () => _reload(bloc));
+    bloc.add(ToggleSelectionMode(enable: false));
+  }
 
-    if (fileName != null && fileName.isNotEmpty && context.mounted) {
-      // Filter only files for now, directories need recursive add logic in ArchiveService
-      // My ArchiveService.compressFiles only takes List<File>.
-      // So we filter:
-      final filesOnly = state.selectedItems.whereType<File>().toList();
+  /// "Compress…": the format, level, password and parts, then compresses in
+  /// the background.
+  Future<void> _handleCompressWith(
+    BuildContext context,
+    FileExplorerLoaded state,
+  ) async {
+    if (state.selectedItems.isEmpty) return;
+    final bloc = context.read<FileExplorerBloc>();
+    final paths = [for (final entity in state.selectedItems) entity.path];
+    await CompressActions.compressWith(context, paths, state.path, onDone: () => _reload(bloc));
+    if (!bloc.isClosed) bloc.add(ToggleSelectionMode(enable: false));
+  }
 
-      if (filesOnly.length != state.selectedItems.length) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Folders were skipped: they can't be compressed yet"),
-          ),
-        );
-      }
-
-      if (filesOnly.isEmpty) return;
-
-      try {
-        final destPath = p.join(
-          // A category isn't a folder: next to the first file.
-          ExplorerPaths.isVirtual(state.path) ? p.dirname(filesOnly.first.path) : state.path,
-          fileName.endsWith('.zip') ? fileName : '$fileName.zip',
-        );
-        await ArchiveService().compressFiles(filesOnly, File(destPath));
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Compressed to $fileName')));
-          // Refresh
-          context.read<FileExplorerBloc>().add(LoadDirectory(state.path));
-          context.read<FileExplorerBloc>().add(
-            ToggleSelectionMode(enable: false),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Compression failed: $e')));
-        }
-      }
-    }
+  /// Shows the folder again, as an archive made in it now is there.
+  static void _reload(FileExplorerBloc bloc) {
+    final state = bloc.state;
+    if (!bloc.isClosed && state is FileExplorerLoaded) bloc.add(LoadDirectory(state.path));
   }
 
   Future<void> _handleHttpShare(
