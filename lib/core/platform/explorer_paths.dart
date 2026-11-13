@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:folders/core/services/remote/remote_fs.dart';
+import 'package:folders/core/services/remote/remote_places.dart';
 import 'package:folders/core/services/social_files.dart';
 import 'package:folders/features/tags/tag_paths.dart';
 import 'package:path/path.dart' as p;
@@ -47,6 +49,17 @@ abstract final class ExplorerPaths {
   static bool isVirtual(String path) =>
       isWindowsRoots(path) || isCategory(path) || isSocial(path) || TagPaths.isTag(path) || isTrash(path);
 
+  /// On a network place (`explorer://remote/<id>/<path>`): a real folder,
+  /// where folders can be made and files pasted, but not through dart:io.
+  static bool isRemote(String path) => RemotePaths.isRemote(path);
+
+  /// The top of a network place: going up from it leaves the place.
+  static bool isRemoteRoot(String path) => RemotePaths.parse(path)?.$2 == '/';
+
+  /// A folder on this device's disks: neither virtual nor on a network
+  /// place. What reads or writes with dart:io needs one.
+  static bool isLocal(String path) => !isVirtual(path) && !isRemote(path);
+
   /// Whether the category [name] opens as such a folder: on computers,
   /// where its files are plain files. macOS's photos and videos are in the
   /// Photos library and phones have their media library; those keep their
@@ -84,7 +97,7 @@ abstract final class ExplorerPaths {
   /// Whether [path] can be a folder on disk. On Windows a path with no drive,
   /// as Git Bash writes them (/c/Users), means the root of the current drive, so
   /// creating it would leave a stray C:\c behind.
-  static bool isOnDisk(String path) => !isVirtual(path) && (!Platform.isWindows || isFullWindowsPath(path));
+  static bool isOnDisk(String path) => isLocal(path) && (!Platform.isWindows || isFullWindowsPath(path));
 
   static bool isFullWindowsPath(String path) => p.windows.isAbsolute(path) && !p.windows.isRootRelative(path);
 
@@ -104,6 +117,10 @@ abstract final class ExplorerPaths {
   /// Parent path for back navigation; returns null when already at app root.
   static String? parentOf(String path) {
     if (isCategory(path) || TagPaths.isTag(path) || isTrash(path)) return homePath;
+    if (isRemote(path)) {
+      final (id, remote) = RemotePaths.parse(path) ?? ('', '/');
+      return remote == '/' ? homePath : RemotePaths.build(id, RemotePaths.parentOf(remote));
+    }
     if (isSocial(path)) {
       return socialTabOf(path) == null ? homePath : socialPath(socialAppOf(path)!);
     }
@@ -124,6 +141,10 @@ abstract final class ExplorerPaths {
     if (isCategory(path)) return path.substring(_categoryPrefix.length);
     if (TagPaths.isTag(path)) return TagPaths.nameOf(path)!;
     if (isSocial(path)) return socialTabOf(path) ?? SocialApp.byId(socialAppOf(path)!)?.label ?? 'Files';
+    if (isRemote(path)) {
+      final (id, remote) = RemotePaths.parse(path) ?? ('', '/');
+      return remote == '/' ? RemotePlaces.instance.byId(id)?.name ?? 'Network place' : RemotePaths.nameOf(remote);
+    }
     if (Platform.isAndroid && path == androidInternalStorage) return 'Files';
     if (isDriveRoot(path)) {
       return 'Local Disk (${path[0].toUpperCase()}:)';
@@ -134,6 +155,7 @@ abstract final class ExplorerPaths {
 
   static String displayNameForEntity(String path, {String? label}) {
     if (label != null && label.isNotEmpty) return label;
+    if (isRemote(path)) return titleForPath(path);
     if (isDriveRoot(path)) return titleForPath(path);
     final base = p.basename(path);
     return base.isEmpty ? path : base;

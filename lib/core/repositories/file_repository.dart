@@ -9,6 +9,8 @@ import 'package:folders/core/platform/macos_files.dart';
 import 'package:folders/core/platform/windows_locations.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
 import 'package:folders/core/services/path_changes.dart';
+import 'package:folders/core/services/remote/remote_fs.dart';
+import 'package:folders/core/services/remote/remote_repository.dart';
 import 'package:folders/features/tags/tag_paths.dart';
 import 'package:folders/features/tags/tag_store.dart';
 import 'package:folders/core/services/social_files.dart';
@@ -32,6 +34,10 @@ abstract class FileRepository {
 }
 
 class LocalFileRepository implements FileRepository {
+  /// Network places (`explorer://remote/...`) go here: their paths must
+  /// never reach dart:io.
+  static FileRepository remote = RemoteFileRepository();
+
   /// The files of a category; tests replace it.
   @visibleForTesting
   static Future<List<FileSystemEntity>> Function(String name) categoryFiles = _findCategory;
@@ -50,6 +56,7 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<List<FileSystemEntity>> listEntities(String path) async {
+    if (RemotePaths.isRemote(path)) return remote.listEntities(path);
     if (ExplorerPaths.isCategory(path)) {
       return categoryFiles(ExplorerPaths.titleForPath(path));
     }
@@ -140,6 +147,7 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<void> delete(String path, {bool recursive = false}) async {
+    if (RemotePaths.isRemote(path)) return remote.delete(path, recursive: recursive);
     final type = await FileSystemEntity.type(path);
     if (type == FileSystemEntityType.file) {
       await File(path).delete();
@@ -151,6 +159,7 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<void> rename(String path, String newPath) async {
+    if (RemotePaths.isRemote(path)) return remote.rename(path, newPath);
     final type = await FileSystemEntity.type(path);
     if (type == FileSystemEntityType.file) {
       await File(path).rename(newPath);
@@ -162,7 +171,8 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<bool> exists(String path) {
-    if (ExplorerPaths.isVirtual(path)) {
+    // A network place says what's wrong when its folder is listed.
+    if (ExplorerPaths.isVirtual(path) || RemotePaths.isRemote(path)) {
       return Future.value(true);
     }
     return FileSystemEntity.type(
@@ -172,16 +182,19 @@ class LocalFileRepository implements FileRepository {
 
   @override
   Future<FileSystemEntityType> type(String path) {
+    if (RemotePaths.isRemote(path)) return remote.type(path);
     return FileSystemEntity.type(path);
   }
 
   @override
   Future<void> createDirectory(String path) async {
+    if (RemotePaths.isRemote(path)) return remote.createDirectory(path);
     await Directory(path).create(recursive: true);
   }
 
   @override
   Future<void> createFile(String path) async {
+    if (RemotePaths.isRemote(path)) return remote.createFile(path);
     await File(path).create(recursive: true);
   }
 }

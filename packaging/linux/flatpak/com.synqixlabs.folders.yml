@@ -15,6 +15,8 @@ finish-args:
   - --device=dri
   # A file manager needs to see the user's files.
   - --filesystem=host
+  # The keyring (GNOME Keyring, KWallet), for network places' passwords.
+  - --talk-name=org.freedesktop.secrets
 modules:
   - name: folders
     buildsystem: simple

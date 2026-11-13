@@ -20,6 +20,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   external_path: ^2.2.0
   shared_preferences: ^2.5.3
+  # Passwords and keys of network places (Keychain, Keystore, DPAPI, libsecret).
+  flutter_secure_storage: ^10.3.1
   permission_handler: ^12.0.1
   path_provider: ^2.1.5
   flutter_colorpicker: ^1.1.0
@@ -68,6 +70,8 @@ dependencies:
   pdfrx: ^2.4.5
   pdfium_dart: ^0.2.5
   crypto: ^3.0.6
+  # SFTP for network places (MIT).
+  dartssh2: ^4.1.0
   ffi: ^2.2.0
   url_launcher: ^6.3.3
   just_audio_media_kit: 2.1.0

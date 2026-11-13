@@ -32,6 +32,8 @@ apps:
       - removable-media
       - network
       - network-bind
+      # The keyring, for network places' passwords (else kept until closed).
+      - password-manager-service
 
 parts:
   folders:
@@ -40,6 +42,8 @@ parts:
     stage-packages:
       # Video and audio playback (media_kit).
       - libmpv2
+      # Network places' passwords in the keyring.
+      - libsecret-1-0
       # Text in images.
       - tesseract-ocr
       - tesseract-ocr-eng

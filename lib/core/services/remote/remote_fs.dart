@@ -176,6 +176,66 @@ class RemoteException implements Exception {
   String toString() => 'RemoteException(${kind.name}): $message';
 }
 
+/// The server isn't the one seen before: an SFTP host key or a certificate
+/// changed, so someone may be listening in between. Nothing was sent. The
+/// browser shows [message] with a button that calls [trust], which accepts
+/// the new identity ([fingerprint]) for the next try.
+class RemoteTrustException extends RemoteException {
+  const RemoteTrustException(String message, {required this.fingerprint, required this.trust})
+      : super(RemoteErrorKind.permission, message);
+
+  final String fingerprint;
+  final Future<void> Function() trust;
+}
+
+/// How a [RemoteOptionField] is edited.
+enum RemoteOptionKind {
+  /// A switch; its value is `true` or `false`.
+  toggle,
+  text,
+
+  /// One of [RemoteOptionField.choices].
+  choice,
+}
+
+/// A protocol setting that "Add a place" offers beside the usual fields
+/// (FTP's passive mode, FTPS's implicit TLS, WebDAV's HTTPS...), kept in
+/// [RemoteConnection.options] under [key].
+@immutable
+class RemoteOptionField {
+  const RemoteOptionField({
+    required this.key,
+    required this.label,
+    this.kind = RemoteOptionKind.toggle,
+    this.defaultValue = '',
+    this.description,
+    this.hint,
+    this.choices = const {},
+  });
+
+  final String key;
+  final String label;
+  final RemoteOptionKind kind;
+
+  /// `true`/`false` for a toggle.
+  final String defaultValue;
+
+  /// A line under the label.
+  final String? description;
+
+  /// Greyed text in an empty text field.
+  final String? hint;
+
+  /// For [RemoteOptionKind.choice]: value to label, in order.
+  final Map<String, String> choices;
+
+  /// [connection]'s value, or [defaultValue].
+  String valueIn(RemoteConnection connection) => connection.options[key] ?? defaultValue;
+
+  /// [connection]'s value of a toggle.
+  bool isOnIn(RemoteConnection connection) => valueIn(connection) == 'true';
+}
+
 /// One open connection to a remote place. Not safe to share between
 /// isolates; one instance may serve several calls at once.
 abstract class RemoteFileSystem {
@@ -280,6 +340,9 @@ class RemoteProtocolInfo {
     this.signIn,
     this.isAvailable,
     this.deleteNote,
+    this.options = const [],
+    this.description,
+    this.hostHint,
   });
 
   final RemoteProtocol protocol;
@@ -312,6 +375,17 @@ class RemoteProtocolInfo {
   final String? deleteNote;
 
   bool get available => isAvailable?.call() ?? true;
+
+  /// Settings shown after the usual fields, in order.
+  final List<RemoteOptionField> options;
+
+  /// One line under the label in the protocol list ("Linux and Mac
+  /// computers, NAS").
+  final String? description;
+
+  /// Greyed text in the empty host field ("nas.local or 192.168.1.5").
+  final String? hostHint;
+
 }
 
 /// The protocols this build knows, filled by `registerRemoteProtocols()`.
