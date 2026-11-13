@@ -41,7 +41,6 @@ import 'package:folders/features/tags/tag_paths.dart';
 import 'package:folders/features/file_explorere/widgets/new_file_button.dart';
 import 'package:folders/features/file_explorere/widgets/paste_bar.dart';
 import 'package:folders/features/file_explorere/widgets/search_panel.dart';
-import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/panes/dual_pane.dart';
 import 'package:folders/features/panes/pane_actions.dart';

@@ -190,4 +190,8 @@ RemoteProtocolInfo shizukuProtocolInfo() => RemoteProtocolInfo(
       usesPassword: false,
       signIn: ShizukuSetup.signIn,
       isAvailable: () => Platform.isAndroid,
+      // Always in the sidebar, with nothing to fill in; its error page
+      // walks through installing, starting and allowing Shizuku.
+      builtInPlace: () => ShizukuPlaces.connection,
+      fixAccess: ShizukuSetup.ensureReady,
     );

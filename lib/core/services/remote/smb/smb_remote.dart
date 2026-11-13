@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:shadcn_ui/shadcn_ui.dart' show LucideIcons;
 
 import '../remote_fs.dart';
+import 'smb_discovery.dart';
 import 'smb_file_system.dart';
 import 'windows_smb_file_system.dart';
 
@@ -134,5 +135,39 @@ final RemoteProtocolInfo smbProtocolInfo = RemoteProtocolInfo(
   icon: LucideIcons.server,
   defaultPort: 445,
   usesPassword: true,
+  description: 'Windows PCs, NAS boxes and Macs',
+  hostHint: 'nas.local or 192.168.1.5',
+  options: [
+    const RemoteOptionField(
+      key: 'domain',
+      label: 'Domain',
+      kind: RemoteOptionKind.text,
+      hint: 'Leave empty unless your network has one',
+    ),
+    const RemoteOptionField(
+      key: 'showHiddenShares',
+      label: r'Show hidden shares ($)',
+      description: 'Shares whose names end in a dollar sign',
+    ),
+    const RemoteOptionField(
+      key: 'encrypt',
+      label: 'Always encrypt',
+      description: 'Even when the share doesn\'t ask for it',
+    ),
+    const RemoteOptionField(
+      key: 'signing',
+      label: 'Signing',
+      kind: RemoteOptionKind.choice,
+      choices: {'': 'When the server asks', 'required': 'Always'},
+    ),
+    if (Platform.isWindows)
+      const RemoteOptionField(
+        key: 'engine',
+        label: 'Connect through',
+        kind: RemoteOptionKind.choice,
+        choices: {'': 'Automatic', 'windows': "Windows' own sharing", 'dart': "Folders' own"},
+      ),
+  ],
+  discover: () => discoverSmbHosts().map((h) => RemoteFoundHost(name: h.name, host: h.address.address, port: h.port)),
   create: (connection, secrets) => SmbRemoteFileSystem(connection, secrets),
 );

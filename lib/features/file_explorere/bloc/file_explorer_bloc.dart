@@ -5,6 +5,7 @@ import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
 import 'package:folders/core/services/remote/remote_fs.dart';
+import 'package:folders/core/services/remote/shizuku/shizuku_fs.dart';
 import 'package:folders/core/services/search/file_search.dart';
 import 'package:folders/core/services/search/photo_text_index.dart';
 import 'package:folders/core/services/search/search_criteria.dart';
@@ -354,6 +355,13 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
     LoadDirectory event,
     Emitter<FileExplorerState> emit,
   ) async {
+    // Android/data and obb are locked since Android 11: they open as the
+    // App folders place, through Shizuku.
+    final locked = Platform.isAndroid ? ShizukuPlaces.redirect(event.path) : null;
+    if (locked != null) {
+      add(LoadDirectory(locked, select: event.select, rename: event.rename, step: event.step));
+      return;
+    }
     final generation = ++_loadGeneration;
     bool stale() => generation != _loadGeneration;
     history.apply(event.path, event.step);
