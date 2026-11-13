@@ -12,6 +12,7 @@ import 'package:folders/core/services/path_changes.dart';
 import 'package:folders/features/tags/tag_paths.dart';
 import 'package:folders/features/tags/tag_store.dart';
 import 'package:folders/core/services/social_files.dart';
+import 'package:folders/core/services/trash/trash.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
 import 'package:win32/win32.dart'
@@ -54,6 +55,7 @@ class LocalFileRepository implements FileRepository {
     }
     if (ExplorerPaths.isSocial(path)) return SocialFiles.list(path);
     if (TagPaths.isTag(path)) return TagStore.instance.entitiesWith(TagPaths.nameOf(path)!);
+    if (ExplorerPaths.isTrash(path)) return TrashListing.load();
     if (ExplorerPaths.isWindowsRoots(path)) {
       final locations = await WindowsLocations.listAll();
       final entities = <FileSystemEntity>[];

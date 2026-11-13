@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/file_explorere/bloc/folder_history.dart';
 import 'package:folders/features/file_explorere/bloc/folder_search.dart';
 import 'package:folders/features/file_explorere/bloc/grouping.dart';
@@ -325,6 +326,8 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       final List<FileSystemEntity> entities = await repository.listEntities(
         event.path,
       );
+      // The Trash shows its items under the names they had.
+      if (ExplorerPaths.isTrash(event.path)) pathLabels = TrashListing.labels;
       final sortedEntities = await _sortEntities(
         entities,
         sortOption,

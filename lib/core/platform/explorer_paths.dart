@@ -37,9 +37,15 @@ abstract final class ExplorerPaths {
     return parts.length > 1 ? Uri.decodeComponent(parts[1]) : null;
   }
 
+  /// What's in the Trash (the Recycle Bin on Windows), as a folder.
+  static const String trash = 'explorer://trash';
+
+  static bool isTrash(String path) => path == trash;
+
   /// Listed by the app, not a folder on disk: nothing can be created or
   /// pasted there, and it has no folder to watch.
-  static bool isVirtual(String path) => isWindowsRoots(path) || isCategory(path) || isSocial(path) || TagPaths.isTag(path);
+  static bool isVirtual(String path) =>
+      isWindowsRoots(path) || isCategory(path) || isSocial(path) || TagPaths.isTag(path) || isTrash(path);
 
   /// Whether the category [name] opens as such a folder: on computers,
   /// where its files are plain files. macOS's photos and videos are in the
@@ -97,7 +103,7 @@ abstract final class ExplorerPaths {
 
   /// Parent path for back navigation; returns null when already at app root.
   static String? parentOf(String path) {
-    if (isCategory(path) || TagPaths.isTag(path)) return homePath;
+    if (isCategory(path) || TagPaths.isTag(path) || isTrash(path)) return homePath;
     if (isSocial(path)) {
       return socialTabOf(path) == null ? homePath : socialPath(socialAppOf(path)!);
     }
@@ -114,6 +120,7 @@ abstract final class ExplorerPaths {
 
   static String titleForPath(String path) {
     if (isWindowsRoots(path)) return 'This PC';
+    if (isTrash(path)) return Platform.isWindows ? 'Recycle Bin' : 'Trash';
     if (isCategory(path)) return path.substring(_categoryPrefix.length);
     if (TagPaths.isTag(path)) return TagPaths.nameOf(path)!;
     if (isSocial(path)) return socialTabOf(path) ?? SocialApp.byId(socialAppOf(path)!)?.label ?? 'Files';

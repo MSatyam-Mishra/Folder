@@ -4,6 +4,7 @@ import 'package:folders/core/files/file_types.dart';
 import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/services/bluetooth_share.dart';
 import 'package:folders/core/services/new_files.dart';
+import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
 import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
@@ -28,6 +29,7 @@ import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/router/file_opener.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
+import 'package:folders/features/trash/trash_actions.dart';
 import 'package:folders/features/vault/vault_store.dart';
 import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/core/services/device_files.dart';
@@ -47,6 +49,9 @@ class FileActionsService {
   /// The delete shortcut: the Delete key, or ⌘⌫ on macOS (Finder's Move to
   /// Trash; a Mac's delete key is backspace).
   static String get deleteShortcut => Platform.isMacOS ? '⌘⌫' : 'Delete';
+
+  /// Deleting for good, past the Trash: Shift+Delete, or ⌥⌘⌫ on macOS.
+  static String get deleteForGoodShortcut => Platform.isMacOS ? '⌥⌘⌫' : 'Shift+Delete';
 
   /// Whether [entity] is a macOS package (an app, plug-in or document
   /// package): a folder that opens like a file, as in Finder.
@@ -184,6 +189,13 @@ class FileActionsService {
               icon: LucideIcons.trash2,
               destructive: true,
               shortcut: deleteShortcut),
+          if (Trash.instance.canTrash(entity.path))
+            ExplorerMenu.item(context,
+                value: _EntityAction.deleteForGood,
+                label: 'Delete for good',
+                icon: LucideIcons.fileX,
+                destructive: true,
+                shortcut: deleteForGoodShortcut),
         ],
       ],
     );
@@ -220,7 +232,9 @@ class FileActionsService {
       case _EntityAction.properties:
         showInfoSheet(entity, context);
       case _EntityAction.delete:
-        await showDeleteConfirmationDialog(context, entity);
+        await deleteFiles(context, [entity]);
+      case _EntityAction.deleteForGood:
+        await deleteFiles(context, [entity], permanent: true);
     }
   }
 
@@ -413,9 +427,15 @@ class FileActionsService {
                 icon: LucideIcons.trash2,
                 label: 'Delete',
                 destructive: true,
-                onTap: () =>
-                    run(() => showDeleteConfirmationDialog(context, entity)),
+                onTap: () => run(() => deleteFiles(context, [entity])),
               ),
+              if (Trash.instance.canTrash(entity.path))
+                _SheetAction(
+                  icon: LucideIcons.fileX,
+                  label: 'Delete for good',
+                  destructive: true,
+                  onTap: () => run(() => deleteFiles(context, [entity], permanent: true)),
+                ),
             ],
           );
         },
@@ -673,11 +693,16 @@ class FileActionsService {
     }
   }
 
+  /// Deletes [files]: to the Trash, with Undo, unless [permanent] or they
+  /// can't go there; then for good, after asking.
   Future<void> deleteFiles(
     BuildContext context,
-    List<FileSystemEntity> files,
-  ) async {
+    List<FileSystemEntity> files, {
+    bool permanent = false,
+  }) async {
     if (files.isEmpty) return;
+    if (!permanent && await TrashActions.moveToTrash(context, files)) return;
+    if (!context.mounted) return;
     if (files.length == 1) {
       await showDeleteConfirmationDialog(context, files.single);
       if (context.mounted) {
@@ -1337,4 +1362,5 @@ enum _EntityAction {
   vault,
   properties,
   delete,
+  deleteForGood,
 }

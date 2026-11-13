@@ -8,6 +8,7 @@ class MainFlutterWindow: NSWindow {
   private var imageText: ImageTextChannel?
   private var fileClipboard: FileClipboardChannel?
   private var systemIcons: SystemIconsChannel?
+  private var trash: TrashChannel?
 
   override func awakeFromNib() {
     // macos_window_utils (used by flutter_acrylic for the translucent
@@ -26,8 +27,36 @@ class MainFlutterWindow: NSWindow {
     imageText = ImageTextChannel(messenger: messenger)
     fileClipboard = FileClipboardChannel(messenger: messenger)
     systemIcons = SystemIconsChannel(messenger: messenger)
+    trash = TrashChannel(messenger: messenger)
 
     super.awakeFromNib()
+  }
+}
+
+/// Moves files to the Trash as Finder does. `trash` {path} gives where the
+/// item is now, so Folders can put it back.
+class TrashChannel {
+  private let channel: FlutterMethodChannel
+
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "explorer/trash", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "trash" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let path = (call.arguments as? [String: Any])?["path"] as? String else {
+        result(FlutterError(code: "args", message: "No path", details: nil))
+        return
+      }
+      do {
+        var resulting: NSURL?
+        try FileManager.default.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: &resulting)
+        result(resulting?.path)
+      } catch {
+        result(FlutterError(code: "trash", message: error.localizedDescription, details: nil))
+      }
+    }
   }
 }
 

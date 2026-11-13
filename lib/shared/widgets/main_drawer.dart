@@ -91,6 +91,15 @@ class MainDrawerContent extends StatelessWidget {
                     ],
                   ),
                 ),
+              // What was deleted, to restore or delete for good.
+              AppSidebarItem(
+                icon: LucideIcons.trash2,
+                label: ExplorerPaths.titleForPath(ExplorerPaths.trash),
+                onTap: () {
+                  dismissDrawer(context);
+                  context.read<FileExplorerBloc>().add(LoadDirectory(ExplorerPaths.trash));
+                },
+              ),
               const AppSidebarSection('Categories'),
               BlocBuilder<SidebarBloc, SidebarState>(
                 builder: (context, state) {

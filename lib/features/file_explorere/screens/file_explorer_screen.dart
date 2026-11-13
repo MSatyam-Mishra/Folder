@@ -45,6 +45,9 @@ import 'package:folders/features/panes/pane_area.dart';
 import 'package:folders/features/panes/pane_menu.dart';
 import 'package:folders/features/sidebar/bloc/bloc/sidebar_bloc.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
+import 'package:folders/core/services/trash/trash.dart';
+import 'package:folders/features/trash/trash_actions.dart';
+import 'package:folders/features/trash/trash_view.dart';
 import 'package:folders/shared/layout/adaptive_layout.dart';
 import 'package:folders/shared/widgets/docked_glossy_top_bar.dart';
 import 'package:folders/shared/widgets/explorer_options_sheet.dart';
@@ -503,14 +506,17 @@ class _FileExplorerUI extends StatelessWidget {
     final clipboard = context.read<ClipboardBloc>();
     // This PC's drives and libraries aren't for moving, renaming or deleting.
     final thisPc = ExplorerPaths.isWindowsRoots(state.path);
+    // Nor what's in the Trash, which is restored or deleted for good.
+    final trash = ExplorerPaths.isTrash(state.path);
 
     if (command && key == LogicalKeyboardKey.keyA) {
       if (thisPc) return KeyEventResult.ignored;
       bloc.add(SelectAll());
     } else if (command && key == LogicalKeyboardKey.keyC && selected.isNotEmpty) {
+      if (trash) return KeyEventResult.ignored;
       clipboard.add(CopyToClipboard(selected));
     } else if (command && key == LogicalKeyboardKey.keyX && selected.isNotEmpty) {
-      if (thisPc) return KeyEventResult.ignored;
+      if (thisPc || trash) return KeyEventResult.ignored;
       clipboard.add(CutToClipboard(selected));
     } else if (command && key == LogicalKeyboardKey.keyV) {
       // On macOS files another app copied are looked at only now.
@@ -544,15 +550,22 @@ class _FileExplorerUI extends StatelessWidget {
         _open(context, state, single);
       }
     } else if (command && key == LogicalKeyboardKey.keyI && single != null) {
+      if (trash) return KeyEventResult.ignored;
       fileActionsService.showInfoSheet(single, context);
     } else if ((key == LogicalKeyboardKey.delete ||
             // ⌘⌫ on macOS, where the delete key is backspace.
             (Platform.isMacOS && command && key == LogicalKeyboardKey.backspace)) &&
         selected.isNotEmpty) {
       if (thisPc) return KeyEventResult.ignored;
-      fileActionsService.deleteFiles(context, selected);
+      if (trash) {
+        TrashActions.deleteForGood(context, TrashListing.itemsOf(selected));
+      } else {
+        // Shift+Delete, or ⌥⌘⌫ on a Mac: for good, past the Trash.
+        fileActionsService.deleteFiles(context, selected,
+            permanent: Platform.isMacOS ? keys.isAltPressed : keys.isShiftPressed);
+      }
     } else if (key == LogicalKeyboardKey.f2 && single != null) {
-      if (thisPc) return KeyEventResult.ignored;
+      if (thisPc || trash) return KeyEventResult.ignored;
       fileActionsService.showRenameDialog(context, single);
     } else if (key == LogicalKeyboardKey.escape && selected.isNotEmpty) {
       bloc.add(ToggleSelectionMode(enable: false));
@@ -642,6 +655,18 @@ class _FileExplorerUI extends StatelessWidget {
   }) {
     final bloc = context.read<FileExplorerBloc>();
 
+    if (isSelectionMode && fileExplorerState is FileExplorerLoaded && ExplorerPaths.isTrash(fileExplorerState.path)) {
+      final items = TrashListing.itemsOf(fileExplorerState.selectedItems);
+      return TrashSelectionHeader(
+        count: items.length,
+        total: fileExplorerState.visibleEntities.length,
+        wide: docked,
+        onClose: () => bloc.add(ToggleSelectionMode(enable: false)),
+        onSelectAll: () => bloc.add(SelectAll()),
+        onRestore: () => TrashActions.restore(context, items),
+        onDelete: () => TrashActions.deleteForGood(context, items),
+      );
+    }
     if (isSelectionMode && fileExplorerState is FileExplorerLoaded) {
       final selected = fileExplorerState.selectedItems.toList();
       void exitSelection() => bloc.add(ToggleSelectionMode(enable: false));
@@ -783,17 +808,27 @@ class _FileExplorerUI extends StatelessWidget {
       FileExplorerError(:final path) => path,
       _ => null,
     };
-    if (path != null && TagPaths.isTag(path)) {
-      // A tag's items, under the tag with its Rename and Delete.
+    if (path != null && (TagPaths.isTag(path) || ExplorerPaths.isTrash(path))) {
+      // A tag's items, under the tag with its Rename and Delete; or the
+      // Trash, with how long things stay and Empty above what's in it.
+      final tag = TagPaths.isTag(path);
       return Stack(
         fit: StackFit.expand,
         children: [
-          _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate, extraTop: TagFolderBar.height),
+          _buildFolder(
+            context,
+            state,
+            bottomInset: bottomInset,
+            canCreate: canCreate,
+            extraTop: tag ? TagFolderBar.height : TrashBar.height,
+          ),
           Positioned(
             top: DockedGlossyTopBar.contentTopInset(context),
             left: 0,
             right: 0,
-            child: TagFolderBar(path: path),
+            child: tag
+                ? TagFolderBar(path: path)
+                : TrashBar(count: state is FileExplorerLoaded ? state.entities.length : 0),
           ),
         ],
       );
@@ -874,6 +909,25 @@ class _FileExplorerUI extends StatelessWidget {
               );
       }
       if (state.entities.isEmpty) {
+        if (ExplorerPaths.isTrash(state.path)) {
+          final open = Trash.instance.openInSystem;
+          return ExplorerEmptyState(
+            padding: statePadding,
+            icon: LucideIcons.trash2,
+            title: 'The ${ExplorerPaths.titleForPath(state.path)} is empty',
+            description: Platform.isMacOS
+                ? 'What Folders moves to the Trash shows here. Finder shows the rest.'
+                : 'What you delete goes here first, so you can get it back.',
+            actions: [
+              if (open != null)
+                OutlinedButton.icon(
+                  onPressed: open,
+                  icon: const Icon(LucideIcons.squareArrowOutUpRight, size: 16),
+                  label: Text(Platform.isMacOS ? 'Open in Finder' : 'Open in File Explorer'),
+                ),
+            ],
+          );
+        }
         if (ExplorerPaths.isSocial(state.path)) {
           return ExplorerEmptyState(
             padding: statePadding,
@@ -948,6 +1002,7 @@ class _FileExplorerUI extends StatelessWidget {
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
       final dir = p.dirname(e.path);
+      if (ExplorerPaths.isTrash(state.path)) return TrashListing.itemAt(e.path)?.originalFolder;
       if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path) || TagPaths.isTag(state.path)) {
         return p.basename(dir);
       }
@@ -990,7 +1045,9 @@ class _FileExplorerUI extends StatelessWidget {
       }
       return state.isSelectionMode
           ? null
-          : (_) => fileActionsService.showFileOptionsMenu(context, e);
+          : (_) => ExplorerPaths.isTrash(state.path)
+              ? _open(context, state, e)
+              : fileActionsService.showFileOptionsMenu(context, e);
     }
 
     final footer = SliverToBoxAdapter(
@@ -1029,7 +1086,9 @@ class _FileExplorerUI extends StatelessWidget {
     // take drops, but not macOS packages (apps), which would be damaged.
     // With tabs, the middle button opens a folder in a new one, behind.
     Widget dragAndDrop(FileSystemEntity entity, Widget item) {
-      final folder = entity is Directory && !FileActionsService.isPackage(entity);
+      // Nothing is dragged out of the Trash or dropped into it.
+      final inTrash = ExplorerPaths.isTrash(state.path);
+      final folder = entity is Directory && !FileActionsService.isPackage(entity) && !inTrash;
       final target = folder
           ? FileDropTarget(
               folder: entity.path,
@@ -1049,7 +1108,7 @@ class _FileExplorerUI extends StatelessWidget {
         entity: entity,
         child: GitDim(git: git, path: entity.path, child: FileDragSource(
           entity: entity,
-          draggable: entity.path != state.renamingPath,
+          draggable: entity.path != state.renamingPath && !inTrash,
           selection: () => state.selectedItems.contains(entity)
               ? [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e]
               : const [],
@@ -1246,6 +1305,12 @@ class _FileExplorerUI extends StatelessWidget {
     FileSystemEntity entity,
   ) async {
     final bloc = context.read<FileExplorerBloc>();
+    // In the Trash: its details, to restore or delete for good.
+    if (ExplorerPaths.isTrash(state.path)) {
+      final item = TrashListing.itemAt(entity.path);
+      if (item != null) await TrashActions.showItemSheet(context, item);
+      return;
+    }
     if (entity is Directory && !FileActionsService.isPackage(entity)) {
       bloc.add(LoadDirectory(entity.path));
       return;
@@ -1340,7 +1405,16 @@ class _FileExplorerUI extends StatelessWidget {
     Offset position,
   ) {
     final selected = state.selectedItems;
-    if (selected.length > 1 && selected.any((e) => e.path == entity.path)) {
+    final ofSelection = selected.length > 1 && selected.any((e) => e.path == entity.path);
+    if (ExplorerPaths.isTrash(state.path)) {
+      if (!ofSelection) {
+        _clicks.mark(entity.path);
+        context.read<FileExplorerBloc>().add(SetSelection({entity}));
+      }
+      TrashActions.showItemMenu(context, TrashListing.itemsOf(ofSelection ? selected : {entity}), position);
+      return;
+    }
+    if (ofSelection) {
       _showSelectionMenu(context, state, position);
       return;
     }
@@ -1419,6 +1493,13 @@ class _FileExplorerUI extends StatelessWidget {
             icon: LucideIcons.trash2,
             destructive: true,
             shortcut: FileActionsService.deleteShortcut),
+        if (selected.every((e) => Trash.instance.canTrash(e.path)))
+          ExplorerMenu.item(context,
+              value: 'forGood',
+              label: 'Delete for good',
+              icon: LucideIcons.fileX,
+              destructive: true,
+              shortcut: FileActionsService.deleteForGoodShortcut),
       ],
     );
     if (action == null || !context.mounted) return;
@@ -1441,6 +1522,8 @@ class _FileExplorerUI extends StatelessWidget {
         bloc.add(ToggleSelectionMode(enable: false));
       case 'delete':
         fileActionsService.deleteFiles(context, selected);
+      case 'forGood':
+        fileActionsService.deleteFiles(context, selected, permanent: true);
     }
   }
 
@@ -1450,6 +1533,7 @@ class _FileExplorerUI extends StatelessWidget {
     FileExplorerLoaded state,
     Offset position,
   ) async {
+    if (ExplorerPaths.isTrash(state.path)) return TrashActions.showFolderMenu(context, position);
     final bloc = context.read<FileExplorerBloc>();
     final clipboard = context.read<ClipboardBloc>();
     final inFolder = !ExplorerPaths.isVirtual(state.path);
