@@ -8,6 +8,7 @@ import 'package:folders/features/file_explorere/explorer_zoom.dart';
 import 'package:folders/shared/widgets/scrollbar_scroll_view.dart';
 import 'package:folders/core/platform/desktop.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
+import 'package:folders/core/platform/terminal.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/router/file_opener.dart';
 import 'package:folders/core/services/archive_service.dart';
@@ -530,6 +531,8 @@ class _FileExplorerUI extends StatelessWidget {
       }
     } else if (command && key == LogicalKeyboardKey.keyN && Desktop.isDesktop) {
       Desktop.openWindow(folder: state.path);
+    } else if (key == LogicalKeyboardKey.f4 && !command && Terminal.canOpen(state.path)) {
+      Terminal.openFrom(context, state.path);
     } else if ((command && key == LogicalKeyboardKey.keyF) || key == LogicalKeyboardKey.f3) {
       bloc.add(OpenSearch());
     } else if (command &&
@@ -1597,6 +1600,9 @@ class _FileExplorerUI extends StatelessWidget {
             label: 'Open in new window',
             icon: LucideIcons.appWindow,
             shortcut: FileActionsService.shortcut('N')),
+        if (Terminal.canOpen(state.path))
+          ExplorerMenu.item(context,
+              value: 'terminal', label: 'Open in Terminal', icon: LucideIcons.squareTerminal, shortcut: 'F4'),
         if (inFolder)
           fileActionsService.shareSubmenu(context, [Directory(state.path)],
               label: 'Share this folder'),
@@ -1618,6 +1624,8 @@ class _FileExplorerUI extends StatelessWidget {
         bloc.add(LoadDirectory(state.path));
       case 'window':
         Desktop.openWindow(folder: state.path);
+      case 'terminal':
+        Terminal.openFrom(context, state.path);
     }
   }
 

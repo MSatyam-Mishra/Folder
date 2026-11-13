@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:folders/core/files/file_types.dart';
 import 'package:folders/core/platform/desktop.dart';
+import 'package:folders/core/platform/terminal.dart';
 import 'package:folders/core/services/bluetooth_share.dart';
 import 'package:folders/core/services/new_files.dart';
 import 'package:folders/core/services/trash/trash.dart';
@@ -132,6 +133,11 @@ class FileActionsService {
               value: _EntityAction.newWindow,
               label: 'Open in new window',
               icon: LucideIcons.appWindow),
+        if (!isFile && !package && Terminal.canOpen(entity.path))
+          ExplorerMenu.item(context,
+              value: _EntityAction.terminal,
+              label: 'Open in Terminal',
+              icon: LucideIcons.squareTerminal),
         if (isFile)
           ExplorerMenu.item(context,
               value: _EntityAction.openWith,
@@ -220,6 +226,8 @@ class FileActionsService {
             : Desktop.openWindow(folder: entity.path));
       case _EntityAction.openWith:
         await FileOpener.showOpenWith(context, entity as File);
+      case _EntityAction.terminal:
+        await Terminal.openFrom(context, entity.path);
       case _EntityAction.copy:
         context.read<ClipboardBloc>().add(CopyToClipboard([entity]));
         _toast(context, 'Copied. Open a folder and paste.');
@@ -1360,6 +1368,7 @@ enum _EntityAction {
   showInFolder,
   newTab,
   newWindow,
+  terminal,
   openWith,
   copy,
   cut,
