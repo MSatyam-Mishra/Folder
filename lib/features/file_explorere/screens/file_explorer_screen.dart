@@ -39,6 +39,7 @@ import 'package:folders/features/tags/tag_folder_bar.dart';
 import 'package:folders/features/tags/tag_paths.dart';
 import 'package:folders/features/file_explorere/widgets/new_file_button.dart';
 import 'package:folders/features/file_explorere/widgets/paste_bar.dart';
+import 'package:folders/features/file_explorere/widgets/search_panel.dart';
 import 'package:folders/features/localsend/screens/localsend_screen.dart';
 import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/panes/dual_pane.dart';
@@ -778,6 +779,7 @@ class _FileExplorerUI extends StatelessWidget {
       onSearch: loaded == null ? null : () => bloc.add(OpenSearch()),
       onSearchChanged: (q) => bloc.add(SearchChanged(q)),
       onSearchClosed: () => bloc.add(CloseSearch()),
+      searchEdits: loaded?.search.edits ?? 0,
       onViewModeChanged: loaded == null
           ? null
           : (mode) => bloc.add(ChangeViewMode(mode)),
@@ -825,45 +827,40 @@ class _FileExplorerUI extends StatelessWidget {
       FileExplorerError(:final path) => path,
       _ => null,
     };
-    if (path != null && (TagPaths.isTag(path) || ExplorerPaths.isTrash(path))) {
-      // A tag's items, under the tag with its Rename and Delete; or the
-      // Trash, with how long things stay and Empty above what's in it.
-      final tag = TagPaths.isTag(path);
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildFolder(
-            context,
-            state,
-            bottomInset: bottomInset,
-            canCreate: canCreate,
-            extraTop: tag ? TagFolderBar.height : TrashBar.height,
-          ),
-          Positioned(
-            top: DockedGlossyTopBar.contentTopInset(context),
-            left: 0,
-            right: 0,
-            child: tag
-                ? TagFolderBar(path: path)
-                : TrashBar(count: state is FileExplorerLoaded ? state.entities.length : 0),
-          ),
-        ],
-      );
-    }
-    if (path == null || !ExplorerPaths.isSocial(path)) {
+    final social = path != null && ExplorerPaths.isSocial(path);
+    final tag = path != null && TagPaths.isTag(path);
+    final trash = path != null && ExplorerPaths.isTrash(path);
+    // The search's options and what it understood, above the results.
+    final searchPanel = state is FileExplorerLoaded && state.searchOpen ? SearchPanel(state: state) : null;
+    // Above the items: an app's tabs (WhatsApp...), a tag with its Rename
+    // and Delete, or the Trash with how long things stay and Empty.
+    final Widget? bar = social
+        ? SocialTabs(path: path)
+        : tag
+            ? TagFolderBar(path: path)
+            : trash
+                ? TrashBar(count: state is FileExplorerLoaded ? state.entities.length : 0)
+                : null;
+    if (bar == null && searchPanel == null) {
       return _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate);
     }
-    // An app's files (WhatsApp...): its tabs stay above them.
+    final barHeight = social
+        ? SocialTabs.height
+        : tag
+            ? TagFolderBar.height
+            : trash
+                ? TrashBar.height
+                : 0.0;
+    final top = DockedGlossyTopBar.contentTopInset(context);
     return Stack(
       fit: StackFit.expand,
       children: [
-        _buildFolder(context, state, bottomInset: bottomInset, canCreate: canCreate, extraTop: SocialTabs.height),
-        Positioned(
-          top: DockedGlossyTopBar.contentTopInset(context),
-          left: 0,
-          right: 0,
-          child: SocialTabs(path: path),
-        ),
+        _buildFolder(context, state,
+            bottomInset: bottomInset,
+            canCreate: canCreate,
+            extraTop: barHeight + (searchPanel == null ? 0 : SearchPanel.height)),
+        if (bar != null) Positioned(top: top, left: 0, right: 0, child: bar),
+        if (searchPanel != null) Positioned(top: top + barHeight, left: 0, right: 0, child: searchPanel),
       ],
     );
   }
@@ -912,17 +909,27 @@ class _FileExplorerUI extends StatelessWidget {
     }
     if (state is FileExplorerLoaded) {
       if (state.query.isNotEmpty && state.searchResults.isEmpty) {
+        final options = state.search.options;
         return state.searching
             ? Padding(
                 padding: EdgeInsets.only(top: topInset),
-                child: const _Searching(),
+                child: _Searching(label: searchStatus(state)),
               )
             : ExplorerEmptyState(
                 padding: statePadding,
                 icon: LucideIcons.searchX,
                 title: 'Nothing matches “${state.query}”',
-                description: 'Nothing here or in the folders inside has that '
-                    'name. Use * for any text, as in *.pdf.',
+                description: searchEmptyHint(state),
+                actions: [
+                  if (!options.everywhere)
+                    OutlinedButton.icon(
+                      onPressed: () => context
+                          .read<FileExplorerBloc>()
+                          .add(ChangeSearchOptions(options.copyWith(everywhere: true))),
+                      icon: const Icon(LucideIcons.globe, size: 16),
+                      label: const Text('Search everywhere'),
+                    ),
+                ],
               );
       }
       if (state.entities.isEmpty) {
@@ -1027,8 +1034,15 @@ class _FileExplorerUI extends StatelessWidget {
       if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path) || TagPaths.isTag(state.path)) {
         return p.basename(dir);
       }
-      if (!searching) return null;
-      return p.equals(dir, state.path) ? null : p.relative(dir, from: state.path);
+      if (!searching || p.equals(dir, state.path)) return null;
+      // Found everywhere: what's outside this folder shows its whole path.
+      return p.isWithin(state.path, dir) ? p.relative(dir, from: state.path) : dir;
+    }
+
+    /// The words in context, for results found inside files.
+    Widget? snippetOf(FileSystemEntity e) {
+      final snippet = searching ? state.search.snippets[e.path] : null;
+      return snippet == null ? null : SearchSnippetText(snippet: snippet, selected: state.selectedItems.contains(e));
     }
 
     void onTap(FileSystemEntity e) {
@@ -1074,8 +1088,8 @@ class _FileExplorerUI extends StatelessWidget {
     final footer = SliverToBoxAdapter(
       child: searching
           ? (state.searching
-              ? const _Searching()
-              : _SearchSummary(count: entities.length))
+              ? _Searching(label: searchStatus(state))
+              : _SearchSummary(count: entities.length, note: searchLeftOut(state)))
           : _FolderSummary(entities: entities),
     );
     Widget heading(EntityGroup group, double side) => SliverToBoxAdapter(
@@ -1206,6 +1220,18 @@ class _FileExplorerUI extends StatelessWidget {
           ? FileRowStyle.table
           : FileRowStyle.comfortable;
       final sidePad = wide ? 8.0 : 0.0;
+      final rowHeight = FileListItem.heightFor(style, zoom) + 2;
+      // Rows with a line of text found inside the file are taller.
+      Widget rowsOf(EntityGroup group, SliverChildDelegate delegate) => searching && state.search.snippets.isNotEmpty
+          ? SliverVariedExtentList(
+              // Null past the last row: the list ends there.
+              itemExtentBuilder: (index, _) => index >= group.entities.length
+                  ? null
+                  : rowHeight +
+                      (state.search.snippets.containsKey(group.entities[index].path) ? FileListItem.snippetHeight : 0),
+              delegate: delegate,
+            )
+          : SliverFixedExtentList(itemExtent: rowHeight, delegate: delegate);
       slivers = [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(sidePad, top + 8, sidePad, 0),
@@ -1226,14 +1252,15 @@ class _FileExplorerUI extends StatelessWidget {
         if (group.label.isNotEmpty) heading(group, sidePad + 8),
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: sidePad),
-          sliver: SliverFixedExtentList(
-            itemExtent: FileListItem.heightFor(style, zoom) + 2,
-            delegate: SliverChildBuilderDelegate((context, index) {
+          sliver: rowsOf(
+            group,
+            SliverChildBuilderDelegate((context, index) {
               final entity = group.entities[index];
               return dragAndDrop(entity, FileListItem(
                 entity: entity,
                 displayName: state.labelFor(entity),
                 location: locationOf(entity),
+                snippet: snippetOf(entity),
                 style: style,
                 zoom: zoom,
                 isSelectionMode: state.isSelectionMode,
@@ -1811,7 +1838,9 @@ class _GroupHeading extends StatelessWidget {
 
 /// "Searching folders inside…" while subfolders are searched.
 class _Searching extends StatelessWidget {
-  const _Searching();
+  const _Searching({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -1825,7 +1854,7 @@ class _Searching extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
           const SizedBox(width: 10),
-          Text('Searching folders inside…', style: Theme.of(context).textTheme.bodySmall),
+          Flexible(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
         ],
       ),
     );
@@ -1833,16 +1862,19 @@ class _Searching extends StatelessWidget {
 }
 
 class _SearchSummary extends StatelessWidget {
-  const _SearchSummary({required this.count});
+  const _SearchSummary({required this.count, this.note});
 
   final int count;
+
+  /// What's left to look at, if anything.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        count == 1 ? '1 result' : '$count results',
+        [count == 1 ? '1 result' : '$count results', ?note].join(' · '),
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodySmall,
       ),

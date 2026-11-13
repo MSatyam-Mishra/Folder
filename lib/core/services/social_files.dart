@@ -115,6 +115,10 @@ abstract final class SocialFiles {
     return _computerPlaces(app, ExplorerPaths.userFolder);
   }
 
+  /// The folders [app] is known to keep files in here, whether they exist
+  /// or not (Smart search's "from WhatsApp").
+  static List<String> folders(SocialApp app) => [for (final place in _places(app)) place.path];
+
   /// A subfolder's tab: "WhatsApp Images" is Images, ".Statuses" is Statuses;
   /// null for the other hidden ones, which are the app's own.
   @visibleForTesting

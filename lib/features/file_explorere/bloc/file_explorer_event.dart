@@ -73,3 +73,16 @@ class SearchChanged extends FileExplorerEvent {
 
 /// Closes the search box; the folder shows again.
 class CloseSearch extends FileExplorerEvent {}
+
+/// Smart search, Inside files or Everywhere switched; searches again.
+class ChangeSearchOptions extends FileExplorerEvent {
+  final SearchOptions options;
+  ChangeSearchOptions(this.options);
+}
+
+/// Takes what a chip under the search box stands for out of the query, and
+/// searches again.
+class RemoveSearchChip extends FileExplorerEvent {
+  final QueryChip chip;
+  RemoveSearchChip(this.chip);
+}

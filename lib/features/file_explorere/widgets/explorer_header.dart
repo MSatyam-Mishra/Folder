@@ -103,6 +103,7 @@ class ExplorerHeader extends StatelessWidget {
     this.onSearchClosed,
     this.statusChip,
     this.leading,
+    this.searchEdits = 0,
   });
 
   final List<PathCrumb> crumbs;
@@ -146,6 +147,10 @@ class ExplorerHeader extends StatelessWidget {
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSearchClosed;
 
+  /// Counts changes the app made to [query] (a chip removed): the box then
+  /// shows the new one.
+  final int searchEdits;
+
   @override
   Widget build(BuildContext context) {
     return _HeaderTheme(
@@ -169,6 +174,7 @@ class ExplorerHeader extends StatelessWidget {
               child: searchOpen
                   ? _SearchField(
                       query: query,
+                      edits: searchEdits,
                       hint: crumbs.isEmpty
                           ? 'Search'
                           : 'Search ${crumbs.last.label}',
@@ -634,9 +640,11 @@ class _SearchField extends StatefulWidget {
     required this.hint,
     required this.onChanged,
     required this.onClosed,
+    this.edits = 0,
   });
 
   final String query;
+  final int edits;
   final String hint;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onClosed;
@@ -657,6 +665,18 @@ class _SearchFieldState extends State<_SearchField> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focus.requestFocus();
     });
+  }
+
+  @override
+  void didUpdateWidget(_SearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only what the app changed: while typing, the query lags the box.
+    if (widget.edits != oldWidget.edits && _controller.text.trim() != widget.query) {
+      _controller.value = TextEditingValue(
+        text: widget.query,
+        selection: TextSelection.collapsed(offset: widget.query.length),
+      );
+    }
   }
 
   @override

@@ -42,6 +42,12 @@ class FileListItem extends StatelessWidget {
   /// Where it is, for search results from subfolders ("Reports/2025").
   final String? location;
 
+  /// A line of the file's text, for search results found inside it; the row
+  /// is [snippetHeight] taller.
+  final Widget? snippet;
+
+  static const double snippetHeight = 18;
+
   /// Right click / two-finger tap (desktop, trackpads).
   /// Right-click, with where it happened (for a context menu).
   final GestureTapUpCallback? onSecondaryTapUp;
@@ -58,6 +64,7 @@ class FileListItem extends StatelessWidget {
     this.displayName,
     this.style = FileRowStyle.comfortable,
     this.location,
+    this.snippet,
     this.onSecondaryTapUp,
     this.zoom = 1,
     this.marks,
@@ -115,7 +122,15 @@ class FileListItem extends StatelessWidget {
                 child: picture,
               ),
         SizedBox(width: style == FileRowStyle.compact ? 10 : 12),
-        Expanded(child: _details(context, title)),
+        Expanded(
+          child: snippet == null
+              ? _details(context, title)
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [_details(context, title), const SizedBox(height: 2), snippet!],
+                ),
+        ),
         if (isSelectionMode) ...[
           const SizedBox(width: 12),
           SelectionCheck(selected: isSelected),
@@ -138,7 +153,7 @@ class FileListItem extends StatelessWidget {
             onLongPress: onLongPress,
             onSecondaryTapUp: onSecondaryTapUp,
             child: SizedBox(
-              height: heightFor(style, zoom),
+              height: heightFor(style, zoom) + (snippet == null ? 0 : snippetHeight),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: style == FileRowStyle.compact ? 10 : 12,

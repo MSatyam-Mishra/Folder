@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/search/file_search.dart';
 import 'package:folders/features/clipboard/bloc/clipboard_bloc.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
+import 'package:folders/features/file_explorere/bloc/search_info.dart';
 import 'package:folders/features/file_explorere/screens/file_explorer_screen.dart';
 import 'package:folders/features/tasks/bloc/task_progress_bloc.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,9 @@ void main() {
     }
     await File(p.join(sample.path, 'Documents', 'Report draft.docx'))
         .writeAsBytes(List.filled(48 * 1024, 120));
+    // Found by its text with Inside files.
+    await File(p.join(sample.path, 'Documents', 'Minutes.txt'))
+        .writeAsString('Minutes of the March meeting. The budget for the new office was approved by everyone.');
     // Varied sizes (KB) and dates so the metadata looks realistic.
     const files = {
       'Quarterly report.pdf': 184, 'Meeting notes.docx': 32,
@@ -199,6 +204,19 @@ void main() {
           return s is FileExplorerLoaded && !s.searching;
         });
         await saveScreenshot(tester, 'explorer_search_$tag');
+        // Smart search's chips, and words found inside a file.
+        // PDFium isn't set up in widget tests; the sample PDFs have no text.
+        final readPdf = FileSearch.readPdf;
+        FileSearch.readPdf = (_) async => null;
+        bloc.add(ChangeSearchOptions(const SearchOptions(insideFiles: true)));
+        await tester.enterText(find.byType(TextField), 'budget this year');
+        await settleUntil(tester, () {
+          final s = bloc.state;
+          return s is FileExplorerLoaded && !s.searching && s.query == 'budget this year';
+        });
+        await saveScreenshot(tester, 'explorer_smart_search_$tag');
+        bloc.add(ChangeSearchOptions(const SearchOptions()));
+        FileSearch.readPdf = readPdf;
         bloc.add(CloseSearch());
         await settle(tester);
 

@@ -37,6 +37,9 @@ class FileExplorerLoaded extends FileExplorerState {
   final List<FileSystemEntity> searchResults;
   final bool searching;
 
+  /// The search's options, what it understood, words in context, progress.
+  final SearchInfo search;
+
   /// The item whose name is being edited in the list.
   final String? renamingPath;
 
@@ -64,6 +67,7 @@ class FileExplorerLoaded extends FileExplorerState {
     this.query = '',
     this.searchResults = const [],
     this.searching = false,
+    this.search = const SearchInfo(),
     this.renamingPath,
   });
 
@@ -87,6 +91,7 @@ class FileExplorerLoaded extends FileExplorerState {
     String? query,
     List<FileSystemEntity>? searchResults,
     bool? searching,
+    SearchInfo? search,
     String? renamingPath,
     bool stopRenaming = false,
   }) {
@@ -105,6 +110,7 @@ class FileExplorerLoaded extends FileExplorerState {
       query: query ?? this.query,
       searchResults: searchResults ?? this.searchResults,
       searching: searching ?? this.searching,
+      search: search ?? this.search,
       renamingPath: stopRenaming ? null : (renamingPath ?? this.renamingPath),
     );
   }

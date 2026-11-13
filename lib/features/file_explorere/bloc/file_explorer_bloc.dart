@@ -4,10 +4,13 @@ import 'package:bloc/bloc.dart';
 import 'package:folders/core/platform/explorer_paths.dart';
 import 'package:folders/core/repositories/file_repository.dart';
 import 'package:folders/core/services/folder_prefs_service.dart';
+import 'package:folders/core/services/search/file_search.dart';
+import 'package:folders/core/services/search/photo_text_index.dart';
+import 'package:folders/core/services/search/search_criteria.dart';
 import 'package:folders/core/services/trash/trash.dart';
 import 'package:folders/features/file_explorere/bloc/folder_history.dart';
-import 'package:folders/features/file_explorere/bloc/folder_search.dart';
 import 'package:folders/features/file_explorere/bloc/grouping.dart';
+import 'package:folders/features/file_explorere/bloc/search_info.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -146,9 +149,17 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
       }
     });
 
-    on<OpenSearch>((event, emit) {
+    on<OpenSearch>((event, emit) async {
       final current = state;
-      if (current is FileExplorerLoaded) emit(current.copyWith(searchOpen: true));
+      if (current is! FileExplorerLoaded) return;
+      emit(current.copyWith(searchOpen: true));
+      // The remembered options; Everywhere stays as it is.
+      final before = current.search.options;
+      final options = (await SearchOptions.load()).copyWith(everywhere: before.everywhere);
+      final latest = state;
+      if (options == before || latest is! FileExplorerLoaded || latest.path != current.path) return;
+      emit(latest.copyWith(search: latest.search.copyWith(options: options)));
+      if (latest.query.isNotEmpty) add(SearchChanged(latest.query));
     });
 
     on<CloseSearch>((event, emit) async {
@@ -160,11 +171,30 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
         query: '',
         searchResults: const [],
         searching: false,
+        search: SearchInfo(options: current.search.options.copyWith(everywhere: false), edits: current.search.edits),
       );
       emit(closed.copyWith(groups: await _group(closed)));
     });
 
     on<SearchChanged>(_onSearchChanged);
+
+    on<ChangeSearchOptions>((event, emit) async {
+      final current = state;
+      if (current is! FileExplorerLoaded) return;
+      emit(current.copyWith(search: current.search.copyWith(options: event.options)));
+      if (current.query.isNotEmpty) add(SearchChanged(current.query));
+      await event.options.save();
+    });
+
+    on<RemoveSearchChip>((event, emit) {
+      final current = state;
+      if (current is! FileExplorerLoaded) return;
+      final query = current.search.understood?.without(event.chip);
+      if (query == null) return;
+      // The search box shows the new query.
+      emit(current.copyWith(query: query, search: current.search.copyWith(edits: current.search.edits + 1)));
+      add(SearchChanged(query));
+    });
   }
 
   /// Incremented per search; a search's late results are dropped once
@@ -177,40 +207,76 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
     if (current is! FileExplorerLoaded) return;
     final query = event.query.trim();
     if (query.isEmpty) {
-      final cleared = current.copyWith(searchOpen: true, query: '', searchResults: const [], searching: false);
+      final cleared = current.copyWith(
+        searchOpen: true,
+        query: '',
+        searchResults: const [],
+        searching: false,
+        search: current.search.cleared,
+      );
       emit(cleared.copyWith(groups: await _group(cleared)));
       return;
     }
-    // The folder's own items at once.
-    final matcher = NameMatcher(query);
+    final options = current.search.options;
+    final smart = options.smart ? SmartQuery.parse(query) : null;
+    // The folder's own items whose names match, at once.
+    final names = SearchCriteria(query, smart: smart);
     final results = [
-      for (final e in current.entities)
-        if (matcher.matches(current.labelFor(e))) e,
+      if (!options.everywhere)
+        for (final e in current.entities)
+          if (names.literal(current.labelFor(e))) e,
     ];
-    // This PC lists drives: searching all of them would take ages. A
-    // category's files are all listed already.
-    final deep = !ExplorerPaths.isVirtual(current.path);
-    var shown = current.copyWith(searchOpen: true, query: query, searchResults: List.of(results), searching: deep);
+    // This PC lists drives: searching all of them would take ages, unless
+    // asked to. A category's files are all listed already.
+    final deep = SearchScope.goesOn(current.path, query, options, smart);
+    var shown = current.copyWith(
+      searchOpen: true,
+      query: query,
+      searchResults: List.of(results),
+      searching: deep,
+      search: current.search.cleared.copyWith(understood: smart, progress: SearchProgress(walking: deep)),
+    );
     emit(shown.copyWith(groups: await _group(shown)));
     if (!deep) return;
 
-    // Then its subfolders, once typing pauses.
+    // Then the rest, once typing pauses.
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (generation != _searchGeneration || emit.isDone) return;
     await FolderPrefsService().init();
-    final found = searchSubfolders(current.path, query, showHidden: FolderPrefsService().showHidden);
-    await for (final batch in found) {
+    final spec = await SearchScope.spec(
+      path: current.path,
+      query: query,
+      smart: smart,
+      options: options,
+      entities: current.entities,
+      showHidden: FolderPrefsService().showHidden,
+    );
+    if (generation != _searchGeneration || emit.isDone) return;
+    final seen = {for (final e in results) e.path};
+    final snippets = <String, SearchSnippet>{};
+    await for (final update in FileSearch.run(spec, photos: PhotoTextIndex.shared)) {
       final latest = state;
       if (generation != _searchGeneration || emit.isDone || latest is! FileExplorerLoaded || latest.path != current.path) {
         return; // Cancelling the stream stops the search.
       }
-      results.addAll(batch);
-      shown = latest.copyWith(searchResults: List.of(results));
-      emit(shown.copyWith(groups: await _group(shown)));
+      var added = false;
+      for (final hit in update.hits) {
+        final snippet = hit.snippet;
+        if (snippet != null && snippet.text.isNotEmpty) snippets[hit.path] = snippet;
+        if (seen.add(hit.path)) {
+          results.add(hit.entity);
+          added = true;
+        }
+      }
+      shown = latest.copyWith(
+        searchResults: added ? List.of(results) : null,
+        search: latest.search.copyWith(snippets: added ? Map.of(snippets) : null, progress: update.progress),
+      );
+      emit(added ? shown.copyWith(groups: await _group(shown)) : shown);
     }
     final latest = state;
     if (generation == _searchGeneration && !emit.isDone && latest is FileExplorerLoaded && latest.path == current.path) {
-      emit(latest.copyWith(searching: false));
+      emit(latest.copyWith(searching: false, search: latest.search.copyWith(progress: latest.search.progress.done)));
     }
   }
 
@@ -364,6 +430,14 @@ class FileExplorerBloc extends Bloc<FileExplorerEvent, FileExplorerState> {
         renamingPath: event.rename ? select : (same && select == null ? latest.renamingPath : null),
         // A refresh keeps the search box open.
         searchOpen: latest is FileExplorerLoaded && latest.path == event.path && latest.searchOpen,
+        // And the search as it is; another folder only its options.
+        search: same
+            ? latest.search
+            : SearchInfo(
+                options: latest is FileExplorerLoaded
+                    ? latest.search.options.copyWith(everywhere: false)
+                    : const SearchOptions(),
+              ),
       );
       final groups = await _group(loaded);
       if (stale()) return;
