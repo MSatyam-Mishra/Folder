@@ -10,6 +10,7 @@ import 'package:folders/features/explorer_tabs/explorer_tabs.dart';
 import 'package:folders/features/file_explorere/bloc/file_explorer_bloc.dart';
 import 'package:folders/features/file_explorere/widgets/entity_meta.dart';
 import 'package:folders/features/file_explorere/widgets/explorer_menu.dart';
+import 'package:folders/features/file_explorere/widgets/checksum_panel.dart';
 import 'package:folders/features/file_explorere/widgets/image_actions.dart';
 import 'package:folders/features/file_explorere/widgets/info_row.dart';
 import 'package:folders/features/tags/tag_actions.dart';
@@ -1303,6 +1304,10 @@ class _PropertiesSheetState extends State<_PropertiesSheet> {
             );
           },
         ),
+        if (entity is File) ...[
+          const SizedBox(height: 20),
+          ChecksumPanel(file: entity),
+        ],
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: () {
