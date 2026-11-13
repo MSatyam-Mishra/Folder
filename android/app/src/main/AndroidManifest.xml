@@ -233,6 +233,34 @@
         </activity-alias>
 
         <activity-alias
+            android:name=".tool_storage_analyzer"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_tool_storage_analyzer"
+            android:label="Storage analyzer"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="explorer.route" android:value="tool/storage_analyzer"/>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".tool_folder_sync"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_tool_folder_sync"
+            android:label="Folder sync"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="explorer.route" android:value="tool/folder_sync"/>
+        </activity-alias>
+
+        <activity-alias
             android:name=".tool_document_scanner"
             android:enabled="false"
             android:exported="true"

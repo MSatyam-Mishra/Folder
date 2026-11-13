@@ -11,9 +11,11 @@ import 'package:folders/features/network/screens/file_server_screen.dart';
 import 'package:folders/features/network/wifi_sharing.dart';
 import 'package:folders/features/document_scanner/document_scanner_screen.dart';
 import 'package:folders/features/toolbox/duplicate_finder_screen.dart';
+import 'package:folders/features/toolbox/folder_sync_screen.dart';
 import 'package:folders/features/toolbox/junk_cleaner_screen.dart';
 import 'package:folders/features/toolbox/music_player_screen.dart';
 import 'package:folders/features/toolbox/ram_cleaner_screen.dart';
+import 'package:folders/features/toolbox/storage_analyzer_screen.dart';
 import 'package:folders/features/video_downloader/screens/video_downloader_screen.dart';
 import 'package:folders/features/video_player/video_library_screen.dart';
 import 'package:folders/shared/ui/app_ui.dart';
@@ -29,6 +31,8 @@ enum Tool {
   ramCleaner('ram_cleaner', LucideIcons.memoryStick, 'RAM cleaner', 'See memory in use, and free what the system allows'),
   junkCleaner('memory_cleaner', LucideIcons.eraser, 'Junk cleaner', 'Remove temporary files, caches and other junk'),
   duplicateFinder('duplicate_finder', LucideIcons.copy, 'Duplicate finder', 'Find files with the same contents, and clean them up'),
+  storageAnalyzer('storage_analyzer', LucideIcons.chartPie, 'Storage analyzer', 'See what takes up the space on a drive or in a folder'),
+  folderSync('folder_sync', LucideIcons.folderSync, 'Folder sync', 'Compare two folders and make them match'),
   documentScanner('document_scanner', LucideIcons.scanLine, 'Document scanner', 'Scan pages to a PDF or pictures with the camera'),
   videoPlayer('video_player', LucideIcons.film, 'Video player', 'All the videos on this device'),
   musicPlayer('music_player', LucideIcons.music, 'Music player', 'All your music, one song after another'),
@@ -82,6 +86,8 @@ enum Tool {
         ramCleaner => const RamCleanerScreen(),
         junkCleaner => const JunkCleanerScreen(),
         duplicateFinder => const DuplicateFinderScreen(),
+        storageAnalyzer => const StorageAnalyzerScreen(),
+        folderSync => const FolderSyncScreen(),
         documentScanner => const DocumentScannerScreen(),
         videoPlayer => const VideoLibraryScreen(),
         musicPlayer => const MusicPlayerScreen(),
