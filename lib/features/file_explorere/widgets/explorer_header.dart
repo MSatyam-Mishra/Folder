@@ -861,6 +861,14 @@ class ExplorerSelectionHeader extends StatelessWidget {
                           icon: LucideIcons.scaling,
                         ),
                       ],
+                      // Several at once: the batch rename.
+                      if (count > 1)
+                        ExplorerMenu.item(
+                          anchor,
+                          value: SelectionMenuAction.rename,
+                          label: 'Rename…',
+                          icon: LucideIcons.pencil,
+                        ),
                       if (single) ...[
                         ExplorerMenu.item(
                           anchor,

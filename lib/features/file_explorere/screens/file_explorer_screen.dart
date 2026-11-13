@@ -24,6 +24,7 @@ import 'package:folders/features/file_explorere/widgets/file_drag_drop.dart';
 import 'package:folders/features/file_explorere/widgets/file_grid_item.dart';
 import 'package:folders/features/file_explorere/widgets/file_list_item.dart';
 import 'package:folders/features/file_explorere/widgets/file_peek.dart';
+import 'package:folders/features/file_explorere/widgets/batch_rename_dialog.dart';
 import 'package:folders/features/file_explorere/widgets/history_buttons.dart';
 import 'package:folders/features/file_explorere/widgets/selection_band.dart';
 import 'package:folders/features/file_explorere/widgets/social_tabs.dart';
@@ -564,9 +565,14 @@ class _FileExplorerUI extends StatelessWidget {
         fileActionsService.deleteFiles(context, selected,
             permanent: Platform.isMacOS ? keys.isAltPressed : keys.isShiftPressed);
       }
-    } else if (key == LogicalKeyboardKey.f2 && single != null) {
+    } else if (key == LogicalKeyboardKey.f2 && selected.isNotEmpty) {
       if (thisPc || trash) return KeyEventResult.ignored;
-      fileActionsService.showRenameDialog(context, single);
+      if (single != null) {
+        fileActionsService.showRenameDialog(context, single);
+      } else {
+        // Several: all at once, in the order shown.
+        BatchRenameDialog.run(context, _inOrder(state));
+      }
     } else if (key == LogicalKeyboardKey.escape && selected.isNotEmpty) {
       bloc.add(ToggleSelectionMode(enable: false));
     } else if (key == LogicalKeyboardKey.escape && state.searchOpen) {
@@ -591,6 +597,10 @@ class _FileExplorerUI extends StatelessWidget {
     }
     return KeyEventResult.handled;
   }
+
+  /// What's selected, in the order shown.
+  static List<FileSystemEntity> _inOrder(FileExplorerLoaded state) =>
+      [for (final e in state.displayEntities) if (state.selectedItems.contains(e)) e];
 
   /// The arrow keys, Home, End, Page Up and Page Down go through the items;
   /// with Shift the selection stretches from where it started.
@@ -707,8 +717,12 @@ class _FileExplorerUI extends StatelessWidget {
             case SelectionMenuAction.moveToOtherPane:
               PaneActions.transfer(context, move: true, items: selected);
             case SelectionMenuAction.rename:
-              exitSelection();
-              fileActionsService.showRenameDialog(context, selected.first);
+              if (selected.length > 1) {
+                BatchRenameDialog.run(context, _inOrder(fileExplorerState));
+              } else {
+                exitSelection();
+                fileActionsService.showRenameDialog(context, selected.first);
+              }
             case SelectionMenuAction.properties:
               exitSelection();
               fileActionsService.showInfoSheet(selected.first, context);
@@ -1478,6 +1492,8 @@ class _FileExplorerUI extends StatelessWidget {
             value: 'zip',
             label: 'Compress to ZIP',
             icon: LucideIcons.fileArchive),
+        if (!ExplorerPaths.isWindowsRoots(state.path))
+          ExplorerMenu.item(context, value: 'rename', label: 'Rename…', icon: LucideIcons.pencil, shortcut: 'F2'),
         ExplorerMenu.divider(),
         ExplorerMenu.item(context,
             value: 'all',
@@ -1516,6 +1532,8 @@ class _FileExplorerUI extends StatelessWidget {
         context.read<ClipboardBloc>().add(CutToClipboard(selected));
       case 'zip':
         _handleCompress(context, state);
+      case 'rename':
+        BatchRenameDialog.run(context, _inOrder(state));
       case 'all':
         bloc.add(SelectAll());
       case 'none':
