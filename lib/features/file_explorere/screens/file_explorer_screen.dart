@@ -1019,7 +1019,11 @@ class _FileExplorerUI extends StatelessWidget {
     /// Where a search result from a subfolder is, from here.
     String? locationOf(FileSystemEntity e) {
       final dir = p.dirname(e.path);
-      if (ExplorerPaths.isTrash(state.path)) return TrashListing.itemAt(e.path)?.originalFolder;
+      if (ExplorerPaths.isTrash(state.path)) {
+        // The folder it came from; its details have the whole path.
+        final from = TrashListing.itemAt(e.path)?.originalFolder ?? '';
+        return from.isEmpty ? null : ExplorerPaths.displayNameForEntity(from);
+      }
       if (ExplorerPaths.isCategory(state.path) || ExplorerPaths.isSocial(state.path) || TagPaths.isTag(state.path)) {
         return p.basename(dir);
       }

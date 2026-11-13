@@ -60,7 +60,6 @@ class ChecksumJob {
   final void Function(double fraction)? onProgress;
 
   final _done = Completer<Map<HashKind, String>>();
-  ReceivePort? _port;
 
   /// Where to ask the isolate to stop: it then closes the file itself (a
   /// killed isolate could leave it open, and Windows locked).
@@ -71,7 +70,6 @@ class ChecksumJob {
 
   Future<void> _run() async {
     final port = ReceivePort();
-    _port = port;
     port.listen((message) {
       if (message is SendPort) {
         _control = message;

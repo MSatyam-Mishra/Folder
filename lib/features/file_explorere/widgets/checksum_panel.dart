@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:folders/core/services/checksums.dart';
-import 'package:folders/features/viewer_kit/viewer_kit.dart' show Tone, ToneColors;
+import 'package:folders/features/viewer_kit/viewer_kit.dart' show CodeFont, Tone, ToneColors;
 import 'package:folders/shared/ui/app_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -148,7 +148,7 @@ class _ChecksumPanelState extends State<ChecksumPanel> {
                             child: SelectableText(
                               hex,
                               maxLines: kind == HashKind.sha512 ? 3 : 2,
-                              style: text.bodySmall?.copyWith(fontFamily: 'monospace', color: colors.foreground),
+                              style: CodeFont.style(fontSize: 12, color: colors.foreground, height: 1.4),
                             ),
                           ),
                           AppIconButton(
@@ -170,7 +170,7 @@ class _ChecksumPanelState extends State<ChecksumPanel> {
             setState(() {});
             if (Checksums.parse(value) != null) _calculate();
           },
-          style: text.bodySmall?.copyWith(fontFamily: 'monospace'),
+          style: CodeFont.style(fontSize: 12, color: colors.foreground),
           decoration: InputDecoration(
             isDense: true,
             labelText: 'Compare',

@@ -150,6 +150,10 @@ void main() {
       expect(SpecTrash.androidVolumeOf('/storage/1A2B-3C4D/Music/x.mp3'), '/storage/1A2B-3C4D');
       expect(SpecTrash.androidVolumeOf('/storage/emulated/10/x'), isNull);
       expect(SpecTrash.androidVolumeOf('/data/user/0/x'), isNull);
+      // Outside the storage volumes there's no Trash: deletes there are for good.
+      final android = SpecTrash.android();
+      expect(android.canTrash('/storage/emulated/0/Download/a.pdf'), isTrue);
+      expect(android.canTrash('/data/user/0/com.example/a.txt'), isFalse);
     });
   });
 

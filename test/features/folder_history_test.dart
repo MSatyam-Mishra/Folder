@@ -108,10 +108,19 @@ void main() {
           _ => null,
         };
 
+    /// Settles until [path] is shown (a busy machine takes a while), then
+    /// checks it is.
+    Future<void> lands(WidgetTester tester, FileExplorerBloc bloc, String path) async {
+      for (var i = 0; i < 60 && pathOf(bloc) != path; i++) {
+        await settle(tester);
+      }
+      expect(pathOf(bloc), path);
+    }
+
     Future<void> go(WidgetTester tester, FileExplorerBloc bloc, String path) async {
       bloc.add(LoadDirectory(path));
       await settle(tester);
-      expect(pathOf(bloc), path);
+      await lands(tester, bloc, path);
     }
 
     Future<void> withAlt(WidgetTester tester, LogicalKeyboardKey key) async {
@@ -130,18 +139,18 @@ void main() {
       await go(tester, bloc, music);
 
       await withAlt(tester, LogicalKeyboardKey.arrowLeft);
-      expect(pathOf(bloc), inner);
+      await lands(tester, bloc, inner);
       await withAlt(tester, LogicalKeyboardKey.arrowLeft);
-      expect(pathOf(bloc), root.path);
+      await lands(tester, bloc, root.path);
       await withAlt(tester, LogicalKeyboardKey.arrowRight);
-      expect(pathOf(bloc), inner);
+      await lands(tester, bloc, inner);
 
       // Up is a new visit: Forward to Music is gone.
       await withAlt(tester, LogicalKeyboardKey.arrowUp);
-      expect(pathOf(bloc), docs);
+      await lands(tester, bloc, docs);
       expect(bloc.history.canForward, isFalse);
       await withAlt(tester, LogicalKeyboardKey.arrowLeft);
-      expect(pathOf(bloc), inner);
+      await lands(tester, bloc, inner);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -154,10 +163,10 @@ void main() {
 
       await tester.tap(find.byTooltip('Back (${Platform.isMacOS ? '⌘[' : 'Alt+Left'})'));
       await settle(tester);
-      expect(pathOf(bloc), docs);
+      await lands(tester, bloc, docs);
       await tester.tap(find.byTooltip('Forward (${Platform.isMacOS ? '⌘]' : 'Alt+Right'})'));
       await settle(tester);
-      expect(pathOf(bloc), music);
+      await lands(tester, bloc, music);
 
       // A right-click on Back lists the folders behind, the nearest first.
       final back = find.byTooltip('Back (${Platform.isMacOS ? '⌘[' : 'Alt+Left'})');
@@ -168,7 +177,7 @@ void main() {
       expect(find.text('Docs'), findsWidgets);
       await tester.tap(find.text(rootName).last);
       await settle(tester);
-      expect(pathOf(bloc), root.path);
+      await lands(tester, bloc, root.path);
       expect(bloc.history.forwardEntries, [docs, music]);
 
       // The mouse's forward button, anywhere over the browser.
@@ -176,18 +185,18 @@ void main() {
       await mouse.down(const Offset(700, 500));
       await mouse.up();
       await settle(tester);
-      expect(pathOf(bloc), docs);
+      await lands(tester, bloc, docs);
       final backButton = await tester.createGesture(kind: PointerDeviceKind.mouse, buttons: kBackMouseButton);
       await backButton.down(const Offset(700, 500));
       await backButton.up();
       await settle(tester);
-      expect(pathOf(bloc), root.path);
+      await lands(tester, bloc, root.path);
 
       // Up, from the header.
       await go(tester, bloc, p.join(docs, 'Inner'));
       await tester.tap(find.byTooltip('Up (${Platform.isMacOS ? '⌘↑' : 'Alt+Up'})'));
       await settle(tester);
-      expect(pathOf(bloc), docs);
+      await lands(tester, bloc, docs);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -204,9 +213,9 @@ void main() {
       }
 
       await systemBack();
-      expect(pathOf(bloc), inner);
+      await lands(tester, bloc, inner);
       await systemBack();
-      expect(pathOf(bloc), root.path);
+      await lands(tester, bloc, root.path);
       expect(bloc.history.canBack, isFalse);
 
       await tester.pumpWidget(const SizedBox());
@@ -221,11 +230,11 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await settle(tester);
-      expect(pathOf(bloc), docs);
+      await lands(tester, bloc, docs);
       expect(bloc.history.entries, [docs], reason: "so the next Back doesn't return to Inner");
       await tester.binding.handlePopRoute();
       await settle(tester);
-      expect(pathOf(bloc), root.path);
+      await lands(tester, bloc, root.path);
       expect(bloc.history.entries, [root.path]);
       await tester.pumpWidget(const SizedBox());
     });

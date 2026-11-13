@@ -63,9 +63,25 @@ class SpecTrash extends Trash {
   @override
   bool get emptiesItself => own;
 
+  /// Only what's on a drive with a Trash (Android: internal storage and SD
+  /// cards, not the app's own folders); the rest is deleted for good, after
+  /// asking.
+  @override
+  bool canTrash(String path) => super.canTrash(path) && dirFor(path) != null;
+
+  List<TrashDir>? _knownDirs;
+  DateTime _knownAt = DateTime(0);
+
   @override
   bool contains(String path) {
-    for (final dir in dirs()) {
+    // Asked for every item a menu shows: the folders are looked for at most
+    // every few seconds.
+    final now = DateTime.now();
+    if (_knownDirs == null || now.difference(_knownAt) > const Duration(seconds: 5)) {
+      _knownDirs = dirs();
+      _knownAt = now;
+    }
+    for (final dir in _knownDirs!) {
       if (p.equals(path, dir.path) || p.isWithin(dir.path, path)) return true;
     }
     return false;
@@ -461,7 +477,20 @@ class LinuxMounts {
 
   final String Function() _read;
 
+  List<({String device, String point})>? _known;
+  DateTime _knownAt = DateTime(0);
+
+  /// Read again at most every few seconds: menus ask for every item.
   List<({String device, String point})> _entries() {
+    final now = DateTime.now();
+    if (_known == null || now.difference(_knownAt) > const Duration(seconds: 5)) {
+      _known = _readEntries();
+      _knownAt = now;
+    }
+    return _known!;
+  }
+
+  List<({String device, String point})> _readEntries() {
     try {
       return [
         for (final line in _read().split('\n'))

@@ -146,8 +146,11 @@ void main() {
       );
       expect(plans.every((p) => p.ok), isTrue);
       // Something takes the name before it's applied.
-      final result = await BatchRename.apply([...plans, RenamePlan(real('gone.txt'), 'kept.txt')]
-        ..add(RenamePlan(RenameSource(p.join(root.path, 'missing.txt')), 'other.txt')));
+      final result = await BatchRename.apply([
+        ...plans,
+        RenamePlan(real('gone.txt'), 'kept.txt'),
+        RenamePlan(RenameSource(p.join(root.path, 'missing.txt')), 'other.txt'),
+      ]);
       expect(Directory(p.join(root.path, 'PHOTOS')).existsSync(), isTrue);
       expect(root.listSync().map((e) => p.basename(e.path)), containsAll(['PHOTOS', 'X.txt', 'kept.txt']));
       expect(result.failed.keys.single, endsWith('missing.txt'));

@@ -169,10 +169,11 @@ void main() {
     expect(find.text('Restored "beta.txt"'), findsOneWidget);
     expect(find.text('beta.txt'), findsNothing);
 
-    // A double-click shows its details: delete it for good from there.
+    // Opening it (Enter, as a double-click) shows its details: delete it for
+    // good from there.
     await tester.pump(const Duration(milliseconds: 500));
     await click(tester, 'Docs');
-    await click(tester, 'Docs');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await seen(tester, find.text('From'));
     expect(find.text('From'), findsOneWidget);
     await tester.tap(find.widgetWithText(OutlinedButton, 'Delete for good'));
