@@ -229,7 +229,8 @@ class _ItemPreviewState extends State<_ItemPreview> {
           ? (inner * 1.3).clamp(200.0, math.max(200.0, box.maxHeight * 0.62)).toDouble()
           : look == PreviewLook.audio
               ? inner + 64
-              : math.min(inner, math.max(160.0, box.maxHeight * 0.45));
+              // A folder has only its icon to show.
+              : math.min(inner, _isFolder ? 180.0 : math.max(160.0, box.maxHeight * 0.45));
       return _PreviewScroll(
         children: [
           Container(

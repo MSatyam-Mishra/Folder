@@ -316,6 +316,33 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('a phone in landscape: two panes without the sidebar, the menu in the first only', (tester) async {
+    final panes = await open(tester, size: const Size(800, 420));
+    expect(find.byType(MainDrawerContent), findsNothing);
+    expect(panes.roomForTwo, isTrue);
+    await toggleDual(tester);
+    await waitFor(tester, () => find.text('a.txt').evaluate().length == 2);
+    expect(panes.showing, isTrue);
+    expect(find.byTooltip('Open menu'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await finish(tester);
+  });
+
+  testWidgets("a narrow pane's New button offers a folder or a file", (tester) async {
+    final panes = await open(tester);
+    await toggleDual(tester);
+    await waitFor(tester, () => panes.second != null);
+    // Both panes are under 760 px: the compact header, with one New button.
+    expect(find.byTooltip('New'), findsNWidgets(2));
+    expect(find.text('New folder'), findsNothing);
+    await tester.tap(find.byTooltip('New').last, kind: PointerDeviceKind.mouse);
+    await settle(tester);
+    expect(find.text('New folder'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(tester);
+    await finish(tester);
+  });
+
   testWidgets('with one pane, Tab still moves the keyboard as before', (tester) async {
     await open(tester);
     await click(tester, find.text('a.txt'));
