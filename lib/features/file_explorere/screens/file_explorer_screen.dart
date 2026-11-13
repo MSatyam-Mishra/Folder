@@ -762,7 +762,7 @@ class _FileExplorerUI extends StatelessWidget {
       crumbs: path == null
           ? const []
           : explorerCrumbs(path, labels: loaded?.pathLabels ?? const {}),
-      // A narrow pane beside another one or the preview: the compact one.
+      // A narrow pane (a small window, or beside another pane or the preview): the compact header.
       wide: docked && PaneActions.roomyHeader(context),
       statusChip: GitBranchChip(git: GitStatusController.of(bloc)),
       onNavigate: (target) => bloc.add(LoadDirectory(target)),

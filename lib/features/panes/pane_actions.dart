@@ -26,11 +26,12 @@ abstract final class PaneActions {
   static String get moveShortcut => Platform.isMacOS ? '⇧F6' : 'Shift+F6';
 
   /// Whether the header of the pane [context] is in has room for its wide
-  /// layout (the breadcrumb, New folder): always with the room to itself,
-  /// as before panes; beside another pane or the preview pane, from 760 px.
+  /// layout (the breadcrumb, New folder, with Back, Forward and Up before
+  /// them): from 700 px with the room to itself, as in a small window beside
+  /// the sidebar; beside another pane or the preview pane, from 760 px.
   static bool roomyHeader(BuildContext context) {
     final slot = PaneSlot.of(context);
-    return slot == null || !slot.shared || slot.width >= 760;
+    return slot == null || slot.width >= (slot.shared ? 760 : 700);
   }
 
   /// The preview pane is for computers and tablets, not phones.
